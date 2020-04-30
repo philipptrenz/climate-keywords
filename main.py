@@ -17,12 +17,19 @@ class Document:
 
     @staticmethod
     def time_binning(documents: List["Document"], binning) -> Dict[float, List["Document"]]:
-        for d in documents:
         pass
+
+
+class KeyWord():
+    def __init__(self, english_translation, german_translation):
+        self.english_translation = english_translation
+        self.german_translation = german_translation
+
 
 class KeyWordList():
     def __init__(self, keywords: NamedTuple, time_spec, ):
         pass
+
 
 def extract_tf_keywords(time_specific_documents: Dict[float, List[Document]]) -> Dict[float, List[str]]:
     pass
@@ -41,7 +48,7 @@ time_binned_documents = Document.time_binning(documents, "year")
 # extract key words
 key_words = extract_tf_keywords(time_binned_documents)
 
-# match key words
+# translate and match key words
 
 # visualize matching
 
