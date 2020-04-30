@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 
 
 class Document:
-    def __init__(self, text, date, language, doc_id):
+    def __init__(self, text, date, language, doc_id: str):
         self.text = text
         self.date = date
         self.language = language
@@ -20,22 +20,27 @@ class Document:
         pass
 
 
-class KeyWord():
+class Keyword():
     def __init__(self, english_translation, german_translation):
         self.english_translation = english_translation
         self.german_translation = german_translation
 
+    def set_translation(self, translation_type, translation):
+        if translation_type == "german":
+            self.german_translation = translation
+        else:
+            self.english_translation = translation
 
 class KeyWordList():
-    def __init__(self, keywords: NamedTuple, time_spec, ):
+    def __init__(self, keywords: NamedTuple, time_spec):
         pass
 
 
-def extract_tf_keywords(time_specific_documents: Dict[float, List[Document]]) -> Dict[float, List[str]]:
+def extract_tf_keywords(documents: List[Document]) -> Dict[str, List[str]]:
     pass
 
 
-def extract_tfidf_keywords(time_specific_documents: Dict[float, List[Document]]) -> Dict[float, List[str]]:
+def extract_tfidf_keywords(documents: List[Document]) -> Dict[str, List[str]]:
     pass
 
 # read and parse data
@@ -43,10 +48,13 @@ accademic_srcs = [] # add real data source
 politic_srcs = [] # add real data source
 documents = Document.from_sources_to_documents(accademic_srcs)
 documents.extend(Document.from_sources_to_documents(politic_srcs))
-time_binned_documents = Document.time_binning(documents, "year")
 
-# extract key words
-key_words = extract_tf_keywords(time_binned_documents)
+
+# extract keywords
+keywords = extract_tf_keywords(documents)
+
+# aggregate documents / keywords
+
 
 # translate and match key words
 
