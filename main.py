@@ -22,6 +22,7 @@ class Document:
 
 class KeyWordList():
     def __init__(self, keywords: NamedTuple, time_spec, ):
+        pass
 
 def extract_tf_keywords(time_specific_documents: Dict[float, List[Document]]) -> Dict[float, List[str]]:
     pass
