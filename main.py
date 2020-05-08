@@ -7,19 +7,60 @@ from tqdm import tqdm
 import string
 from sklearn.feature_extraction.text import TfidfVectorizer
 import numpy as np
+from os import walk, path
 
-def get_data(path="E:/mcc/all_docs.csv"):
+
+def get_sustainability_data(path="E:/mcc/abstracts/sustainability/all_docs.csv"):
     df = pd.read_csv(path)
     return [Document(text=row["content"], date=row["PY"], language="English", doc_id=i, tags=row["tags"]) for i, row in df.iterrows() if not pd.isna(row["content"])]
 
 
+def get_abstracts(path="E:/mcc/abstracts/climate_literature/climate_literature.txt"):
+    # https://images.webofknowledge.com/images/help/WOS/hs_wos_fieldtags.html
+    with open(path, encoding="utf-8") as f:
+        data = f.read()
+
+    records = data.split("ER ")
+    print(len(records))
+    for record in records:
+        lines = record.split("\n")
+        print(lines[:10])
+        pass
+        break
+
+    return data
+
+
+def get_bundestag_speeches(dir="E:\mcc\bundestag"):
+    files = []
+    for (dirpath, dirnames, filenames) in walk(dir):
+        files.extend(filenames)
+        break
+
+    speeches = []
+    for file in files:
+        df = pd.read_csv(path.join(dir, file))
+        speeches.extend([Document(text=row["Speech text"],
+                                   date=row["Date"],
+                                   language="German", doc_id=i,
+                                   author=row["Speaker"],
+                                   party="Speaker party",
+                                   rating="Interjection count")
+                         for i, row in df.iterrows() if not pd.isna(row["Speech text"])])
+
+    return speeches
+
+
 class Document:
-    def __init__(self, text, date, language, doc_id: str, tags=None):
+    def __init__(self, text, date, language, doc_id: str, tags=None, author=None, party=None, rating=None):
         self.text = text
         self.date = date
         self.language = language
         self.doc_id = doc_id
         self.tags = tags
+        self.author = author
+        self.party = party
+        self.rating = rating
         self.keywords = None
 
     @classmethod
@@ -96,22 +137,32 @@ def extract_tfidf_keywords_pke(documents: List[Document]) -> Dict[str, List[str]
     # 5. get the 10-highest scored candidates as keyphrases
     keyphrases = extractor.get_n_best(n=10)
 
-def extract_RAKE_keywords(documents: List[Document]) -> Dict[str, List[str]]:
+
+def extract_RAKE_keywords(documents: List[Document] = None, document: Document = None) -> Dict[str, List[str]]:
     r = Rake()
     results = {}
-    for document in tqdm(documents):
+    if document:
         r.extract_keywords_from_text(document.text)
         document.keywords = r.get_ranked_phrases()
         results[document.doc_id] = document.keywords
+    else:
+        for document in tqdm(documents):
+            r.extract_keywords_from_text(document.text)
+            document.keywords = r.get_ranked_phrases()
+            results[document.doc_id] = document.keywords
 
     return results
 
 
 
 # read and parse data
-abstract_corpus = get_data(path="E:/mcc/all_docs.csv")
-print(extract_tfidf_keywords_skl(abstract_corpus[:1000]))
-# print(extract_RAKE_keywords(abstract_corpus))
+# abstract_corpus_old = get_sustainability_data()
+abstract_corpus = get_abstracts()
+# bundestag_corpus = get_bundestag_speeches(dir="E:/mcc/bundestag")
+# print(extract_tfidf_keywords_skl(abstract_corpus[:1000]))
+print(extract_RAKE_keywords(document=abstract_corpus[0]))
+# print(extract_RAKE_keywords(document=abstract_corpus[0]))
+# print(extract_RAKE_keywords(document=abstract_corpus[0]))
 
 accademic_srcs = [] # add real data source
 politic_srcs = [] # add real data source
