@@ -17,6 +17,18 @@ def get_sustainability_data(path="E:/mcc/abstracts/sustainability/all_docs.csv")
 
 def get_abstracts(path="E:/mcc/abstracts/climate_literature/climate_literature.txt"):
     # https://images.webofknowledge.com/images/help/WOS/hs_wos_fieldtags.html
+    # control sequences:
+    # ER    end of record
+    # EF    end of file
+    # FN    file name
+    # relevant:
+    # PY    Year Published
+    # DE    Author Keywords
+    # AB    Abstract
+    # unsure:
+    # TI    Document Title
+    # AU    Authors
+    # AF    Authors Full Name
     with open(path, encoding="utf-8") as f:
         data = f.read()
 
