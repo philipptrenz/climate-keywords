@@ -8,13 +8,19 @@ from tqdm import tqdm
 import string
 from sklearn.feature_extraction.text import TfidfVectorizer
 import numpy as np
-from os import walk, path
+import os
 import re
+import json
+
+
+def nan_resolver(pandas_attribut):
+    return None if pd.isna(pandas_attribut) else pandas_attribut
 
 
 def get_sustainability_data(path="E:/mcc/abstracts/sustainability/all_docs.csv"):
     df = pd.read_csv(path)
-    return [Document(text=row["content"], date=row["PY"], language="English", doc_id=i, tags=row["tags"]) for i, row in
+    return [Document(text=row["content"], date=nan_resolver(row["PY"]), language="English", doc_id=f'{i}',
+                     tags=nan_resolver(row["tags"])) for i, row in
             df.iterrows() if not pd.isna(row["content"])]
 
 
@@ -60,13 +66,13 @@ def get_abstracts(path="E:/mcc/abstracts/climate_literature/climate_literature.t
 
 def get_bundestag_speeches(dir="E:\mcc\bundestag"):
     files = []
-    for (dirpath, dirnames, filenames) in walk(dir):
+    for (dirpath, dirnames, filenames) in os.walk(dir):
         files.extend(filenames)
         break
 
     speeches = []
     for file in files:
-        df = pd.read_csv(path.join(dir, file))
+        df = pd.read_csv(os.path.join(dir, file))
         speeches.extend([Document(text=row["Speech text"],
                                   date=row["Date"],
                                   language="German",
@@ -80,7 +86,7 @@ def get_bundestag_speeches(dir="E:\mcc\bundestag"):
 
 
 class Document:
-    def __init__(self, text, date, language, doc_id: str, tags=None, author=None, party=None, rating=None):
+    def __init__(self, text, date, language, doc_id: str, tags=None, author=None, party=None, rating=None, keywords=None):
         self.text = text
         self.date = date
         self.language = language
@@ -89,7 +95,7 @@ class Document:
         self.author = author
         self.party = party
         self.rating = rating
-        self.keywords = None
+        self.keywords = keywords
 
     @classmethod
     def from_sources_to_documents(cls, srcs):
@@ -101,6 +107,32 @@ class Document:
 
     def __str__(self):
         return f'{self.date}: {self.text[:30]}'
+
+    __repr__ = __str__
+
+    @staticmethod
+    def save_corpus(corpus: List["Document"], path: str = "data.json"):
+        data = [doc.__dict__ for doc in corpus]
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=1)
+
+    @staticmethod
+    def load_corpus(path: str = "data.json") -> List["Document"]:
+
+        with open(path, 'r', encoding='utf-8') as file:
+            data = json.loads(file.read())
+
+        corpus = [Document(text=doc["text"],
+                           date=doc["date"],
+                           language=doc["language"],
+                           doc_id=doc["doc_id"],
+                           author=doc["author"],
+                           tags=doc["tags"],
+                           keywords=doc["keywords"],
+                           party=doc["party"],
+                           rating=doc["rating"]) for doc in data]
+
+        return corpus
 
 
 class Keyword():
@@ -185,11 +217,14 @@ def extract_RAKE_keywords(documents: List[Document] = None, document: Document =
 
 
 # read and parse data
-# abstract_corpus_old = get_sustainability_data()
-abstract_corpus = get_abstracts()
+abstract_corpus_old = get_sustainability_data()
+# abstract_corpus = get_abstracts()
 # bundestag_corpus = get_bundestag_speeches(dir="E:/mcc/bundestag")
 # print(extract_tfidf_keywords_skl(abstract_corpus[:1000]))
-print(extract_RAKE_keywords(document=abstract_corpus[0]))
+
+Document.save_corpus(abstract_corpus_old)
+Document.load_corpus()
+print(extract_RAKE_keywords(document=abstract_corpus_old[0]))
 # print(extract_RAKE_keywords(document=abstract_corpus[0]))
 # print(extract_RAKE_keywords(document=abstract_corpus[0]))
 
