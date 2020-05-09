@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import List, Set, Dict, NamedTuple
 from abc import ABC, abstractmethod
 import pandas as pd
@@ -8,11 +9,13 @@ import string
 from sklearn.feature_extraction.text import TfidfVectorizer
 import numpy as np
 from os import walk, path
+import re
 
 
 def get_sustainability_data(path="E:/mcc/abstracts/sustainability/all_docs.csv"):
     df = pd.read_csv(path)
-    return [Document(text=row["content"], date=row["PY"], language="English", doc_id=i, tags=row["tags"]) for i, row in df.iterrows() if not pd.isna(row["content"])]
+    return [Document(text=row["content"], date=row["PY"], language="English", doc_id=i, tags=row["tags"]) for i, row in
+            df.iterrows() if not pd.isna(row["content"])]
 
 
 def get_abstracts(path="E:/mcc/abstracts/climate_literature/climate_literature.txt"):
@@ -34,13 +37,25 @@ def get_abstracts(path="E:/mcc/abstracts/climate_literature/climate_literature.t
 
     records = data.split("ER ")
     print(len(records))
-    for record in records:
-        lines = record.split("\n")
-        print(lines[:10])
-        pass
-        break
+    abstracts = []
+    wos_categories = re.compile('(FN|VR|PT|AU|AF|BA|BF|CA|GP|BE|TI|SO|SE|BS|LA|DT|CT|CY|CL|SP|HO|DE|ID|AB|C1|RP|EM|RI'
+                                '|OI|FU|FX|CR|NR|TC|Z9|U1|U2|PU|PI|PA|SN|EI|BN|J9|JI|PD|PY|VL|IS|SI|PN|SU|MA|BP|EP|AR'
+                                '|DI|D2|EA|EY|PG|P2|WC|SC|GA|PM|UT|OA|HP|HC|DA|ER|EF)\\s(.*)', re.MULTILINE)
 
-    return data
+    for i, record in tqdm(enumerate(records)):
+        attributes = re.findall(wos_categories, record)
+
+        wos_dict = defaultdict(lambda: None,
+                               {attribute[0]: ' '.join(list(attribute[1:])).strip() for attribute in attributes})
+
+        if wos_dict["AB"]:
+            abstracts.append(Document(text=wos_dict["AB"],
+                                      date=wos_dict["PY"],
+                                      language=wos_dict["LA"],
+                                      doc_id=f'sc_{i}',
+                                      author=wos_dict["AU"]))
+
+    return abstracts
 
 
 def get_bundestag_speeches(dir="E:\mcc\bundestag"):
@@ -53,11 +68,12 @@ def get_bundestag_speeches(dir="E:\mcc\bundestag"):
     for file in files:
         df = pd.read_csv(path.join(dir, file))
         speeches.extend([Document(text=row["Speech text"],
-                                   date=row["Date"],
-                                   language="German", doc_id=i,
-                                   author=row["Speaker"],
-                                   party="Speaker party",
-                                   rating="Interjection count")
+                                  date=row["Date"],
+                                  language="German",
+                                  doc_id=f'po_{i}',
+                                  author=row["Speaker"],
+                                  party="Speaker party",
+                                  rating="Interjection count")
                          for i, row in df.iterrows() if not pd.isna(row["Speech text"])])
 
     return speeches
@@ -98,6 +114,7 @@ class Keyword():
         else:
             self.english_translation = translation
 
+
 class KeyWordList():
     def __init__(self, keywords: NamedTuple, time_spec):
         pass
@@ -116,6 +133,7 @@ def extract_tfidf_keywords_skl(documents: List[Document]) -> Dict[str, List[str]
         df.columns = ['feature', 'tfidf']
         print(df)
         return df
+
     tfidf_vectorizer = TfidfVectorizer()
     tfidf_matrix = tfidf_vectorizer.fit_transform([document.text for document in documents])
     doc_id_lookup = {i: document.doc_id for i, document in enumerate(documents)}
@@ -166,7 +184,6 @@ def extract_RAKE_keywords(documents: List[Document] = None, document: Document =
     return results
 
 
-
 # read and parse data
 # abstract_corpus_old = get_sustainability_data()
 abstract_corpus = get_abstracts()
@@ -176,15 +193,13 @@ print(extract_RAKE_keywords(document=abstract_corpus[0]))
 # print(extract_RAKE_keywords(document=abstract_corpus[0]))
 # print(extract_RAKE_keywords(document=abstract_corpus[0]))
 
-accademic_srcs = [] # add real data source
-politic_srcs = [] # add real data source
+accademic_srcs = []  # add real data source
+politic_srcs = []  # add real data source
 documents = Document.from_sources_to_documents(accademic_srcs)
 documents.extend(Document.from_sources_to_documents(politic_srcs))
 
-
 # extract keywords
 keywords = extract_tf_keywords(documents)
-
 
 # aggregate documents / keywords
 
@@ -192,6 +207,3 @@ keywords = extract_tf_keywords(documents)
 # translate and match key words
 
 # visualize matching
-
-
-
