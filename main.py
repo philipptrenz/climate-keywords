@@ -13,76 +13,77 @@ import re
 import json
 
 
-def nan_resolver(pandas_attribut):
-    return None if pd.isna(pandas_attribut) else pandas_attribut
+class DataLoader:
+    @staticmethod
+    def get_sustainability_data(path="E:/mcc/abstracts/sustainability/all_docs.csv"):
+        def nan_resolver(pandas_attribut):
+            return None if pd.isna(pandas_attribut) else pandas_attribut
 
+        df = pd.read_csv(path)
+        return [Document(text=row["content"], date=nan_resolver(row["PY"]), language="English", doc_id=f'{i}',
+                         tags=nan_resolver(row["tags"])) for i, row in
+                df.iterrows() if not pd.isna(row["content"])]
 
-def get_sustainability_data(path="E:/mcc/abstracts/sustainability/all_docs.csv"):
-    df = pd.read_csv(path)
-    return [Document(text=row["content"], date=nan_resolver(row["PY"]), language="English", doc_id=f'{i}',
-                     tags=nan_resolver(row["tags"])) for i, row in
-            df.iterrows() if not pd.isna(row["content"])]
+    @staticmethod
+    def get_abstracts(path="E:/mcc/abstracts/climate_literature/climate_literature.txt"):
+        # https://images.webofknowledge.com/images/help/WOS/hs_wos_fieldtags.html
+        # control sequences:
+        # ER    end of record
+        # EF    end of file
+        # FN    file name
+        # relevant:
+        # PY    Year Published
+        # DE    Author Keywords
+        # AB    Abstract
+        # unsure:
+        # TI    Document Title
+        # AU    Authors
+        # AF    Authors Full Name
+        with open(path, encoding="utf-8") as f:
+            data = f.read()
 
+        records = data.split("ER ")
+        print(len(records))
+        abstracts = []
+        wos_categories = re.compile('(FN|VR|PT|AU|AF|BA|BF|CA|GP|BE|TI|SO|SE|BS|LA|DT|CT|CY|CL|SP|HO|DE|ID|AB|C1|RP|EM|RI'
+                                    '|OI|FU|FX|CR|NR|TC|Z9|U1|U2|PU|PI|PA|SN|EI|BN|J9|JI|PD|PY|VL|IS|SI|PN|SU|MA|BP|EP|AR'
+                                    '|DI|D2|EA|EY|PG|P2|WC|SC|GA|PM|UT|OA|HP|HC|DA|ER|EF)\\s(.*)', re.MULTILINE)
 
-def get_abstracts(path="E:/mcc/abstracts/climate_literature/climate_literature.txt"):
-    # https://images.webofknowledge.com/images/help/WOS/hs_wos_fieldtags.html
-    # control sequences:
-    # ER    end of record
-    # EF    end of file
-    # FN    file name
-    # relevant:
-    # PY    Year Published
-    # DE    Author Keywords
-    # AB    Abstract
-    # unsure:
-    # TI    Document Title
-    # AU    Authors
-    # AF    Authors Full Name
-    with open(path, encoding="utf-8") as f:
-        data = f.read()
+        for i, record in tqdm(enumerate(records)):
+            attributes = re.findall(wos_categories, record)
 
-    records = data.split("ER ")
-    print(len(records))
-    abstracts = []
-    wos_categories = re.compile('(FN|VR|PT|AU|AF|BA|BF|CA|GP|BE|TI|SO|SE|BS|LA|DT|CT|CY|CL|SP|HO|DE|ID|AB|C1|RP|EM|RI'
-                                '|OI|FU|FX|CR|NR|TC|Z9|U1|U2|PU|PI|PA|SN|EI|BN|J9|JI|PD|PY|VL|IS|SI|PN|SU|MA|BP|EP|AR'
-                                '|DI|D2|EA|EY|PG|P2|WC|SC|GA|PM|UT|OA|HP|HC|DA|ER|EF)\\s(.*)', re.MULTILINE)
+            wos_dict = defaultdict(lambda: None,
+                                   {attribute[0]: ' '.join(list(attribute[1:])).strip() for attribute in attributes})
 
-    for i, record in tqdm(enumerate(records)):
-        attributes = re.findall(wos_categories, record)
+            if wos_dict["AB"]:
+                abstracts.append(Document(text=wos_dict["AB"],
+                                          date=wos_dict["PY"],
+                                          language=wos_dict["LA"],
+                                          doc_id=f'sc_{i}',
+                                          author=wos_dict["AU"]))
 
-        wos_dict = defaultdict(lambda: None,
-                               {attribute[0]: ' '.join(list(attribute[1:])).strip() for attribute in attributes})
+        return abstracts
 
-        if wos_dict["AB"]:
-            abstracts.append(Document(text=wos_dict["AB"],
-                                      date=wos_dict["PY"],
-                                      language=wos_dict["LA"],
-                                      doc_id=f'sc_{i}',
-                                      author=wos_dict["AU"]))
+    @staticmethod
+    def get_bundestag_speeches(dir="E:/mcc/bundestag"):
+        files = []
+        for (dirpath, dirnames, filenames) in os.walk(dir):
+            files.extend(filenames)
+            break
 
-    return abstracts
+        speeches = []
+        for file in tqdm(files):
+            df = pd.read_csv(os.path.join(dir, file))
+            speeches.extend([Document(text=row["Speech text"],
+                                      date=row["Date"],
+                                      language="German",
+                                      doc_id=f'po_{i}',
+                                      author=row["Speaker"],
+                                      party="Speaker party",
+                                      rating="Interjection count")
+                             for i, row in df.iterrows() if not pd.isna(row["Speech text"])])
 
-
-def get_bundestag_speeches(dir="E:\mcc\bundestag"):
-    files = []
-    for (dirpath, dirnames, filenames) in os.walk(dir):
-        files.extend(filenames)
-        break
-
-    speeches = []
-    for file in files:
-        df = pd.read_csv(os.path.join(dir, file))
-        speeches.extend([Document(text=row["Speech text"],
-                                  date=row["Date"],
-                                  language="German",
-                                  doc_id=f'po_{i}',
-                                  author=row["Speaker"],
-                                  party="Speaker party",
-                                  rating="Interjection count")
-                         for i, row in df.iterrows() if not pd.isna(row["Speech text"])])
-
-    return speeches
+        return speeches
 
 
 class Document:
@@ -217,14 +218,14 @@ def extract_RAKE_keywords(documents: List[Document] = None, document: Document =
 
 
 # read and parse data
-abstract_corpus_old = get_sustainability_data()
-# abstract_corpus = get_abstracts()
-# bundestag_corpus = get_bundestag_speeches(dir="E:/mcc/bundestag")
+# sustainability_corpus = DataLoader.get_sustainability_data()
+# abstract_corpus = DataLoader.get_abstracts()
+bundestag_corpus = DataLoader.get_bundestag_speeches()
 # print(extract_tfidf_keywords_skl(abstract_corpus[:1000]))
 
-Document.save_corpus(abstract_corpus_old)
+Document.save_corpus(bundestag_corpus)
 Document.load_corpus()
-print(extract_RAKE_keywords(document=abstract_corpus_old[0]))
+print(extract_RAKE_keywords(document=bundestag_corpus[0]))
 # print(extract_RAKE_keywords(document=abstract_corpus[0]))
 # print(extract_RAKE_keywords(document=abstract_corpus[0]))
 
