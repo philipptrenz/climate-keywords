@@ -87,6 +87,10 @@ class DataLoader:
             files.extend(filenames)
             break
 
+        for f in files:
+            if f.startswith('.'):
+                files.remove(f)
+
         speeches = []
         for file in tqdm(files):
             df = pd.read_csv(os.path.join(dir, file))
