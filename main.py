@@ -13,9 +13,25 @@ import re
 import json
 
 
+class ConfigLoader:
+    @staticmethod
+    def get_config():
+        if os.path.exists("config.json"):
+            print('importing config from config.json ...')
+            with open("config.json") as json_file:
+                return json.load(json_file)
+
+        elif os.path.exists("default.config.json"):
+            print('importing config from default.config.json ...')
+            with open("default.config.json") as json_file:
+                return json.load(json_file)
+        else:
+            raise Exception("config file missing!")
+
+
 class DataLoader:
     @staticmethod
-    def get_sustainability_data(path="E:/mcc/abstracts/sustainability/all_docs.csv"):
+    def get_sustainability_data(path):
         def nan_resolver(pandas_attribut):
             return None if pd.isna(pandas_attribut) else pandas_attribut
 
@@ -25,7 +41,7 @@ class DataLoader:
                 df.iterrows() if not pd.isna(row["content"])]
 
     @staticmethod
-    def get_abstracts(path="E:/mcc/abstracts/climate_literature/climate_literature.txt"):
+    def get_abstracts(path):
         # https://images.webofknowledge.com/images/help/WOS/hs_wos_fieldtags.html
         # control sequences:
         # ER    end of record
@@ -65,7 +81,7 @@ class DataLoader:
         return abstracts
 
     @staticmethod
-    def get_bundestag_speeches(dir="E:/mcc/bundestag"):
+    def get_bundestag_speeches(dir):
         files = []
         for (dirpath, dirnames, filenames) in os.walk(dir):
             files.extend(filenames)
@@ -217,17 +233,24 @@ def extract_RAKE_keywords(documents: List[Document] = None, document: Document =
     return results
 
 
+# load configuration parameters from config file
+config = ConfigLoader.get_config()
+
 # read and parse data
-# sustainability_corpus = DataLoader.get_sustainability_data()
-# abstract_corpus = DataLoader.get_abstracts()
-bundestag_corpus = DataLoader.get_bundestag_speeches()
+# sustainability_corpus = DataLoader.get_sustainability_data(path=config["datasets"]["abstracts"]["sustainability"])
+# abstract_corpus = DataLoader.get_abstracts(path=config["datasets"]["abstracts"]["climate_literature"])
+bundestag_corpus = DataLoader.get_bundestag_speeches(dir=config["datasets"]["bundestag"]["directory"])
 # print(extract_tfidf_keywords_skl(abstract_corpus[:1000]))
 
 Document.save_corpus(bundestag_corpus)
 Document.load_corpus()
-print(extract_RAKE_keywords(document=bundestag_corpus[0]))
-# print(extract_RAKE_keywords(document=abstract_corpus[0]))
-# print(extract_RAKE_keywords(document=abstract_corpus[0]))
+
+if len(bundestag_corpus) > 0:
+    print(extract_RAKE_keywords(document=bundestag_corpus[0]))
+
+# if len(abstract_corpus) > 0:
+#     print(extract_RAKE_keywords(document=abstract_corpus[0]))
+
 
 accademic_srcs = []  # add real data source
 politic_srcs = []  # add real data source
