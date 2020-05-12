@@ -61,9 +61,10 @@ class DataLoader:
         records = data.split("ER ")
         print(len(records))
         abstracts = []
-        wos_categories = re.compile('(FN|VR|PT|AU|AF|BA|BF|CA|GP|BE|TI|SO|SE|BS|LA|DT|CT|CY|CL|SP|HO|DE|ID|AB|C1|RP|EM|RI'
-                                    '|OI|FU|FX|CR|NR|TC|Z9|U1|U2|PU|PI|PA|SN|EI|BN|J9|JI|PD|PY|VL|IS|SI|PN|SU|MA|BP|EP|AR'
-                                    '|DI|D2|EA|EY|PG|P2|WC|SC|GA|PM|UT|OA|HP|HC|DA|ER|EF)\\s(.*)', re.MULTILINE)
+        wos_categories = re.compile(
+            '(FN|VR|PT|AU|AF|BA|BF|CA|GP|BE|TI|SO|SE|BS|LA|DT|CT|CY|CL|SP|HO|DE|ID|AB|C1|RP|EM|RI'
+            '|OI|FU|FX|CR|NR|TC|Z9|U1|U2|PU|PI|PA|SN|EI|BN|J9|JI|PD|PY|VL|IS|SI|PN|SU|MA|BP|EP|AR'
+            '|DI|D2|EA|EY|PG|P2|WC|SC|GA|PM|UT|OA|HP|HC|DA|ER|EF)\\s(.*)', re.MULTILINE)
 
         for i, record in tqdm(enumerate(records)):
             attributes = re.findall(wos_categories, record)
@@ -107,7 +108,8 @@ class DataLoader:
 
 
 class Document:
-    def __init__(self, text, date, language, doc_id: str, tags=None, author=None, party=None, rating=None, keywords=None):
+    def __init__(self, text, date, language, doc_id: str, tags=None, author=None, party=None, rating=None,
+                 keywords=None):
         self.text = text
         self.date = date
         self.language = language
@@ -135,7 +137,6 @@ class Document:
 
     @staticmethod
     def load_corpus(path: str = "data.json") -> List["Document"]:
-
         with open(path, 'r', encoding='utf-8') as file:
             data = json.loads(file.read())
 
@@ -237,26 +238,29 @@ class KeyPhraseExtractor:
 
 
 # load configuration parameters from config file
-config = ConfigLoader.get_config()
+def main():
+    config = ConfigLoader.get_config()
 
-# read and parse data
-# sustainability_corpus = DataLoader.get_sustainability_data(path=config["datasets"]["abstracts"]["sustainability"])
-# abstract_corpus = DataLoader.get_abstracts(path=config["datasets"]["abstracts"]["climate_literature"])
-bundestag_corpus = DataLoader.get_bundestag_speeches(dir=config["datasets"]["bundestag"]["directory"])
-# print(extract_tfidf_keywords_skl(abstract_corpus[:1000]))
+    # read and parse data
+    # sustainability_corpus = DataLoader.get_sustainability_data(path=config["datasets"]["abstracts"]["sustainability"])
+    # abstract_corpus = DataLoader.get_abstracts(path=config["datasets"]["abstracts"]["climate_literature"])
+    bundestag_corpus = DataLoader.get_bundestag_speeches(dir=config["datasets"]["bundestag"]["directory"])
+    # print(extract_tfidf_keywords_skl(abstract_corpus[:1000]))
 
-Document.save_corpus(bundestag_corpus)
-Document.load_corpus()
+    Document.save_corpus(bundestag_corpus)
+    Document.load_corpus()
 
-# extract keywords
-rake_keywords = KeyPhraseExtractor.rake(document=bundestag_corpus[0])
-tfidf_keywords = KeyPhraseExtractor.tfidf_skl(documents=bundestag_corpus)
-print(rake_keywords)
+    # extract keywords
+    rake_keywords = KeyPhraseExtractor.rake(document=bundestag_corpus[0])
+    tfidf_keywords = KeyPhraseExtractor.tfidf_skl(documents=bundestag_corpus)
+    print(rake_keywords)
+
+    # aggregate documents / keywords
+
+    # translate and match key words
+
+    # visualize matching
 
 
-# aggregate documents / keywords
-
-
-# translate and match key words
-
-# visualize matching
+if __name__ == '__main__':
+    main()
