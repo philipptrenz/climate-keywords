@@ -118,10 +118,6 @@ class Document:
         self.rating = rating
         self.keywords = keywords
 
-    @classmethod
-    def from_sources_to_documents(cls, srcs):
-        return [Document(src.text, src.date, src.language, src.doc_id) for src in srcs]
-
     @staticmethod
     def time_binning(documents: List["Document"], binning) -> Dict[float, List["Document"]]:
         pass
@@ -173,14 +169,14 @@ class KeyWordList():
         pass
 
 
-class DataExtractor:
+class KeyPhraseExtractor:
 
     @staticmethod
-    def extract_tf_keywords(documents: List[Document]) -> Dict[str, List[str]]:
+    def term_frequency(documents: List[Document]) -> Dict[str, List[str]]:
         pass
 
     @staticmethod
-    def extract_tfidf_keywords_skl(documents: List[Document]) -> Dict[str, List[str]]:
+    def tfidf_skl(documents: List[Document]) -> Dict[str, List[str]]:
         def top_tfidf_feats(row, features, top_n=25):
             ''' Get top n tfidf values in row and return them with their corresponding feature names.'''
             topn_ids = np.argsort(row)[::-1][:top_n]
@@ -207,7 +203,7 @@ class DataExtractor:
         return results
 
     @staticmethod
-    def extract_tfidf_keywords_pke(documents: List[Document]) -> Dict[str, List[str]]:
+    def tfidf_pke(documents: List[Document]) -> Dict[str, List[str]]:
         # 1. create a TfIdf extractor.
         extractor = pke.unsupervised.TfIdf()
         # 2. load the content of the document.
@@ -224,7 +220,7 @@ class DataExtractor:
         keyphrases = extractor.get_n_best(n=10)
 
     @staticmethod
-    def extract_RAKE_keywords(documents: List[Document] = None, document: Document = None) -> Dict[str, List[str]]:
+    def rake(documents: List[Document] = None, document: Document = None) -> Dict[str, List[str]]:
         r = Rake()
         results = {}
         if document:
@@ -252,20 +248,11 @@ bundestag_corpus = DataLoader.get_bundestag_speeches(dir=config["datasets"]["bun
 Document.save_corpus(bundestag_corpus)
 Document.load_corpus()
 
-if len(bundestag_corpus) > 0:
-    print(DataExtractor.extract_RAKE_keywords(document=bundestag_corpus[0]))
-
-# if len(abstract_corpus) > 0:
-#     print(DataExtractor.extract_RAKE_keywords(document=abstract_corpus[0]))
-
-
-accademic_srcs = []  # add real data source
-politic_srcs = []  # add real data source
-documents = Document.from_sources_to_documents(accademic_srcs)
-documents.extend(Document.from_sources_to_documents(politic_srcs))
-
 # extract keywords
-keywords = DataExtractor.extract_tf_keywords(documents)
+rake_keywords = KeyPhraseExtractor.rake(document=bundestag_corpus[0])
+tfidf_keywords = KeyPhraseExtractor.tfidf_skl(documents=bundestag_corpus)
+print(rake_keywords)
+
 
 # aggregate documents / keywords
 
