@@ -57,7 +57,7 @@ class Document:
 
 def preprocess(documents: List[Document], lemmatize: bool = True, lower: bool = False,
                pos_filter: list = None, remove_stopwords: bool = False,
-               remove_punctuation: bool = False, lan: str = "German"):
+               remove_punctuation: bool = False):
 
     def token_representation(token):
         if lemmatize:
@@ -69,7 +69,7 @@ def preprocess(documents: List[Document], lemmatize: bool = True, lower: bool = 
             representation = representation.lower()
         return representation
 
-    if documents[0].language == "German" or lan == "German":
+    if documents[0].language == "German":
         lan = "German"
         nlp = spacy.load("de_core_news_sm")
     else:
@@ -172,8 +172,8 @@ class DataHandler:
                                       language="German",
                                       doc_id=f'po_{i}',
                                       author=row["Speaker"],
-                                      party="Speaker party",
-                                      rating="Interjection count")
+                                      party=row["Speaker party"],
+                                      rating=row["Interjection count"])
                              for i, row in df.iterrows() if not pd.isna(row["Speech text"])])
 
         return speeches
@@ -318,10 +318,10 @@ def main():
     config = ConfigLoader.get_config()
 
     # read and parse data
-    # bundestag_corpus = DataHandler.get_bundestag_speeches(dir=config["datasets"]["bundestag"]["directory"])
-    # preprocess(bundestag_corpus)
-    # DataHandler.save_corpus(bundestag_corpus, "bundestag_corpus.json")
-    # del bundestag_corpus
+    bundestag_corpus = DataHandler.get_bundestag_speeches(dir=config["datasets"]["bundestag"]["directory"])
+    preprocess(bundestag_corpus)
+    DataHandler.save_corpus(bundestag_corpus, "bundestag_corpus.json")
+    del bundestag_corpus
     #
     # sustainability_corpus = DataHandler.get_sustainability_data(path=config["datasets"]["abstracts"]["sustainability"])
     # preprocess(sustainability_corpus)
@@ -340,8 +340,8 @@ def main():
 
     # extract keywords
     # rake_keywords = KeyPhraseExtractor.rake(document=bundestag_corpus[0])
-    tfidf_keywords = KeyPhraseExtractor.tfidf_skl(documents=corpus)
-    print(tfidf_keywords)
+    # tfidf_keywords = KeyPhraseExtractor.tfidf_skl(documents=corpus)
+    # print(tfidf_keywords)
 
     print(KeyPhraseExtractor.key_word_count(KeyPhraseExtractor.rake(documents=corpus)))
 
