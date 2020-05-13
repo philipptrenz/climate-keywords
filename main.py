@@ -11,18 +11,19 @@ import numpy as np
 import os
 import re
 import json
+import logging
 
 
 class ConfigLoader:
     @staticmethod
     def get_config():
         if os.path.exists("config.json"):
-            print('importing config from config.json ...')
+            logging.info('importing config from config.json ...')
             with open("config.json") as json_file:
                 return json.load(json_file)
 
         elif os.path.exists("default.config.json"):
-            print('importing config from default.config.json ...')
+            logging.info('importing config from default.config.json ...')
             with open("default.config.json") as json_file:
                 return json.load(json_file)
         else:
@@ -38,7 +39,7 @@ class DataLoader:
         df = pd.read_csv(path)
         return [Document(text=row["content"], date=nan_resolver(row["PY"]), language="English", doc_id=f'{i}',
                          tags=nan_resolver(row["tags"])) for i, row in
-                df.iterrows() if not pd.isna(row["content"])]
+                tqdm(df.iterrows(), desc="Load sustainability abstracts", total=len(df)) if not pd.isna(row["content"])]
 
     @staticmethod
     def get_abstracts(path):
@@ -66,7 +67,7 @@ class DataLoader:
             '|OI|FU|FX|CR|NR|TC|Z9|U1|U2|PU|PI|PA|SN|EI|BN|J9|JI|PD|PY|VL|IS|SI|PN|SU|MA|BP|EP|AR'
             '|DI|D2|EA|EY|PG|P2|WC|SC|GA|PM|UT|OA|HP|HC|DA|ER|EF)\\s(.*)', re.MULTILINE)
 
-        for i, record in tqdm(enumerate(records)):
+        for i, record in tqdm(enumerate(records), desc="Load abstracts", total=len(records)):
             attributes = re.findall(wos_categories, record)
 
             wos_dict = defaultdict(lambda: None,
@@ -93,7 +94,7 @@ class DataLoader:
                 files.remove(f)
 
         speeches = []
-        for file in tqdm(files):
+        for file in tqdm(files, desc="load Bundestag speeches", total=len(files)):
             df = pd.read_csv(os.path.join(dir, file))
             speeches.extend([Document(text=row["Speech text"],
                                       date=row["Date"],
@@ -134,9 +135,11 @@ class Document:
         data = [doc.__dict__ for doc in corpus]
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=1)
+        logging.info(f'saved {path}')
 
     @staticmethod
     def load_corpus(path: str = "data.json") -> List["Document"]:
+        logging.info(f"load {path}")
         with open(path, 'r', encoding='utf-8') as file:
             data = json.loads(file.read())
 
@@ -149,6 +152,7 @@ class Document:
                            keywords=doc["keywords"],
                            party=doc["party"],
                            rating=doc["rating"]) for doc in data]
+        logging.info(f"{path} loaded")
 
         return corpus
 
@@ -242,18 +246,24 @@ def main():
     config = ConfigLoader.get_config()
 
     # read and parse data
+    bundestag_corpus = DataLoader.get_bundestag_speeches(dir=config["datasets"]["bundestag"]["directory"])
     # sustainability_corpus = DataLoader.get_sustainability_data(path=config["datasets"]["abstracts"]["sustainability"])
     # abstract_corpus = DataLoader.get_abstracts(path=config["datasets"]["abstracts"]["climate_literature"])
-    bundestag_corpus = DataLoader.get_bundestag_speeches(dir=config["datasets"]["bundestag"]["directory"])
-    # print(extract_tfidf_keywords_skl(abstract_corpus[:1000]))
 
-    Document.save_corpus(bundestag_corpus)
-    Document.load_corpus()
+    # # print(extract_tfidf_keywords_skl(abstract_corpus[:1000]))
+    #
+    Document.save_corpus(bundestag_corpus, "bundestag_corpus.json")
+    # Document.save_corpus(sustainability_corpus, "sustainability_corpus.json")
+    # Document.save_corpus(abstract_corpus, "abstract_corpus.json")
+
+    corpus = Document.load_corpus("bundestag_corpus.json")
+    # corpus = Document.load_corpus("sustainability_corpus.json")
+    # corpus = Document.load_corpus("abstract_corpus.json")
 
     # extract keywords
-    rake_keywords = KeyPhraseExtractor.rake(document=bundestag_corpus[0])
-    tfidf_keywords = KeyPhraseExtractor.tfidf_skl(documents=bundestag_corpus)
-    print(rake_keywords)
+    # rake_keywords = KeyPhraseExtractor.rake(document=bundestag_corpus[0])
+    tfidf_keywords = KeyPhraseExtractor.tfidf_skl(documents=corpus)
+    print(tfidf_keywords)
 
     # aggregate documents / keywords
 
