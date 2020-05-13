@@ -70,13 +70,17 @@ def preprocess(documents: List[Document], lemmatize: bool = True, lower: bool = 
         return representation
 
     if documents[0].language == "German" or lan == "German":
+        lan = "German"
         nlp = spacy.load("de_core_news_sm")
     else:
+        lan = "English"
         nlp = spacy.load("en_core_web_sm")
     tokenized = []
     texts = [document.text for document in documents]
     if pos_filter is None:
-        for doc in tqdm(nlp.pipe(texts, disable=['parser', 'ner', 'tagger']), desc="Preprocess documents", total=len(texts)):
+        for doc in tqdm(nlp.pipe(texts, disable=['parser', 'ner', 'tagger']),
+                        desc=f"Preprocess documents in {lan}",
+                        total=len(texts)):
             tokenized.append(
                 [token_representation(token)
                  for token in doc
@@ -314,19 +318,21 @@ def main():
     config = ConfigLoader.get_config()
 
     # read and parse data
-    bundestag_corpus = DataHandler.get_bundestag_speeches(dir=config["datasets"]["bundestag"]["directory"])
-    # sustainability_corpus = DataLoader.get_sustainability_data(path=config["datasets"]["abstracts"]["sustainability"])
-    # abstract_corpus = DataLoader.get_abstracts(path=config["datasets"]["abstracts"]["climate_literature"])
-
-    preprocess(bundestag_corpus)
-    # preprocess(sustainability_corpus)
-    # preprocess(abstract_corpus)
-
-    # # print(extract_tfidf_keywords_skl(abstract_corpus[:1000]))
+    # bundestag_corpus = DataHandler.get_bundestag_speeches(dir=config["datasets"]["bundestag"]["directory"])
+    # preprocess(bundestag_corpus)
+    # DataHandler.save_corpus(bundestag_corpus, "bundestag_corpus.json")
+    # del bundestag_corpus
     #
-    DataHandler.save_corpus(bundestag_corpus, "bundestag_corpus.json")
+    # sustainability_corpus = DataHandler.get_sustainability_data(path=config["datasets"]["abstracts"]["sustainability"])
+    # preprocess(sustainability_corpus)
     # DataHandler.save_corpus(sustainability_corpus, "sustainability_corpus.json")
+    # del sustainability_corpus
+    #
+    # abstract_corpus = DataHandler.get_abstracts(path=config["datasets"]["abstracts"]["climate_literature"])
+    # preprocess(abstract_corpus)
     # DataHandler.save_corpus(abstract_corpus, "abstract_corpus.json")
+    # del abstract_corpus
+
 
     corpus = DataHandler.load_corpus("bundestag_corpus.json")
     # corpus = DataHandler.load_corpus("sustainability_corpus.json")
