@@ -85,7 +85,7 @@ def preprocess(documents: List[Document], lemmatize: bool = True, lower: bool = 
             )
 
     else:
-        for doc in tqdm(nlp.pipe(texts, disable=['parser', 'ner'])):
+        for doc in tqdm(nlp.pipe(texts, disable=['parser', 'ner']), desc="Preprocess documents", total=len(texts)):
             tokenized.append(
                 [token_representation(token)
                  for token in doc if (not remove_stopwords or not token.is_stop)
@@ -95,7 +95,6 @@ def preprocess(documents: List[Document], lemmatize: bool = True, lower: bool = 
 
     for i, document in tqdm(enumerate(documents)):
         document.text = ' '.join(tokenized[i])
-
 
 
 class DataHandler:
@@ -165,7 +164,7 @@ class DataHandler:
         for file in tqdm(files, desc="load Bundestag speeches", total=len(files)):
             df = pd.read_csv(os.path.join(dir, file))
             speeches.extend([Document(text=row["Speech text"],
-                                      date=row["Date"],
+                                      date=row["Date"][:4],
                                       language="German",
                                       doc_id=f'po_{i}',
                                       author=row["Speaker"],
@@ -318,6 +317,10 @@ def main():
     bundestag_corpus = DataHandler.get_bundestag_speeches(dir=config["datasets"]["bundestag"]["directory"])
     # sustainability_corpus = DataLoader.get_sustainability_data(path=config["datasets"]["abstracts"]["sustainability"])
     # abstract_corpus = DataLoader.get_abstracts(path=config["datasets"]["abstracts"]["climate_literature"])
+
+    preprocess(bundestag_corpus)
+    # preprocess(sustainability_corpus)
+    # preprocess(abstract_corpus)
 
     # # print(extract_tfidf_keywords_skl(abstract_corpus[:1000]))
     #
