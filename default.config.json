@@ -1,11 +1,11 @@
 {
   "datasets": {
     "bundestag": {
-      "directory": "E:/mcc/bundestag"
+      "directory": "/path/to/dir"
     },
     "abstracts": {
-      "sustainability": "E:/mcc/abstracts/sustainability/all_docs.csv",
-      "climate_literature": "E:/mcc/abstracts/climate_literature/climate_literature.txt"
+      "sustainability": "/path/to/file.csv",
+      "climate_literature": "/path/to/file.json.txt"
     }
   },
   "corpora": {
