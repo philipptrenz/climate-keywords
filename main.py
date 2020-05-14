@@ -12,6 +12,7 @@ import os
 import re
 import json
 import logging
+from enum import Enum
 
 
 class ConfigLoader:
@@ -157,16 +158,60 @@ class Document:
         return corpus
 
 
-class Keyword():
-    def __init__(self, english_translation, german_translation):
-        self.english_translation = english_translation
-        self.german_translation = german_translation
+class KeywordType(Enum):
+
+    UNKNOWN = 0
+    TFIDF_SKL = "tfidf_skl"
+    TFIDF_PKE = "tfidf_pke"
+    RAKE = "rake"
+    TEXTRANK = "textrank"
+
+
+class KeywordSourceLanguage(Enum):
+
+    UNKNOWN = 0
+    DE = "german"
+    EN = "english"
+
+
+class Keyword:
+
+    def __init__(self, english_translation: str = None, german_translation: str = None, type: KeywordType = KeywordType.UNKNOWN):
+
+        if not english_translation and not german_translation:
+            raise Exception("Keyword cannot be intialized without any translation")
+
+        self.source_language = KeywordSourceLanguage.UNKNOWN
+
+        if english_translation:
+            self.english_translation = english_translation
+            if not german_translation:
+                self.german_translation = self.translate_english2german(english_translation)
+                self.source_language = KeywordSourceLanguage.EN
+
+        if german_translation:
+            self.german_translation = german_translation
+            if not english_translation:
+                self.english_translation = self.translate_german2english(german_translation)
+                self.source_language = KeywordSourceLanguage.DE
+
+        self.type = type
 
     def set_translation(self, translation_type, translation):
         if translation_type == "german":
             self.german_translation = translation
         else:
             self.english_translation = translation
+
+    @staticmethod
+    def translate_english2german(self, english):
+        logging.warning("Auto translation of keywords not yet implemented!")
+        return None
+
+    @staticmethod
+    def translate_german2english(self, german):
+        logging.warning("Auto translation of keywords not yet implemented!")
+        return None
 
 
 class KeyWordList():
@@ -252,13 +297,13 @@ def main():
 
     # # print(extract_tfidf_keywords_skl(abstract_corpus[:1000]))
     #
-    Document.save_corpus(bundestag_corpus, "bundestag_corpus.json")
+    # Document.save_corpus(bundestag_corpus, "bundestag_corpus.json")
     # Document.save_corpus(sustainability_corpus, "sustainability_corpus.json")
     # Document.save_corpus(abstract_corpus, "abstract_corpus.json")
 
-    corpus = Document.load_corpus("bundestag_corpus.json")
+    # corpus = Document.load_corpus("bundestag_corpus.json")
     # corpus = Document.load_corpus("sustainability_corpus.json")
-    # corpus = Document.load_corpus("abstract_corpus.json")
+    corpus = Document.load_corpus("abstract_corpus.json")
 
     # extract keywords
     # rake_keywords = KeyPhraseExtractor.rake(document=bundestag_corpus[0])
