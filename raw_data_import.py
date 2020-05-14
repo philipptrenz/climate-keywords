@@ -54,16 +54,29 @@ class Preprocessor:
             document.text = ' '.join(tokenized[i])
 
 
+def parse_and_preprocess_src(src):
+    if "bundestag" in src:
+        raw_corpus = DataHandler.get_bundestag_speeches(dir=src)
+        save_path = "bundestag_corpus.json"
+    elif "sustainability" in src:
+        raw_corpus = DataHandler.get_sustainability_data(path=src)
+        save_path = "sustainability_corpus.json"
+    else:
+        raw_corpus = DataHandler.get_abstracts(path=src)
+        save_path = "abstract_corpus.json"
+    Preprocessor.preprocess(raw_corpus)
+    DataHandler.save_corpus(raw_corpus, save_path)
+
+
 if __name__ == '__main__':
 
     config = ConfigLoader.get_config()
 
-    # read and parse data
-    bundestag_corpus = DataHandler.get_bundestag_speeches(dir=config["datasets"]["bundestag"]["directory"])
-    Preprocessor.preprocess(bundestag_corpus)
-    DataHandler.save_corpus(bundestag_corpus, "bundestag_corpus.json")
-    del bundestag_corpus
+    # define data sources
+    file_srcs = [config["datasets"]["bundestag"]["directory"],
+                 config["datasets"]["abstracts"]["sustainability"],
+                 config["datasets"]["abstracts"]["climate_literature"]]
 
-    Document.save_corpus(bundestag_corpus, "bundestag_corpus.json")
-    #Document.save_corpus(sustainability_corpus, "sustainability_corpus.json")
-    #Document.save_corpus(abstract_corpus, "abstract_corpus.json")
+    # read and parse data
+    for src in file_srcs:
+        parse_and_preprocess_src(src)
