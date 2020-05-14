@@ -7,5 +7,10 @@
       "sustainability": "E:/mcc/abstracts/sustainability/all_docs.csv",
       "climate_literature": "E:/mcc/abstracts/climate_literature/climate_literature.txt"
     }
+  },
+  "corpora": {
+    "abstract_corpus": "/path/to/file.json",
+    "bundestag_corpus": "/path/to/file.json",
+    "sustainability_corpus": "/path/to/file.json"
   }
 }
