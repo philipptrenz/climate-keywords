@@ -1,5 +1,5 @@
-from collections import defaultdict, Counter
-from typing import List, Set, Dict, NamedTuple
+from collections import defaultdict, Counter, OrderedDict
+from typing import List, Set, Dict, NamedTuple, Callable
 import pandas as pd
 from rake_nltk import Rake
 from nltk.corpus import stopwords
@@ -76,7 +76,7 @@ class KeyPhraseExtractor:
             r = Rake(ranking_metric=None,
                      stopwords=stopwords.words(language),
                      language=language,
-                     min_length=2,
+                     min_length=1,
                      max_length=4)
             r.extract_keywords_from_text(document.text)
             document.keywords = r.get_ranked_phrases()
@@ -87,7 +87,7 @@ class KeyPhraseExtractor:
             r = Rake(ranking_metric=None,
                      stopwords=stopwords.words(language),
                      language=language,
-                     min_length=2,
+                     min_length=1,
                      max_length=4)
             for document in tqdm(documents):
                 r.extract_keywords_from_text(document.text)
@@ -104,13 +104,19 @@ class KeyPhraseExtractor:
         return c.most_common(top_k)
 
 
-# load configuration parameters from config file
+
+
+
+
 def main():
+    # load configuration parameters from config file
     config = ConfigLoader.get_config()
 
     # corpus = DataHandler.load_corpus(config["corpora"]["abstract_corpus"])
     corpus = DataHandler.load_corpus(config["corpora"]["bundestag_corpus"])
     # corpus = DataHandler.load_corpus(config["corpora"]["sustainability_corpus"])
+
+
 
     # extract keywords
     print('extracting keywords with rake ...')
