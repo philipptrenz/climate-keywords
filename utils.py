@@ -127,8 +127,6 @@ class KeywordTranslator:
             logging.debug("KeywordTranslator: {}, {}| source is EN, but DE already set, skipping translation".format(keyword.english_translation, keyword.german_translation))
 
 
-
-
 class KeyWordList():
     def __init__(self, keywords: NamedTuple, time_spec):
         pass

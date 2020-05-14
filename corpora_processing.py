@@ -10,7 +10,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import numpy as np
 import logging
 
-from utils import Document, ConfigLoader, DataHandler
+from utils import Document, ConfigLoader, DataHandler, Keyword, KeywordTranslator, KeyWordList, KeywordType
 
 
 class KeyPhraseExtractor:
@@ -108,14 +108,29 @@ class KeyPhraseExtractor:
 def main():
     config = ConfigLoader.get_config()
 
-    corpus = DataHandler.load_corpus(config["corpora"]["abstract_corpus"])
-    # corpus = DataHandler.load_corpus(config["corpora"]["bundestag_corpus"])
+    # corpus = DataHandler.load_corpus(config["corpora"]["abstract_corpus"])
+    corpus = DataHandler.load_corpus(config["corpora"]["bundestag_corpus"])
     # corpus = DataHandler.load_corpus(config["corpora"]["sustainability_corpus"])
 
     # extract keywords
-    # rake_keywords = KeyPhraseExtractor.rake(document=bundestag_corpus[0])
+    print('extracting keywords with rake ...')
+    rake_keywords = KeyPhraseExtractor.rake(document=corpus[0])
+    rake_keywords_keys = list(rake_keywords.keys())
+    print('rake keywords dict keys:', rake_keywords_keys)
+
+    kwt = KeywordTranslator()
+    list_of_keywords = []
+
+    for k in rake_keywords[rake_keywords_keys[0]]:
+        kw = Keyword(german_translation=k, type=KeywordType.RAKE)
+        kwt.translate(kw)
+        list_of_keywords.append(kw)
+        print('{} \t {} \t\t\t {}'.format(kw.source_language, kw.english_translation, kw.german_translation))
+
+
+    # print('extracting keywords with tf-idf ...')
     # tfidf_keywords = KeyPhraseExtractor.tfidf_skl(documents=corpus)
-    # print(tfidf_keywords)
+    # print(tfidf_keywords, '\n')
 
     # print(KeyPhraseExtractor.key_word_count(KeyPhraseExtractor.rake(documents=corpus)))
 
