@@ -14,13 +14,14 @@ from utils import Document, ConfigLoader, DataHandler, Keyword, KeywordTranslato
 
 
 class KeyPhraseExtractor:
-
-    @staticmethod
-    def term_frequency(documents: List[Document]) -> Dict[str, List[str]]:
+    min_nrgam = 1
+    max_ngram = 4
+    @classmethod
+    def term_frequency(cls, documents: List[Document]) -> Dict[str, List[str]]:
         pass
 
-    @staticmethod
-    def tfidf_skl(documents: List[Document]) -> Dict[str, List[str]]:
+    @classmethod
+    def tfidf_skl(cls, documents: List[Document]) -> Dict[str, List[str]]:
         def top_tfidf_feats(row, features, top_n=25):
             ''' Get top n tfidf values in row and return them with their corresponding feature names.'''
             topn_ids = np.argsort(row)[::-1][:top_n]
@@ -30,7 +31,10 @@ class KeyPhraseExtractor:
             print(df)
             return df
 
-        tfidf_vectorizer = TfidfVectorizer()
+        language = documents[0].language.lower()
+        tfidf_vectorizer = TfidfVectorizer(stop_words=stopwords.words(language),
+                                           ngram_range=(cls.min_nrgam, cls.max_ngram),
+                                           min_df=2)
         tfidf_matrix = tfidf_vectorizer.fit_transform([document.text for document in documents])
         doc_id_lookup = {i: document.doc_id for i, document in enumerate(documents)}
 
@@ -38,7 +42,7 @@ class KeyPhraseExtractor:
         results = {}
         features = tfidf_vectorizer.get_feature_names()
 
-        for i, doc in tqdm(enumerate(tfidf_matrix)):
+        for i, doc in tqdm(enumerate(tfidf_matrix), desc="Calculating tf-idf", total=tfidf_matrix.shape[0]):
             df = pd.DataFrame(doc.T.todense(), index=features,
                               columns=["tfidf"])
             top_key_words = df.sort_values(by=["tfidf"], ascending=False)[:k]
@@ -46,8 +50,8 @@ class KeyPhraseExtractor:
 
         return results
 
-    @staticmethod
-    def tfidf_pke(documents: List[Document]) -> Dict[str, List[str]]:
+    @classmethod
+    def tfidf_pke(cls, documents: List[Document]) -> Dict[str, List[str]]:
         # 1. create a TfIdf extractor.
         extractor = pke.unsupervised.TfIdf()
         # 2. load the content of the document.
@@ -63,8 +67,8 @@ class KeyPhraseExtractor:
         # 5. get the 10-highest scored candidates as keyphrases
         keyphrases = extractor.get_n_best(n=10)
 
-    @staticmethod
-    def rake(documents: List[Document] = None, document: Document = None) -> Dict[str, List[str]]:
+    @classmethod
+    def rake(cls, documents: List[Document] = None, document: Document = None) -> Dict[str, List[str]]:
         # additional parameters:
         # ranking_metric
         # punctuations
@@ -76,8 +80,8 @@ class KeyPhraseExtractor:
             r = Rake(ranking_metric=None,
                      stopwords=stopwords.words(language),
                      language=language,
-                     min_length=1,
-                     max_length=4)
+                     min_length=cls.min_nrgam,
+                     max_length=cls.max_ngram)
             r.extract_keywords_from_text(document.text)
             document.keywords = r.get_ranked_phrases()
             results[document.doc_id] = document.keywords
@@ -87,8 +91,8 @@ class KeyPhraseExtractor:
             r = Rake(ranking_metric=None,
                      stopwords=stopwords.words(language),
                      language=language,
-                     min_length=1,
-                     max_length=4)
+                     min_length=cls.min_nrgam,
+                     max_length=cls.max_ngram)
             for document in tqdm(documents):
                 r.extract_keywords_from_text(document.text)
                 document.keywords = r.get_ranked_phrases()
@@ -96,7 +100,8 @@ class KeyPhraseExtractor:
 
         return results
 
-    def key_word_count(keywords: Dict[str, List[str]], top_k=100):
+    @classmethod
+    def key_word_count(cls, keywords: Dict[str, List[str]], top_k=100):
         flattened_keywords = [word for document, document_keywords in keywords.items() for word in document_keywords]
         c = Counter(flattened_keywords)
         if top_k is None:
@@ -104,8 +109,20 @@ class KeyPhraseExtractor:
         return c.most_common(top_k)
 
 
+def year_wise_pseudo_documents(documents, language="English"):
+    year_bins = defaultdict(list)
 
+    for doc in documents:
+        year_bins[doc.date].append(doc)
 
+    pseudo_docs = [Document(doc_id=f'pseudo_{year}',
+                            date=year,
+                            text=" ".join([doc.text for doc in docs]),
+                            language=language
+                            )
+                   for year, docs in tqdm(year_bins.items(), desc="Construct pseudo docs", total=len(year_bins))]
+
+    return pseudo_docs
 
 
 def main():
@@ -113,12 +130,17 @@ def main():
     config = ConfigLoader.get_config()
 
     # corpus = DataHandler.load_corpus(config["corpora"]["abstract_corpus"])
-    corpus = DataHandler.load_corpus(config["corpora"]["bundestag_corpus"])
-    # corpus = DataHandler.load_corpus(config["corpora"]["sustainability_corpus"])
+    # corpus = DataHandler.load_corpus(config["corpora"]["bundestag_corpus"])
+    corpus = DataHandler.load_corpus(config["corpora"]["sustainability_corpus"])
 
-
+    # build yearwise pseudo documents
+    pseudo_docs = year_wise_pseudo_documents(corpus)
 
     # extract keywords
+    tfidf_keywords = KeyPhraseExtractor.tfidf_skl(documents=pseudo_docs)
+    print(tfidf_keywords)
+
+
     print('extracting keywords with rake ...')
     rake_keywords = KeyPhraseExtractor.rake(document=corpus[0])
     rake_keywords_keys = list(rake_keywords.keys())

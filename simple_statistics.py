@@ -21,8 +21,8 @@ def token_number(documents: List[Document]):
 def yearwise_documents(documents: List[Document], aggregation_func: Callable = len, printing: bool = False):
     year_bins = defaultdict(list)
 
-    for obj in documents:
-        year_bins[obj.date].append(obj)
+    for doc in documents:
+        year_bins[doc.date].append(doc)
 
     result = {year: aggregation_func(docs) for year, docs in year_bins.items()}
     result = OrderedDict(sorted(result.items()))
