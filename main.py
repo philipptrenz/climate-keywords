@@ -1,8 +1,9 @@
-from collections import defaultdict
+from collections import defaultdict, Counter
 from typing import List, Set, Dict, NamedTuple
 from abc import ABC, abstractmethod
 import pandas as pd
 from rake_nltk import Rake
+from nltk.corpus import stopwords
 from tqdm import tqdm
 import pke
 import string
@@ -13,6 +14,7 @@ import re
 import json
 import logging
 from enum import Enum
+import spacy
 
 
 class ConfigLoader:
@@ -31,7 +33,76 @@ class ConfigLoader:
             raise Exception("config file missing!")
 
 
-class DataLoader:
+class Document:
+    def __init__(self, text: str, date, language: str, doc_id: str, tags=None, author=None, party=None, rating=None,
+                 keywords=None):
+        self.text = text
+        self.date = date
+        self.language = language
+        self.doc_id = doc_id
+        self.tags = tags
+        self.author = author
+        self.party = party
+        self.rating = rating
+        self.keywords = keywords
+
+    @staticmethod
+    def time_binning(documents: List["Document"], binning) -> Dict[float, List["Document"]]:
+        pass
+
+    def __str__(self):
+        return f'{self.date}: {self.text[:30]}'
+
+    __repr__ = __str__
+
+
+def preprocess(documents: List[Document], lemmatize: bool = True, lower: bool = False,
+               pos_filter: list = None, remove_stopwords: bool = False,
+               remove_punctuation: bool = False):
+
+    def token_representation(token):
+        if lemmatize:
+            representation = str(token.lemma_)
+        else:
+            representation = str(token)
+
+        if lower:
+            representation = representation.lower()
+        return representation
+
+    if documents[0].language == "German":
+        lan = "German"
+        nlp = spacy.load("de_core_news_sm")
+    else:
+        lan = "English"
+        nlp = spacy.load("en_core_web_sm")
+    tokenized = []
+    texts = [document.text for document in documents]
+    if pos_filter is None:
+        for doc in tqdm(nlp.pipe(texts, disable=['parser', 'ner', 'tagger']),
+                        desc=f"Preprocess documents in {lan}",
+                        total=len(texts)):
+            tokenized.append(
+                [token_representation(token)
+                 for token in doc
+                 if (not remove_stopwords or not token.is_stop)
+                 and (not remove_punctuation or token.is_alpha)]
+            )
+
+    else:
+        for doc in tqdm(nlp.pipe(texts, disable=['parser', 'ner']), desc="Preprocess documents", total=len(texts)):
+            tokenized.append(
+                [token_representation(token)
+                 for token in doc if (not remove_stopwords or not token.is_stop)
+                 and (not remove_punctuation or token.is_alpha)
+                 and token.pos_ in pos_filter]
+            )
+
+    for i, document in tqdm(enumerate(documents)):
+        document.text = ' '.join(tokenized[i])
+
+
+class DataHandler:
     @staticmethod
     def get_sustainability_data(path):
         def nan_resolver(pandas_attribut):
@@ -98,41 +169,18 @@ class DataLoader:
         for file in tqdm(files, desc="load Bundestag speeches", total=len(files)):
             df = pd.read_csv(os.path.join(dir, file))
             speeches.extend([Document(text=row["Speech text"],
-                                      date=row["Date"],
+                                      date=row["Date"][:4],
                                       language="German",
                                       doc_id=f'po_{i}',
                                       author=row["Speaker"],
-                                      party="Speaker party",
-                                      rating="Interjection count")
+                                      party=row["Speaker party"],
+                                      rating=row["Interjection count"])
                              for i, row in df.iterrows() if not pd.isna(row["Speech text"])])
 
         return speeches
 
-
-class Document:
-    def __init__(self, text, date, language, doc_id: str, tags=None, author=None, party=None, rating=None,
-                 keywords=None):
-        self.text = text
-        self.date = date
-        self.language = language
-        self.doc_id = doc_id
-        self.tags = tags
-        self.author = author
-        self.party = party
-        self.rating = rating
-        self.keywords = keywords
-
     @staticmethod
-    def time_binning(documents: List["Document"], binning) -> Dict[float, List["Document"]]:
-        pass
-
-    def __str__(self):
-        return f'{self.date}: {self.text[:30]}'
-
-    __repr__ = __str__
-
-    @staticmethod
-    def save_corpus(corpus: List["Document"], path: str = "data.json"):
+    def save_corpus(corpus: List[Document], path: str = "data.json"):
         data = [doc.__dict__ for doc in corpus]
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=1)
@@ -271,13 +319,30 @@ class KeyPhraseExtractor:
 
     @staticmethod
     def rake(documents: List[Document] = None, document: Document = None) -> Dict[str, List[str]]:
-        r = Rake()
+        # additional parameters:
+        # ranking_metric
+        # punctuations
+
         results = {}
         if document:
+            language = document.language.lower()
+            logging.info(f"{language} is used")
+            r = Rake(ranking_metric=None,
+                     stopwords=stopwords.words(language),
+                     language=language,
+                     min_length=2,
+                     max_length=4)
             r.extract_keywords_from_text(document.text)
             document.keywords = r.get_ranked_phrases()
             results[document.doc_id] = document.keywords
         else:
+            language = documents[0].language.lower()
+            logging.info(f"{language} is used")
+            r = Rake(ranking_metric=None,
+                     stopwords=stopwords.words(language),
+                     language=language,
+                     min_length=2,
+                     max_length=4)
             for document in tqdm(documents):
                 r.extract_keywords_from_text(document.text)
                 document.keywords = r.get_ranked_phrases()
@@ -285,17 +350,23 @@ class KeyPhraseExtractor:
 
         return results
 
+    def key_word_count(keywords: Dict[str, List[str]], top_k=100):
+        flattened_keywords = [word for document, document_keywords in keywords.items() for word in document_keywords]
+        c = Counter(flattened_keywords)
+        if top_k is None:
+            return c
+        return c.most_common(top_k)
+
 
 # load configuration parameters from config file
 def main():
     config = ConfigLoader.get_config()
 
     # read and parse data
-    bundestag_corpus = DataLoader.get_bundestag_speeches(dir=config["datasets"]["bundestag"]["directory"])
-    # sustainability_corpus = DataLoader.get_sustainability_data(path=config["datasets"]["abstracts"]["sustainability"])
-    # abstract_corpus = DataLoader.get_abstracts(path=config["datasets"]["abstracts"]["climate_literature"])
-
-    # # print(extract_tfidf_keywords_skl(abstract_corpus[:1000]))
+    bundestag_corpus = DataHandler.get_bundestag_speeches(dir=config["datasets"]["bundestag"]["directory"])
+    preprocess(bundestag_corpus)
+    DataHandler.save_corpus(bundestag_corpus, "bundestag_corpus.json")
+    del bundestag_corpus
     #
     # Document.save_corpus(bundestag_corpus, "bundestag_corpus.json")
     # Document.save_corpus(sustainability_corpus, "sustainability_corpus.json")
@@ -307,8 +378,10 @@ def main():
 
     # extract keywords
     # rake_keywords = KeyPhraseExtractor.rake(document=bundestag_corpus[0])
-    tfidf_keywords = KeyPhraseExtractor.tfidf_skl(documents=corpus)
-    print(tfidf_keywords)
+    # tfidf_keywords = KeyPhraseExtractor.tfidf_skl(documents=corpus)
+    # print(tfidf_keywords)
+
+    print(KeyPhraseExtractor.key_word_count(KeyPhraseExtractor.rake(documents=corpus)))
 
     # aggregate documents / keywords
 
