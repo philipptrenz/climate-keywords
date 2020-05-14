@@ -54,18 +54,15 @@ class Preprocessor:
             document.text = ' '.join(tokenized[i])
 
 
-def parse_and_preprocess_src(data_source):
-    if "bundestag" in data_source:
+def parse_and_preprocess_src(data_source, corpus_destination):
+    if "bundestag" in data_source.lower():
         raw_corpus = DataHandler.get_bundestag_speeches(dir=data_source)
-        save_path = "bundestag_corpus.json"
-    elif "sustainability" in data_source:
+    elif "sustainability" in data_source.lower():
         raw_corpus = DataHandler.get_sustainability_data(path=data_source)
-        save_path = "sustainability_corpus.json"
     else:
         raw_corpus = DataHandler.get_abstracts(path=data_source)
-        save_path = "abstract_corpus.json"
     Preprocessor.preprocess(raw_corpus)
-    DataHandler.save_corpus(raw_corpus, save_path)
+    DataHandler.save_corpus(raw_corpus, corpus_destination)
 
 
 if __name__ == '__main__':
@@ -77,6 +74,11 @@ if __name__ == '__main__':
                  config["datasets"]["abstracts"]["sustainability"],
                  config["datasets"]["abstracts"]["climate_literature"]]
 
+    # define corpus output sources
+    corpus_dests = [config["corpora"]["bundestag_corpus"],
+                    config["corpora"]["sustainability_corpus"],
+                    config["corpora"]["abstract_corpus"]]
+
     # read and parse data
-    for src in file_srcs:
-        parse_and_preprocess_src(src)
+    for i in range(3):
+        parse_and_preprocess_src(data_source=file_srcs[i], corpus_destination=corpus_dests[i])
