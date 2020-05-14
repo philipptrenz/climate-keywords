@@ -108,9 +108,9 @@ class KeyPhraseExtractor:
 def main():
     config = ConfigLoader.get_config()
 
-    # corpus = DataHandler.load_corpus("bundestag_corpus.json")
-    # corpus = DataHandler.load_corpus("sustainability_corpus.json")
-    corpus = DataHandler.load_corpus("abstract_corpus.json")
+    corpus = DataHandler.load_corpus(config["corpora"]["abstract_corpus"])
+    # corpus = DataHandler.load_corpus(config["corpora"]["bundestag_corpus"])
+    # corpus = DataHandler.load_corpus(config["corpora"]["sustainability_corpus"])
 
     # extract keywords
     # rake_keywords = KeyPhraseExtractor.rake(document=bundestag_corpus[0])
