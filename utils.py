@@ -98,9 +98,7 @@ class KeywordTranslator:
     def translate(self, keyword: Keyword):
 
         if keyword.source_language is KeywordSourceLanguage.UNKNOWN:
-
-            # TODO: Check if German or English is set
-            logging.warning("KeywordTranslator: source is unknown, skipping")
+            logging.debug("KeywordTranslator: source is unknown, skipping")
 
         elif keyword.source_language is KeywordSourceLanguage.DE:
             self.translate_german2english(keyword)
