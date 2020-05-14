@@ -1,4 +1,4 @@
-from typing import List, Set, Dict, NamedTuple
+from typing import List
 from tqdm import tqdm
 import spacy
 
@@ -54,15 +54,15 @@ class Preprocessor:
             document.text = ' '.join(tokenized[i])
 
 
-def parse_and_preprocess_src(src):
-    if "bundestag" in src:
-        raw_corpus = DataHandler.get_bundestag_speeches(dir=src)
+def parse_and_preprocess_src(data_source):
+    if "bundestag" in data_source:
+        raw_corpus = DataHandler.get_bundestag_speeches(dir=data_source)
         save_path = "bundestag_corpus.json"
-    elif "sustainability" in src:
-        raw_corpus = DataHandler.get_sustainability_data(path=src)
+    elif "sustainability" in data_source:
+        raw_corpus = DataHandler.get_sustainability_data(path=data_source)
         save_path = "sustainability_corpus.json"
     else:
-        raw_corpus = DataHandler.get_abstracts(path=src)
+        raw_corpus = DataHandler.get_abstracts(path=data_source)
         save_path = "abstract_corpus.json"
     Preprocessor.preprocess(raw_corpus)
     DataHandler.save_corpus(raw_corpus, save_path)
