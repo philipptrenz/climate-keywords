@@ -7,6 +7,7 @@ import os
 import re
 import json
 import logging
+import googletrans
 
 
 class ConfigLoader:
@@ -60,8 +61,8 @@ class KeywordType(Enum):
 class KeywordSourceLanguage(Enum):
 
     UNKNOWN = 0
-    DE = "german"
-    EN = "english"
+    DE = "de"
+    EN = "en"
 
 
 class Keyword:
@@ -71,37 +72,61 @@ class Keyword:
         if not english_translation and not german_translation:
             raise Exception("Keyword cannot be intialized without any translation")
 
+        self.english_translation = None
+        self.german_translation = None
         self.source_language = KeywordSourceLanguage.UNKNOWN
 
         if english_translation:
             self.english_translation = english_translation
-            if not german_translation:
-                self.german_translation = self.translate_english2german(english_translation)
-                self.source_language = KeywordSourceLanguage.EN
+            self.source_language = KeywordSourceLanguage.EN
 
         if german_translation:
             self.german_translation = german_translation
-            if not english_translation:
-                self.english_translation = self.translate_german2english(german_translation)
-                self.source_language = KeywordSourceLanguage.DE
+            self.source_language = KeywordSourceLanguage.DE
+
+        if english_translation and german_translation:
+            self.source_language = KeywordSourceLanguage.UNKNOWN
 
         self.type = type
 
-    def set_translation(self, translation_type, translation):
-        if translation_type == "german":
-            self.german_translation = translation
+
+class KeywordTranslator:
+
+    def __init__(self):
+        self.translator = googletrans.Translator()
+
+    def translate(self, keyword: Keyword):
+
+        if keyword.source_language is KeywordSourceLanguage.UNKNOWN:
+            logging.debug("KeywordTranslator: source is unknown, skipping")
+
+        elif keyword.source_language is KeywordSourceLanguage.DE:
+            self.translate_german2english(keyword)
+
+        elif keyword.source_language is KeywordSourceLanguage.EN:
+            self.translate_english2german(keyword)
+
+    def translate_german2english(self, keyword):
+        if not keyword.english_translation:
+            logging.debug("KeywordTranslator: {} | source is DE, EN not set, translating ...".format(keyword.german_translation))
+
+            translated = self.translator.translate(text=keyword.german_translation, src=str(KeywordSourceLanguage.DE.value), dest=str(KeywordSourceLanguage.EN.value))
+            keyword.english_translation = translated.text
+
         else:
-            self.english_translation = translation
+            logging.debug("KeywordTranslator: {}, {} | source is DE, but EN already set, skipping translation".format(keyword.german_translation, keyword.english_translation))
 
-    @staticmethod
-    def translate_english2german(self, english):
-        logging.warning("Auto translation of keywords not yet implemented!")
-        return None
+    def translate_english2german(self, keyword):
+        if not keyword.german_translation:
+            logging.debug("KeywordTranslator: {} | source is EN, DE not set, translating ...".format(keyword.english_translation))
 
-    @staticmethod
-    def translate_german2english(self, german):
-        logging.warning("Auto translation of keywords not yet implemented!")
-        return None
+            translated = self.translator.translate(text=keyword.english_translation, src=str(KeywordSourceLanguage.EN.value), dest=str(KeywordSourceLanguage.DE.value))
+            keyword.german_translation = translated.text
+
+        else:
+            logging.debug("KeywordTranslator: {}, {}| source is EN, but DE already set, skipping translation".format(keyword.english_translation, keyword.german_translation))
+
+
 
 
 class KeyWordList():
@@ -216,3 +241,25 @@ class DataHandler:
         logging.info(f"{path} loaded")
 
         return corpus
+
+
+if __name__ == '__main__':
+
+    # key word translator example
+
+    kwt = KeywordTranslator()
+
+    def translate(keyword):
+        print('before: {}\t| {}\t | {}'.format(keyword.english_translation, keyword.german_translation, keyword.source_language))
+        kwt.translate(keyword)
+        print('after:  {}\t| {}\t | {}\n'.format(keyword.english_translation, keyword.german_translation, keyword.source_language))
+
+    translate(Keyword(english_translation="axis of evil"))
+
+    translate(Keyword(german_translation="Achse des Bösen"))
+
+    translate(Keyword(english_translation="axis of evil", german_translation="Achse des Bösen"))
+
+
+
+
