@@ -5,3 +5,4 @@ data.json
 abstract_corpus.json
 bundestag_corpus.json
 sustainability_corpus.json
+__pycache__/
