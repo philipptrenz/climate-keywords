@@ -192,14 +192,14 @@ class DataHandler:
         return speeches
 
     @staticmethod
-    def save_corpus(corpus: List[Document], path: str = "data.json"):
+    def save_corpus(corpus: List[Document], path: str):
         data = [doc.__dict__ for doc in corpus]
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=1)
         logging.info(f'saved {path}')
 
     @staticmethod
-    def load_corpus(path: str = "data.json") -> List["Document"]:
+    def load_corpus(path: str) -> List["Document"]:
         logging.info(f"load {path}")
         with open(path, 'r', encoding='utf-8') as file:
             data = json.loads(file.read())
