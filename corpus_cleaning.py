@@ -56,9 +56,9 @@ def main():
     config = ConfigLoader.get_config()
 
     # deletes unusable documents and replaces date with year int
-    cleaning_abstracts(config)
-    cleaning_sustainability(config)
-    cleaning_bundestag(config)
+    cleaning_abstracts(config, overwrite=False)
+    cleaning_sustainability(config, overwrite=False)
+    cleaning_bundestag(config, overwrite=False)
 
 
 if __name__ == '__main__':
