@@ -108,7 +108,12 @@ class DataHandler:
             return None if pd.isna(pandas_attribut) else pandas_attribut
 
         df = pd.read_csv(path)
-        return [Document(text=row["content"], date=nan_resolver(row["PY"]), language="English", doc_id=f'{i}',
+        print(df.columns)
+        return [Document(text=row["content"],
+                         date=nan_resolver(row["PY"]),
+                         language="English",
+                         doc_id=f'su_{i}',
+                         author=row["authors"],
                          tags=nan_resolver(row["tags"])) for i, row in
                 tqdm(df.iterrows(), desc="Load sustainability abstracts", total=len(df)) if not pd.isna(row["content"])]
 
@@ -143,11 +148,11 @@ class DataHandler:
 
             wos_dict = defaultdict(lambda: None,
                                    {attribute[0]: ' '.join(list(attribute[1:])).strip() for attribute in attributes})
-
-            if wos_dict["AB"]:
-                abstracts.append(Document(text=wos_dict["AB"],
+            text = wos_dict["AB"]
+            if text:
+                abstracts.append(Document(text=text,
                                           date=wos_dict["PY"],
-                                          language=wos_dict["LA"],
+                                          language="English",
                                           doc_id=f'sc_{i}',
                                           author=wos_dict["AU"]))
 
@@ -318,15 +323,15 @@ def main():
     config = ConfigLoader.get_config()
 
     # read and parse data
-    bundestag_corpus = DataHandler.get_bundestag_speeches(dir=config["datasets"]["bundestag"]["directory"])
-    preprocess(bundestag_corpus)
-    DataHandler.save_corpus(bundestag_corpus, "bundestag_corpus.json")
-    del bundestag_corpus
+    # bundestag_corpus = DataHandler.get_bundestag_speeches(dir=config["datasets"]["bundestag"]["directory"])
+    # preprocess(bundestag_corpus)
+    # DataHandler.save_corpus(bundestag_corpus, "bundestag_corpus.json")
+    # del bundestag_corpus
     #
-    # sustainability_corpus = DataHandler.get_sustainability_data(path=config["datasets"]["abstracts"]["sustainability"])
-    # preprocess(sustainability_corpus)
-    # DataHandler.save_corpus(sustainability_corpus, "sustainability_corpus.json")
-    # del sustainability_corpus
+    sustainability_corpus = DataHandler.get_sustainability_data(path=config["datasets"]["abstracts"]["sustainability"])
+    preprocess(sustainability_corpus)
+    DataHandler.save_corpus(sustainability_corpus, "sustainability_corpus.json")
+    del sustainability_corpus
     #
     # abstract_corpus = DataHandler.get_abstracts(path=config["datasets"]["abstracts"]["climate_literature"])
     # preprocess(abstract_corpus)
@@ -334,7 +339,7 @@ def main():
     # del abstract_corpus
 
 
-    corpus = DataHandler.load_corpus("bundestag_corpus.json")
+    # corpus = DataHandler.load_corpus("bundestag_corpus.json")
     # corpus = DataHandler.load_corpus("sustainability_corpus.json")
     # corpus = DataHandler.load_corpus("abstract_corpus.json")
 
@@ -343,7 +348,7 @@ def main():
     # tfidf_keywords = KeyPhraseExtractor.tfidf_skl(documents=corpus)
     # print(tfidf_keywords)
 
-    print(KeyPhraseExtractor.key_word_count(KeyPhraseExtractor.rake(documents=corpus)))
+    # print(KeyPhraseExtractor.key_word_count(KeyPhraseExtractor.rake(documents=corpus)))
 
     # aggregate documents / keywords
 
