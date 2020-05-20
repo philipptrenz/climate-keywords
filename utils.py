@@ -78,7 +78,7 @@ class Document:
 
     @staticmethod
     def transform_pseudo_docs_keywords_to_dict(keywords: Dict[str, List[str]]) -> Dict[int, List[str]]:
-        return {id.replace("pseudo_", ""): keyword_list for id, keyword_list in keywords.items()}
+        return {int(id.replace("pseudo_", "")): keyword_list for id, keyword_list in keywords.items()}
 
     def __str__(self):
         return f'{self.date}: {self.text[:30]}'

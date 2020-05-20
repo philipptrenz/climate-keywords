@@ -109,6 +109,9 @@ class KeyPhraseExtractor:
             return c
         return c.most_common(top_k)
 
+    @staticmethod
+    def get_top_k_keywords(year_wise_keywords, top_k=100):
+        return {year: keyword_list[:top_k] for year, keyword_list in year_wise_keywords.items()}
 
 
 
@@ -120,7 +123,7 @@ def main():
     # corpus = DataHandler.load_corpus(config["corpora"]["abstract_corpus"])
     # corpus = DataHandler.load_corpus(config["corpora"]["bundestag_corpus"])
     corpus = DataHandler.load_corpus(config["corpora"]["sustainability_corpus"])
-
+    corpus = corpus
     # build yearwise pseudo documents
     # corpus = corpus[:100]
     pseudo_docs = Document.year_wise_pseudo_documents(corpus)
@@ -131,8 +134,10 @@ def main():
     rake_keywords = KeyPhraseExtractor.rake(documents=corpus)
     Document.assign_keywords(corpus, rake_keywords)
     key_words_post_group = Document.group_keywords_year_wise(corpus)
-    key_words_pseudo_docs = Document.transform_pseudo_docs_keywords_to_dict(KeyPhraseExtractor.rake(documents=pseudo_docs))
+    key_words_pre_group = Document.transform_pseudo_docs_keywords_to_dict(KeyPhraseExtractor.rake(documents=pseudo_docs))
 
+    print(KeyPhraseExtractor.get_top_k_keywords(key_words_post_group, 10))
+    print(KeyPhraseExtractor.get_top_k_keywords(key_words_pre_group, 10))
     # format: {year->list fo keywords}
 
 
