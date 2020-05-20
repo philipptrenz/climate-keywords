@@ -40,6 +40,38 @@ class KeywordSourceLanguage(Enum):
     DE = "de"
     EN = "en"
 
+class Keyword:
+    def __init__(self, english_translation: str = None, german_translation: str = None, type: KeywordType = KeywordType.UNKNOWN):
+
+        if not english_translation and not german_translation:
+            raise Exception("Keyword cannot be intialized without any translation")
+
+        self.english_translation = None
+        self.german_translation = None
+        self.source_language = KeywordSourceLanguage.UNKNOWN
+
+        if english_translation:
+            self.english_translation = english_translation
+            self.source_language = KeywordSourceLanguage.EN
+
+        if german_translation:
+            self.german_translation = german_translation
+            self.source_language = KeywordSourceLanguage.DE
+
+        if english_translation and german_translation:
+            self.source_language = KeywordSourceLanguage.UNKNOWN
+
+        self.type = type
+
+    def __str__(self):
+        if self.english_translation and self.german_translation:
+            return f'({self.english_translation} | {self.german_translation})'
+        if self.english_translation:
+            return f'{self.english_translation}'
+        if self.german_translation:
+            return f'{self.german_translation})'
+
+    __repr__ = __str__
 
 class Document:
     def __init__(self, text: str, date, language: str, doc_id: str, tags=None, author=None, party=None, rating=None,
@@ -55,15 +87,23 @@ class Document:
         self.keywords = keywords
 
     @staticmethod
-    def assign_keywords(documents: List["Document"], keywords, keyword_type: KeywordType):
+    def assign_keywords(documents: List["Document"], keywords: Dict[int, List[str]] = None,
+                        keyword_type: KeywordType = KeywordType.UNKNOWN,
+                        translated_keywords: Dict[int, List[Keyword]] = None):
+
         for document in tqdm(documents, desc="Assign keywords to documents"):
-            if document.language == "German":
-                parsed_keywords = [Keyword(german_translation=keyword, type=keyword_type)
-                                   for keyword in keywords[document.doc_id]]
-            else:
-                parsed_keywords = [Keyword(english_translation=keyword, type=keyword_type)
-                                   for keyword in keywords[document.doc_id]]
-            document.keywords = parsed_keywords
+            if keywords:
+                if document.language == "German":
+                    parsed_keywords = [Keyword(german_translation=keyword, type=keyword_type)
+                                       for keyword in keywords[document.doc_id]]
+                else:
+                    parsed_keywords = [Keyword(english_translation=keyword, type=keyword_type)
+                                       for keyword in keywords[document.doc_id]]
+                document.keywords = parsed_keywords
+
+            if translated_keywords:
+                document.keywords = translated_keywords[document.doc_id]
+
 
     @staticmethod
     def year_wise_pseudo_documents(documents: List["Document"], language="English") -> List["Document"]:
@@ -103,40 +143,6 @@ class Document:
 
     def __str__(self):
         return f'{self.date}: {self.text[:30]}'
-
-    __repr__ = __str__
-
-
-class Keyword:
-    def __init__(self, english_translation: str = None, german_translation: str = None, type: KeywordType = KeywordType.UNKNOWN):
-
-        if not english_translation and not german_translation:
-            raise Exception("Keyword cannot be intialized without any translation")
-
-        self.english_translation = None
-        self.german_translation = None
-        self.source_language = KeywordSourceLanguage.UNKNOWN
-
-        if english_translation:
-            self.english_translation = english_translation
-            self.source_language = KeywordSourceLanguage.EN
-
-        if german_translation:
-            self.german_translation = german_translation
-            self.source_language = KeywordSourceLanguage.DE
-
-        if english_translation and german_translation:
-            self.source_language = KeywordSourceLanguage.UNKNOWN
-
-        self.type = type
-
-    def __str__(self):
-        if self.english_translation and self.german_translation:
-            return f'({self.english_translation} | {self.german_translation})'
-        if self.english_translation:
-            return f'{self.english_translation}'
-        if self.german_translation:
-            return f'{self.german_translation})'
 
     __repr__ = __str__
 
