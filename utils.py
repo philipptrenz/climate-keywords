@@ -25,6 +25,21 @@ class ConfigLoader:
         else:
             raise Exception("config file missing!")
 
+class KeywordType(Enum):
+
+    UNKNOWN = 0
+    TFIDF_SKL = "tfidf_skl"
+    TFIDF_PKE = "tfidf_pke"
+    RAKE = "rake"
+    TEXTRANK = "textrank"
+
+
+class KeywordSourceLanguage(Enum):
+
+    UNKNOWN = 0
+    DE = "de"
+    EN = "en"
+
 
 class Document:
     def __init__(self, text: str, date, language: str, doc_id: str, tags=None, author=None, party=None, rating=None,
@@ -40,9 +55,15 @@ class Document:
         self.keywords = keywords
 
     @staticmethod
-    def assign_keywords(documents: List["Document"], keywords):
+    def assign_keywords(documents: List["Document"], keywords, keyword_type: KeywordType):
         for document in tqdm(documents, desc="Assign keywords to documents"):
-            document.keywords = keywords[document.doc_id]
+            if document.language == "German":
+                parsed_keywords = [Keyword(german_translation=keyword, type=keyword_type)
+                                   for keyword in keywords[document.doc_id]]
+            else:
+                parsed_keywords = [Keyword(english_translation=keyword, type=keyword_type)
+                                   for keyword in keywords[document.doc_id]]
+            document.keywords = parsed_keywords
 
     @staticmethod
     def year_wise_pseudo_documents(documents: List["Document"], language="English") -> List["Document"]:
@@ -86,24 +107,7 @@ class Document:
     __repr__ = __str__
 
 
-class KeywordType(Enum):
-
-    UNKNOWN = 0
-    TFIDF_SKL = "tfidf_skl"
-    TFIDF_PKE = "tfidf_pke"
-    RAKE = "rake"
-    TEXTRANK = "textrank"
-
-
-class KeywordSourceLanguage(Enum):
-
-    UNKNOWN = 0
-    DE = "de"
-    EN = "en"
-
-
 class Keyword:
-
     def __init__(self, english_translation: str = None, german_translation: str = None, type: KeywordType = KeywordType.UNKNOWN):
 
         if not english_translation and not german_translation:
@@ -125,6 +129,16 @@ class Keyword:
             self.source_language = KeywordSourceLanguage.UNKNOWN
 
         self.type = type
+
+    def __str__(self):
+        if self.english_translation and self.german_translation:
+            return f'({self.english_translation} | {self.german_translation})'
+        if self.english_translation:
+            return f'{self.english_translation}'
+        if self.german_translation:
+            return f'{self.german_translation})'
+
+    __repr__ = __str__
 
 
 class KeywordTranslator:

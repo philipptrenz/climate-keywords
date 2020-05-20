@@ -123,7 +123,7 @@ def main():
     # corpus = DataHandler.load_corpus(config["corpora"]["abstract_corpus"])
     # corpus = DataHandler.load_corpus(config["corpora"]["bundestag_corpus"])
     corpus = DataHandler.load_corpus(config["corpora"]["sustainability_corpus"])
-    corpus = corpus
+    corpus = corpus[:100]
     # build yearwise pseudo documents
     # corpus = corpus[:100]
     pseudo_docs = Document.year_wise_pseudo_documents(corpus)
@@ -132,7 +132,7 @@ def main():
     # tfidf_keywords = KeyPhraseExtractor.tfidf_skl(documents=pseudo_docs)
     # print(tfidf_keywords)
     rake_keywords = KeyPhraseExtractor.rake(documents=corpus)
-    Document.assign_keywords(corpus, rake_keywords)
+    Document.assign_keywords(corpus, rake_keywords, keyword_type=KeywordType.RAKE)
     key_words_post_group = Document.group_keywords_year_wise(corpus)
     key_words_pre_group = Document.transform_pseudo_docs_keywords_to_dict(KeyPhraseExtractor.rake(documents=pseudo_docs))
 
