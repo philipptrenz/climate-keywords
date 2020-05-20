@@ -16,6 +16,7 @@ from utils import Document, ConfigLoader, DataHandler, Keyword, KeywordTranslato
 class KeyPhraseExtractor:
     min_nrgam = 1
     max_ngram = 4
+
     @classmethod
     def term_frequency(cls, documents: List[Document]) -> Dict[str, List[str]]:
         pass
@@ -93,7 +94,7 @@ class KeyPhraseExtractor:
                      language=language,
                      min_length=cls.min_nrgam,
                      max_length=cls.max_ngram)
-            for document in tqdm(documents):
+            for document in tqdm(documents, desc="Calculating RAKE"):
                 r.extract_keywords_from_text(document.text)
                 document.keywords = r.get_ranked_phrases()
                 results[document.doc_id] = document.keywords
@@ -109,20 +110,7 @@ class KeyPhraseExtractor:
         return c.most_common(top_k)
 
 
-def year_wise_pseudo_documents(documents, language="English"):
-    year_bins = defaultdict(list)
 
-    for doc in documents:
-        year_bins[doc.date].append(doc)
-
-    pseudo_docs = [Document(doc_id=f'pseudo_{year}',
-                            date=year,
-                            text=" ".join([doc.text for doc in docs]),
-                            language=language
-                            )
-                   for year, docs in tqdm(year_bins.items(), desc="Construct pseudo docs", total=len(year_bins))]
-
-    return pseudo_docs
 
 
 def main():
@@ -134,11 +122,18 @@ def main():
     corpus = DataHandler.load_corpus(config["corpora"]["sustainability_corpus"])
 
     # build yearwise pseudo documents
-    pseudo_docs = year_wise_pseudo_documents(corpus)
+    # corpus = corpus[:100]
+    pseudo_docs = Document.year_wise_pseudo_documents(corpus)
 
     # extract keywords
-    tfidf_keywords = KeyPhraseExtractor.tfidf_skl(documents=pseudo_docs)
-    print(tfidf_keywords)
+    # tfidf_keywords = KeyPhraseExtractor.tfidf_skl(documents=pseudo_docs)
+    # print(tfidf_keywords)
+    rake_keywords = KeyPhraseExtractor.rake(documents=corpus)
+    Document.assign_keywords(corpus, rake_keywords)
+    key_words_post_group = Document.group_keywords_year_wise(corpus)
+    key_words_pseudo_docs = Document.transform_pseudo_docs_keywords_to_dict(KeyPhraseExtractor.rake(documents=pseudo_docs))
+
+    # format: {year->list fo keywords}
 
 
     print('extracting keywords with rake ...')
@@ -154,7 +149,6 @@ def main():
         kwt.translate(kw)
         list_of_keywords.append(kw)
         print('{} \t {} \t\t\t {}'.format(kw.source_language, kw.english_translation, kw.german_translation))
-
 
     # print('extracting keywords with tf-idf ...')
     # tfidf_keywords = KeyPhraseExtractor.tfidf_skl(documents=corpus)

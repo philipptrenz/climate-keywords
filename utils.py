@@ -40,8 +40,45 @@ class Document:
         self.keywords = keywords
 
     @staticmethod
-    def time_binning(documents: List["Document"], binning) -> Dict[float, List["Document"]]:
-        pass
+    def assign_keywords(documents: List["Document"], keywords):
+        for document in tqdm(documents, desc="Assign keywords to documents"):
+            document.keywords = keywords[document.doc_id]
+
+    @staticmethod
+    def year_wise_pseudo_documents(documents: List["Document"], language="English") -> List["Document"]:
+        year_bins = defaultdict(list)
+
+        for doc in documents:
+            year_bins[doc.date].append(doc)
+
+        pseudo_docs = [Document(doc_id=f'pseudo_{year}',
+                                date=year,
+                                text=" ".join([doc.text for doc in docs]),
+                                language=language
+                                )
+                       for year, docs in tqdm(year_bins.items(), desc="Construct pseudo docs", total=len(year_bins))]
+
+        return pseudo_docs
+
+    @classmethod
+    def group_keywords_year_wise(cls, documents_with_keywords: List["Document"], top_k_per_year=None) \
+            -> Dict[int, List[str]]:
+
+        year_bins = defaultdict(list)
+        for doc in documents_with_keywords:
+            year_bins[doc.date].extend(doc.keywords)
+
+        grouped_keywords = defaultdict(list)
+        for year, keyword_list in year_bins.items():
+            keyword_counter = Counter(keyword_list)
+            most_common_keywords = [keyword for keyword, freq in keyword_counter.most_common(top_k_per_year)]
+            grouped_keywords[year] = most_common_keywords
+
+        return grouped_keywords
+
+    @staticmethod
+    def transform_pseudo_docs_keywords_to_dict(keywords: Dict[str, List[str]]) -> Dict[int, List[str]]:
+        return {id.replace("pseudo_", ""): keyword_list for id, keyword_list in keywords.items()}
 
     def __str__(self):
         return f'{self.date}: {self.text[:30]}'
