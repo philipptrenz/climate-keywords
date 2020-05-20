@@ -140,6 +140,14 @@ def main():
     print(KeyPhraseExtractor.get_top_k_keywords(key_words_pre_group, 10))
     # format: {year->list fo keywords}
 
+    kwt = KeywordTranslator()
+
+    for doc in corpus:
+        for keyword in doc.keywords:
+            kwt.translate(keyword)
+            print(keyword)
+
+    exit(0)
 
     print('extracting keywords with rake ...')
     rake_keywords = KeyPhraseExtractor.rake(document=corpus[0])

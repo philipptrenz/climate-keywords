@@ -8,6 +8,7 @@ import re
 import json
 import logging
 import googletrans
+import json
 
 
 class ConfigLoader:
@@ -167,8 +168,12 @@ class KeywordTranslator:
         if not keyword.english_translation:
             logging.debug("KeywordTranslator: {} | source is DE, EN not set, translating ...".format(keyword.german_translation))
 
-            translated = self.translator.translate(text=keyword.german_translation, src=str(KeywordSourceLanguage.DE.value), dest=str(KeywordSourceLanguage.EN.value))
-            keyword.english_translation = translated.text
+            try:
+                translated = self.translator.translate(text=keyword.german_translation, src=str(KeywordSourceLanguage.DE.value), dest=str(KeywordSourceLanguage.EN.value))
+                keyword.english_translation = translated.text
+            except Exception as e:
+                logging.error("While trying to translate, an error occured:")
+                logging.error(e)
 
         else:
             logging.debug("KeywordTranslator: {}, {} | source is DE, but EN already set, skipping translation".format(keyword.german_translation, keyword.english_translation))
@@ -176,9 +181,13 @@ class KeywordTranslator:
     def translate_english2german(self, keyword):
         if not keyword.german_translation:
             logging.debug("KeywordTranslator: {} | source is EN, DE not set, translating ...".format(keyword.english_translation))
+            try:
+                translated = self.translator.translate(text=keyword.english_translation, src=str(KeywordSourceLanguage.EN.value), dest=str(KeywordSourceLanguage.DE.value))
+                keyword.german_translation = translated.text
+            except Exception as e:
+                logging.error("While trying to translate, an error occured:")
+                logging.error(e)
 
-            translated = self.translator.translate(text=keyword.english_translation, src=str(KeywordSourceLanguage.EN.value), dest=str(KeywordSourceLanguage.DE.value))
-            keyword.german_translation = translated.text
 
         else:
             logging.debug("KeywordTranslator: {}, {}| source is EN, but DE already set, skipping translation".format(keyword.english_translation, keyword.german_translation))
