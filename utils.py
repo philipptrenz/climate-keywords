@@ -172,15 +172,13 @@ class KeywordTranslator:
 
     def __init__(self, cache_file='translator_cache.json'):
         self.translator = googletrans.Translator()
-
+        self.cache_file = cache_file
         try:
             self.load_cache_from_file()
         except Exception as e:
             logging.warning("Loading of file failed")
             logging.warning(e)
             self.cache = dict()
-
-        self.cache_file = cache_file
 
     def __del__(self):
         self.save_cache()
@@ -243,11 +241,11 @@ class KeywordTranslator:
                 return None
 
     def load_cache_from_file(self):
+        self.cache = dict()
         if not os.path.exists(self.cache_file):
             raise Exception("File does not exist")
 
         with open(self.cache_file) as json_file:
-            self.cache = dict()
             cache_data = json.load(json_file)
             for key in cache_data:
                 self.cache[key] = Keyword.from_json(cache_data[key])
