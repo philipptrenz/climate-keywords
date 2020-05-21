@@ -150,8 +150,24 @@ class Document:
 
 class KeywordTranslator:
 
-    def __init__(self):
+    def __init__(self, cache_file='translator_cache.json'):
         self.translator = googletrans.Translator()
+
+        try:
+            if not os.path.exists(cache_file):
+                raise Exception("File does not exist")
+            with open(cache_file) as json_file:
+                self.cache = json.load(json_file)
+        except Exception as e:
+            logging.warning("Loading of file failed")
+            logging.warning(e)
+            self.cache = dict()
+
+        self.cache_file = cache_file
+
+    def __del__(self):
+        self.save_cache()
+        logging.info("saved cache file")
 
     def translate(self, keyword: Keyword):
 
@@ -165,32 +181,57 @@ class KeywordTranslator:
             self.translate_english2german(keyword)
 
     def translate_german2english(self, keyword):
-        if not keyword.english_translation:
-            logging.debug("KeywordTranslator: {} | source is DE, EN not set, translating ...".format(keyword.german_translation))
-
-            try:
-                translated = self.translator.translate(text=keyword.german_translation, src=str(KeywordSourceLanguage.DE.value), dest=str(KeywordSourceLanguage.EN.value))
-                keyword.english_translation = translated.text
-            except Exception as e:
-                logging.error("While trying to translate, an error occured:")
-                logging.error(e)
-
+        if keyword.german_translation in self.cache and self.cache[keyword.german_translation].english_translation:
+            print('found keyword in cache, taking this one')
+            keyword = self.cache[keyword.german_translation]
+            return keyword
         else:
-            logging.debug("KeywordTranslator: {}, {} | source is DE, but EN already set, skipping translation".format(keyword.german_translation, keyword.english_translation))
+            if not keyword.english_translation:
+                logging.debug("KeywordTranslator: {} | source is DE, EN not set, translating ...".format(keyword.german_translation))
+
+                try:
+                    translated = self.translator.translate(text=keyword.german_translation, src=str(KeywordSourceLanguage.DE.value), dest=str(KeywordSourceLanguage.EN.value))
+                    keyword.english_translation = translated.text
+                    self.add_to_cache(keyword)
+                    return keyword
+                except Exception as e:
+                    logging.error("While trying to translate, an error occured:")
+                    logging.error(e)
+
+            else:
+                logging.debug("KeywordTranslator: {}, {} | source is DE, but EN already set, skipping translation".format(keyword.german_translation, keyword.english_translation))
+                return None
 
     def translate_english2german(self, keyword):
-        if not keyword.german_translation:
-            logging.debug("KeywordTranslator: {} | source is EN, DE not set, translating ...".format(keyword.english_translation))
-            try:
-                translated = self.translator.translate(text=keyword.english_translation, src=str(KeywordSourceLanguage.EN.value), dest=str(KeywordSourceLanguage.DE.value))
-                keyword.german_translation = translated.text
-            except Exception as e:
-                logging.error("While trying to translate, an error occured:")
-                logging.error(e)
 
-
+        if keyword.english_translation in self.cache and self.cache[keyword.english_translation].german_translation:
+            print('found keyword in cache, taking this one')
+            keyword = self.cache[keyword.english_translation]
+            return keyword
         else:
-            logging.debug("KeywordTranslator: {}, {}| source is EN, but DE already set, skipping translation".format(keyword.english_translation, keyword.german_translation))
+
+            if not keyword.german_translation:
+                logging.debug("KeywordTranslator: {} | source is EN, DE not set, translating ...".format(keyword.english_translation))
+                try:
+                    translated = self.translator.translate(text=keyword.english_translation, src=str(KeywordSourceLanguage.EN.value), dest=str(KeywordSourceLanguage.DE.value))
+                    keyword.german_translation = translated.text
+                    self.add_to_cache(keyword)
+
+                    return keyword
+                except Exception as e:
+                    logging.error("While trying to translate, an error occured:")
+                    logging.error(e)
+            else:
+                logging.debug("KeywordTranslator: {}, {}| source is EN, but DE already set, skipping translation".format(keyword.english_translation, keyword.german_translation))
+                return None
+
+    def add_to_cache(self, keyword: Keyword):
+        self.cache[keyword.german_translation] = keyword
+        self.cache[keyword.english_translation] = keyword
+
+    def save_cache(self):
+        with open(self.cache_file, 'w', encoding='utf-8') as f:
+            json.dump(self.cache, f, ensure_ascii=False, indent=1)
 
 
 class KeyWordList():
