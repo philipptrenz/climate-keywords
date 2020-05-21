@@ -1,6 +1,6 @@
 from enum import Enum
 from collections import defaultdict, Counter
-from typing import List, Set, Dict, NamedTuple
+from typing import List, Set, Dict, NamedTuple, Tuple
 import pandas as pd
 from tqdm import tqdm
 import os
@@ -63,6 +63,16 @@ class Keyword:
             self.source_language = KeywordSourceLanguage.UNKNOWN
 
         self.type = type
+
+    def __eq__(self, other):
+        if not isinstance(other, Keyword):
+            return NotImplemented
+
+        return self.german_translation == other.german_translation or self.english_translation == other.english_translation
+
+    def __hash__(self):
+        # necessary for instances to behave sanely in dicts and sets.
+        return hash((self.german_translation, self.english_translation))
 
     def __str__(self):
         if self.english_translation and self.german_translation:
@@ -198,6 +208,48 @@ class KeyWordList():
         pass
 
 
+class KeywordMatcher:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def match_grouped_dicts(keywords_1: Dict[int, List[Keyword]],
+                            keywords_2: Dict[int, List[Keyword]]) -> Dict[Keyword, Tuple[List[int], List[int]]]:
+        reversed_keywords_1 = defaultdict[List]
+        for year, keyword in keywords_1:
+            reversed_keywords_1[keyword].append(year)
+
+        reversed_keywords_2 = defaultdict[List]
+        for year, keyword in keywords_2:
+            reversed_keywords_2[keyword].append(year)
+
+        # todo: implement real matching and check of both translation options
+        for keyword in reversed_keywords_1:
+            if keyword.german_translation in list(reversed_keywords_2):
+                pass
+        matched_keywords = ... #set(reversed_keywords_1).intersection(set(reversed_keywords_2))
+
+        return {keyword: (reversed_keywords_1[keyword], reversed_keywords_2) for keyword in matched_keywords}
+
+    @staticmethod
+    def match_corpora(corpus_1: List[Document],
+                      corpus_2: List[Document]) -> Dict[Keyword, Tuple[List[int], List[str]]]:
+        reversed_keywords_1 = defaultdict[List]
+        for document in corpus_1:
+            for keyword in document.keywords:
+                reversed_keywords_1[keyword].append(document.doc_id)
+
+        reversed_keywords_2 = defaultdict[List]
+        for document in corpus_2:
+            for keyword in document.keywords:
+                reversed_keywords_2[keyword].append(document.doc_id)
+
+        # todo: implement real matching and check of both translation options
+        matched_keywords = ... #set(reversed_keywords_1).intersection(set(reversed_keywords_2))
+
+        return {keyword: (reversed_keywords_1[keyword], reversed_keywords_2) for keyword in matched_keywords}
+
+
 class DataHandler:
     @staticmethod
     def get_sustainability_data(path):
@@ -308,9 +360,20 @@ class DataHandler:
 
 
 if __name__ == '__main__':
+    monkey = Keyword(german_translation="Affe", english_translation="Monkey")
+    affe = Keyword(german_translation="Affe", english_translation="Ape")
+    affe2 = Keyword(german_translation="Affe", english_translation="Ape")
+    weird_monkey = Keyword(english_translation="Affe", german_translation="Monkey")
+    patch = Keyword(german_translation="Patch", english_translation="patch")
+    print(monkey == affe)
+    print(affe == affe2)
+    print(monkey == weird_monkey)
+    print(affe == weird_monkey)
+    print(monkey == patch)
+
+    print(monkey in list({affe, affe2}))
 
     # key word translator example
-
     kwt = KeywordTranslator()
 
     def translate(keyword):
