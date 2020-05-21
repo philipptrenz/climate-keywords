@@ -26,18 +26,18 @@ class ConfigLoader:
         else:
             raise Exception("config file missing!")
 
-class KeywordType(Enum):
+class KeywordType(str, Enum):
 
-    UNKNOWN = 0
+    UNKNOWN = "unknown"
     TFIDF_SKL = "tfidf_skl"
     TFIDF_PKE = "tfidf_pke"
     RAKE = "rake"
     TEXTRANK = "textrank"
 
 
-class KeywordSourceLanguage(Enum):
+class KeywordSourceLanguage(str, Enum):
 
-    UNKNOWN = 0
+    UNKNOWN = "unknown"
     DE = "de"
     EN = "en"
 
