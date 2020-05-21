@@ -278,21 +278,23 @@ class KeywordMatcher:
     def match_grouped_dicts(keywords_1: Dict[int, List[Keyword]],
                             keywords_2: Dict[int, List[Keyword]]) -> Dict[Keyword, Tuple[List[int], List[int]]]:
 
-        reversed_keywords_1 = defaultdict(list)
+        reversed_keywords_1 = defaultdict(set)
         ger_translations = defaultdict(list)
         en_translations = defaultdict(list)
-        for year, keyword in keywords_1:
-            reversed_keywords_1[keyword.german_translation].append(year)
-            reversed_keywords_1[keyword.english_translation].append(year)
-            ger_translations[keyword.german_translation].append(keyword.english_translation)
-            en_translations[keyword.english_translation].append(keyword.german_translation)
+        for year, keywords in keywords_1.items():
+            for keyword in keywords:
+                reversed_keywords_1[keyword.german_translation].add(year)
+                reversed_keywords_1[keyword.english_translation].add(year)
+                ger_translations[keyword.german_translation].append(keyword.english_translation)
+                en_translations[keyword.english_translation].append(keyword.german_translation)
 
-        reversed_keywords_2 = defaultdict(list)
-        for year, keyword in keywords_2:
-            reversed_keywords_2[keyword.german_translation].append(year)
-            reversed_keywords_2[keyword.english_translation].append(year)
-            ger_translations[keyword.german_translation].append(keyword.english_translation)
-            en_translations[keyword.english_translation].append(keyword.german_translation)
+        reversed_keywords_2 = defaultdict(set)
+        for year, keywords in keywords_2.items():
+            for keyword in keywords:
+                reversed_keywords_2[keyword.german_translation].add(year)
+                reversed_keywords_2[keyword.english_translation].add(year)
+                ger_translations[keyword.german_translation].append(keyword.english_translation)
+                en_translations[keyword.english_translation].append(keyword.german_translation)
 
         matched_keywords = set()
         for keyword in reversed_keywords_1:
