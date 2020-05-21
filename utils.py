@@ -41,15 +41,16 @@ class KeywordSourceLanguage(str, Enum):
     DE = "de"
     EN = "en"
 
+
 class Keyword:
-    def __init__(self, english_translation: str = None, german_translation: str = None, type: KeywordType = KeywordType.UNKNOWN):
+    def __init__(self, english_translation: str = None, german_translation: str = None, type: KeywordType = KeywordType.UNKNOWN, source_language=KeywordSourceLanguage.UNKNOWN):
 
         if not english_translation and not german_translation:
             raise Exception("Keyword cannot be intialized without any translation")
 
         self.english_translation = None
         self.german_translation = None
-        self.source_language = KeywordSourceLanguage.UNKNOWN
+        self.source_language = source_language
 
         if english_translation:
             self.english_translation = english_translation
@@ -83,6 +84,15 @@ class Keyword:
             return f'{self.german_translation})'
 
     __repr__ = __str__
+
+    @classmethod
+    def from_json(cls, data: dict):
+        return Keyword(
+            english_translation=data["english_translation"],
+            german_translation=data["german_translation"],
+            type=KeywordType(data["type"]),
+            source_language=KeywordSourceLanguage(data["source_language"]))
+
 
 class Document:
     def __init__(self, text: str, date, language: str, doc_id: str, tags=None, author=None, party=None, rating=None,
@@ -164,10 +174,7 @@ class KeywordTranslator:
         self.translator = googletrans.Translator()
 
         try:
-            if not os.path.exists(cache_file):
-                raise Exception("File does not exist")
-            with open(cache_file) as json_file:
-                self.cache = json.load(json_file)
+            self.load_cache_from_file()
         except Exception as e:
             logging.warning("Loading of file failed")
             logging.warning(e)
@@ -235,13 +242,23 @@ class KeywordTranslator:
                 logging.debug("KeywordTranslator: {}, {}| source is EN, but DE already set, skipping translation".format(keyword.english_translation, keyword.german_translation))
                 return None
 
+    def load_cache_from_file(self):
+        if not os.path.exists(self.cache_file):
+            raise Exception("File does not exist")
+
+        with open(self.cache_file) as json_file:
+            self.cache = dict()
+            cache_data = json.load(json_file)
+            for key in cache_data:
+                self.cache[key] = Keyword.from_json(cache_data[key])
+
     def add_to_cache(self, keyword: Keyword):
         self.cache[keyword.german_translation] = keyword
         self.cache[keyword.english_translation] = keyword
 
     def save_cache(self):
         with open(self.cache_file, 'w', encoding='utf-8') as f:
-            json.dump(self.cache, f, ensure_ascii=False, indent=1)
+            json.dump(self.cache, f, ensure_ascii=False, indent=1, default=lambda o: o.__dict__)
 
 
 class KeyWordList():
