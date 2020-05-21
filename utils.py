@@ -9,6 +9,7 @@ import json
 import logging
 import googletrans
 import json
+import time
 
 
 class ConfigLoader:
@@ -172,10 +173,10 @@ class Document:
 
 
 class KeywordTranslator:
-
-    def __init__(self, cache_file='translator_cache.json'):
+    def __init__(self, cache_file='translator_cache.json', timeout=1.0):
         self.translator = googletrans.Translator()
         self.cache_file = cache_file
+        self.timeout = 1.0
         try:
             self.load_cache_from_file()
         except Exception as e:
@@ -208,6 +209,7 @@ class KeywordTranslator:
                 logging.debug("KeywordTranslator: {} | source is DE, EN not set, translating ...".format(keyword.german_translation))
 
                 try:
+                    time.sleep(self.timeout)
                     translated = self.translator.translate(text=keyword.german_translation, src=str(KeywordSourceLanguage.DE.value), dest=str(KeywordSourceLanguage.EN.value))
                     keyword.english_translation = translated.text
                     self.add_to_cache(keyword)
@@ -231,6 +233,7 @@ class KeywordTranslator:
             if not keyword.german_translation:
                 logging.debug("KeywordTranslator: {} | source is EN, DE not set, translating ...".format(keyword.english_translation))
                 try:
+                    time.sleep(self.timeout)
                     translated = self.translator.translate(text=keyword.english_translation, src=str(KeywordSourceLanguage.EN.value), dest=str(KeywordSourceLanguage.DE.value))
                     keyword.german_translation = translated.text
                     self.add_to_cache(keyword)
