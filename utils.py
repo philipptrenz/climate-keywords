@@ -65,6 +65,9 @@ class Keyword:
 
         self.type = type
 
+    def __getitem__(self, item):
+        return self.__dict__[item]
+
     def __eq__(self, other):
         if not isinstance(other, Keyword):
             return NotImplemented
@@ -273,21 +276,29 @@ class KeywordMatcher:
     @staticmethod
     def match_grouped_dicts(keywords_1: Dict[int, List[Keyword]],
                             keywords_2: Dict[int, List[Keyword]]) -> Dict[Keyword, Tuple[List[int], List[int]]]:
-        reversed_keywords_1 = defaultdict[List]
+
+        reversed_keywords_1 = defaultdict(list)
+        ger_translations = defaultdict(list)
+        en_translations = defaultdict(list)
         for year, keyword in keywords_1:
-            reversed_keywords_1[keyword].append(year)
+            reversed_keywords_1[keyword.german_translation].append(year)
+            reversed_keywords_1[keyword.english_translation].append(year)
 
-        reversed_keywords_2 = defaultdict[List]
+        reversed_keywords_2 = defaultdict(list)
         for year, keyword in keywords_2:
-            reversed_keywords_2[keyword].append(year)
+            reversed_keywords_2[keyword.german_translation].append(year)
+            reversed_keywords_2[keyword.english_translation].append(year)
 
-        # todo: implement real matching and check of both translation options
+        matched_keywords = set()
         for keyword in reversed_keywords_1:
-            if keyword.german_translation in list(reversed_keywords_2):
-                pass
-        matched_keywords = ... #set(reversed_keywords_1).intersection(set(reversed_keywords_2))
+            if keyword in reversed_keywords_2:
+                matched_keywords.add(keyword)
 
-        return {keyword: (reversed_keywords_1[keyword], reversed_keywords_2) for keyword in matched_keywords}
+        for keyword in reversed_keywords_2:
+            if keyword in reversed_keywords_1:
+                matched_keywords.add(keyword)
+
+        return {keyword: (reversed_keywords_1[keyword], reversed_keywords_2[keyword]) for keyword in matched_keywords}
 
     @staticmethod
     def match_corpora(corpus_1: List[Document],
@@ -423,13 +434,15 @@ if __name__ == '__main__':
     affe2 = Keyword(german_translation="Affe", english_translation="Ape")
     weird_monkey = Keyword(english_translation="Affe", german_translation="Monkey")
     patch = Keyword(german_translation="Patch", english_translation="patch")
+
+    print(patch.__dict__)
     print(monkey == affe)
     print(affe == affe2)
     print(monkey == weird_monkey)
     print(affe == weird_monkey)
     print(monkey == patch)
 
-    print(monkey in list({affe, affe2}))
+    # print(monkey in list({affe, affe2}))
 
     # key word translator example
     kwt = KeywordTranslator()
