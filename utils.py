@@ -283,11 +283,15 @@ class KeywordMatcher:
         for year, keyword in keywords_1:
             reversed_keywords_1[keyword.german_translation].append(year)
             reversed_keywords_1[keyword.english_translation].append(year)
+            ger_translations[keyword.german_translation].append(keyword.english_translation)
+            en_translations[keyword.english_translation].append(keyword.german_translation)
 
         reversed_keywords_2 = defaultdict(list)
         for year, keyword in keywords_2:
             reversed_keywords_2[keyword.german_translation].append(year)
             reversed_keywords_2[keyword.english_translation].append(year)
+            ger_translations[keyword.german_translation].append(keyword.english_translation)
+            en_translations[keyword.english_translation].append(keyword.german_translation)
 
         matched_keywords = set()
         for keyword in reversed_keywords_1:
