@@ -70,9 +70,9 @@ class Keyword:
 
         return self.german_translation == other.german_translation or self.english_translation == other.english_translation
 
-    def __hash__(self):
-        # necessary for instances to behave sanely in dicts and sets.
-        return hash((self.german_translation, self.english_translation))
+    # def __hash__(self):
+    #     # necessary for instances to behave sanely in dicts and sets.
+    #     return hash((self.german_translation, self.english_translation))
 
     def __str__(self):
         if self.english_translation and self.german_translation:

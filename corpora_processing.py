@@ -131,19 +131,24 @@ def main():
     # print(tfidf_keywords)
     rake_keywords = KeyPhraseExtractor.rake(documents=corpus)
     Document.assign_keywords(corpus, rake_keywords, keyword_type=KeywordType.RAKE)
-    key_words_post_group = Document.group_keywords_year_wise(corpus)
-    key_words_pre_group = Document.transform_pseudo_docs_keywords_to_dict(KeyPhraseExtractor.rake(documents=pseudo_docs))
+    # key_words_post_group = Document.group_keywords_year_wise(corpus)
+    # key_words_pre_group = Document.transform_pseudo_docs_keywords_to_dict(KeyPhraseExtractor.rake(documents=pseudo_docs))
 
-    print(KeyPhraseExtractor.get_top_k_keywords(key_words_post_group, 10))
-    print(KeyPhraseExtractor.get_top_k_keywords(key_words_pre_group, 10))
+    # print(KeyPhraseExtractor.get_top_k_keywords(key_words_post_group, 10))
+    # print(KeyPhraseExtractor.get_top_k_keywords(key_words_pre_group, 10))
     # format: {year->list fo keywords}
 
     kwt = KeywordTranslator(cache_file=config["translator"]["cache_file"])
 
+    counter = 0
     for doc in corpus:
         for keyword in doc.keywords:
+            if counter > 10:
+                break
             kwt.translate(keyword)
             print(keyword)
+            counter +=1
+        break
 
     exit(0)
 
