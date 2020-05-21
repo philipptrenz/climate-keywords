@@ -12,5 +12,8 @@
     "abstract_corpus": "/path/to/file.json",
     "bundestag_corpus": "/path/to/file.json",
     "sustainability_corpus": "/path/to/file.json"
+  },
+  "translator": {
+    "cache_file": ""
   }
 }

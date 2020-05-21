@@ -114,8 +114,6 @@ class KeyPhraseExtractor:
         return {year: keyword_list[:top_k] for year, keyword_list in year_wise_keywords.items()}
 
 
-
-
 def main():
     # load configuration parameters from config file
     config = ConfigLoader.get_config()
@@ -140,7 +138,7 @@ def main():
     print(KeyPhraseExtractor.get_top_k_keywords(key_words_pre_group, 10))
     # format: {year->list fo keywords}
 
-    kwt = KeywordTranslator()
+    kwt = KeywordTranslator(cache_file=config["translator"]["cache_file"])
 
     for doc in corpus:
         for keyword in doc.keywords:
