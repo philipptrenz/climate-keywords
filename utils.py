@@ -305,33 +305,38 @@ class KeywordMatcher:
 
     @staticmethod
     def match_grouped_dicts(keywords_1: Dict[int, List[Keyword]],
-                            keywords_2: Dict[int, List[Keyword]]) -> Dict[Keyword, Tuple[List[int], List[int]]]:
-        german_model = spacy.load("de_core_news_sm")
-        english_model = spacy.load("en_core_web_sm")
-        for year, keywords in keywords_1.items():
-            for keyword in keywords:
-                keyword.lemmatize(german_model, english_model)
-        for year, keywords in keywords_2.items():
-            for keyword in keywords:
-                keyword.lemmatize(german_model, english_model)
+                            keywords_2: Dict[int, List[Keyword]],
+                            lemmatize: bool = True,
+                            simplify_result: bool = True) -> Tuple[Dict[Keyword, Tuple[List[int], List[int]]],
+                                                                   Dict[str, str]]:
+
+        if lemmatize:
+            german_model = spacy.load("de_core_news_sm")
+            english_model = spacy.load("en_core_web_sm")
+            for year, keywords in keywords_1.items():
+                for keyword in keywords:
+                    keyword.lemmatize(german_model, english_model)
+            for year, keywords in keywords_2.items():
+                for keyword in keywords:
+                    keyword.lemmatize(german_model, english_model)
 
         reversed_keywords_1 = defaultdict(set)
-        ger_translations = defaultdict(list)
-        en_translations = defaultdict(list)
+        ger_translations = defaultdict(set)
+        en_translations = defaultdict(set)
         for year, keywords in keywords_1.items():
             for keyword in keywords:
                 reversed_keywords_1[keyword.german_translation].add(year)
                 reversed_keywords_1[keyword.english_translation].add(year)
-                ger_translations[keyword.german_translation].append(keyword.english_translation)
-                en_translations[keyword.english_translation].append(keyword.german_translation)
+                ger_translations[keyword.german_translation].add(keyword.english_translation)
+                en_translations[keyword.english_translation].add(keyword.german_translation)
 
         reversed_keywords_2 = defaultdict(set)
         for year, keywords in keywords_2.items():
             for keyword in keywords:
                 reversed_keywords_2[keyword.german_translation].add(year)
                 reversed_keywords_2[keyword.english_translation].add(year)
-                ger_translations[keyword.german_translation].append(keyword.english_translation)
-                en_translations[keyword.english_translation].append(keyword.german_translation)
+                ger_translations[keyword.german_translation].add(keyword.english_translation)
+                en_translations[keyword.english_translation].add(keyword.german_translation)
 
         matched_keywords = set()
         for keyword in reversed_keywords_1:
@@ -342,8 +347,28 @@ class KeywordMatcher:
             if keyword in reversed_keywords_1:
                 matched_keywords.add(keyword)
 
+        result_dict = {keyword: (reversed_keywords_1[keyword], reversed_keywords_2[keyword]) for keyword in matched_keywords}
 
-        return {keyword: (reversed_keywords_1[keyword], reversed_keywords_2[keyword]) for keyword in matched_keywords}
+        if simplify_result:
+            filtered_result = {}
+            for keyword, result in result_dict.items():
+                if keyword in ger_translations.keys():
+                    for translation in ger_translations[keyword]:
+                        if translation in result_dict.keys():
+                            new_result = (result[0].union(result_dict[translation][0]), result[1].union(result_dict[translation][1]))
+                            filtered_result[translation] = new_result
+                        else:
+                            filtered_result[translation] = result
+                if keyword in en_translations.keys():
+                    filtered_result[keyword] = result_dict[keyword]
+            useful_translations = {keyword: translations for keyword, translations in en_translations.items()
+                                   if keyword in filtered_result}
+            # print(useful_translations)
+            return filtered_result, useful_translations
+
+        useful_translations = {keyword: translations for keyword, translations in en_translations.items()
+                               if keyword in result_dict}
+        return result_dict, useful_translations
 
     @staticmethod
     def match_corpora(corpus_1: List[Document],
