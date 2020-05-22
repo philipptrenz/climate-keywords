@@ -1,7 +1,8 @@
 ctm/
 .idea/
 config.json
-abstract_corpus.json
-bundestag_corpus.json
-sustainability_corpus.json
 __pycache__/
+/data/abstract_corpus.json
+/data/bundestag_corpus.json
+/data/sustainability_corpus.json
+/data/translation_cache.json
