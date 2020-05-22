@@ -504,7 +504,12 @@ class DataHandler:
             wos_dict = defaultdict(lambda: None,
                                    {attribute[0]: ' '.join(list(attribute[1:])).strip() for attribute in attributes})
             text = wos_dict["AB"]
-            if text:
+            year = wos_dict["PY"]
+            if text and year:
+                # print(text)
+                if not wos_dict["PY"].isdecimal():
+                    print(wos_dict["PY"])
+                # print(wos_dict["AU"])
                 abstracts.append(Document(text=text,
                                           date=wos_dict["PY"],
                                           language="English",

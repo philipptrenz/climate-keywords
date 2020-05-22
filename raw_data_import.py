@@ -70,14 +70,18 @@ if __name__ == '__main__':
     config = ConfigLoader.get_config()
 
     # define data sources
-    file_srcs = [config["datasets"]["bundestag"]["directory"],
-                 config["datasets"]["abstracts"]["sustainability"],
-                 config["datasets"]["abstracts"]["climate_literature"]]
+    file_srcs = [
+        # config["datasets"]["bundestag"]["directory"],
+        # config["datasets"]["abstracts"]["sustainability"],
+        config["datasets"]["abstracts"]["climate_literature"]
+    ]
 
     # define corpus output sources
-    corpus_dests = [config["corpora"]["bundestag_corpus"],
-                    config["corpora"]["sustainability_corpus"],
-                    config["corpora"]["abstract_corpus"]]
+    corpus_dests = [
+        # config["corpora"]["bundestag_corpus"],
+        # config["corpora"]["sustainability_corpus"],
+        config["corpora"]["abstract_corpus"]
+    ]
 
     # read and parse data
     for i in range(3):
