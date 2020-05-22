@@ -172,6 +172,73 @@ class Document:
     __repr__ = __str__
 
 
+class DocumentsFilter:
+
+    @staticmethod
+    def filter(documents: [Document],
+                   text_contains: [str] = None,
+                   date_in_range: range = None,
+                   is_one_of_languages: [str] = None,
+                   is_one_of_doc_ids: [int] = None,
+                   has_authors: [str] = None,
+                   has_tags: [str] = None,
+                   has_one_of_keywords_with_english_translation: [str] = None,
+                   has_one_of_keywords_with_german_translation: [str] = None,
+                   is_one_of_parties: [str] = None,
+                   ratings_in_range: range = None) -> [Document]:
+
+        filtered: [Document] = []
+
+        for d in documents:
+            try:
+                if text_contains:
+                    does_contain = True
+                    for t in text_contains:
+                        if t not in d.text:
+                            does_contain = False
+                            break
+                    if not does_contain: continue
+
+                if date_in_range and d.date not in date_in_range: continue
+
+                if is_one_of_languages and d.language not in is_one_of_languages: continue
+
+                if is_one_of_doc_ids and d.doc_id not in is_one_of_doc_ids: continue
+
+                if has_authors and d.author not in has_authors: continue
+
+                if has_tags and d.tags and not set(d.tags).issubset(set(has_tags)): continue
+
+                if has_one_of_keywords_with_english_translation:
+                    keywords_en = [x.english_translation for x in d.keywords]
+                    matched_keyword = False
+                    for k in has_one_of_keywords_with_english_translation:
+                        if k in keywords_en:
+                            matched_keyword = True
+                            break
+                    if not matched_keyword: continue
+
+                if has_one_of_keywords_with_german_translation:
+                    keywords_de = [x.german_translation for x in d.keywords]
+                    matched_keyword = False
+                    for k in has_one_of_keywords_with_german_translation:
+                        if k in keywords_de:
+                            matched_keyword = True
+                            break
+                    if not matched_keyword: continue
+
+                if is_one_of_parties and d.party not in is_one_of_parties: continue
+
+                if ratings_in_range and d.rating not in ratings_in_range: continue
+
+                filtered.append(d)
+            except:
+                logging.exception("An exception occured while applying filters, skipping document")
+                continue
+
+        return filtered
+
+
 class KeywordTranslator:
     def __init__(self, cache_file='translator_cache.json', timeout=1.0):
         self.translator = googletrans.Translator()
