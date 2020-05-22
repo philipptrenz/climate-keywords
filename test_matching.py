@@ -5,8 +5,8 @@ def main():
     Keyword(german_translation="Affe", english_translation="ape"),
     Keyword(german_translation="Wasser", english_translation="water")]}
 
-    grouped_dict2 = {2019: [Keyword(german_translation="Affe", english_translation="Monkey"),
-                            Keyword(german_translation="Affen", english_translation="ape"),
+    grouped_dict2 = {2011: [Keyword(german_translation="Pferd", english_translation="Horse"),
+                            Keyword(german_translation="Affen", english_translation="apes"),
                             Keyword(german_translation="Erde", english_translation="Earth")],
                      2018: [Keyword(german_translation="Licht", english_translation="Light"),
                             Keyword(german_translation="Wasser", english_translation="sea"),
