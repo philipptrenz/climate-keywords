@@ -10,6 +10,7 @@ import logging
 import googletrans
 import json
 import time
+import spacy
 
 
 class ConfigLoader:
@@ -74,6 +75,17 @@ class Keyword:
             return NotImplemented
 
         return self.german_translation == other.german_translation or self.english_translation == other.english_translation
+
+    def lemmatize(self, german_nlp, english_nlp):
+        german_lemmatized = []
+        for token in german_nlp(self.german_translation):
+            german_lemmatized.append(token.lemma_)
+        english_lemmatized = []
+        for token in english_nlp(self.english_translation):
+            english_lemmatized.append(token.lemma_)
+
+        self.german_translation = " ".join(german_lemmatized)
+        self.english_translation = " ".join(english_lemmatized)
 
     # def __hash__(self):
     #     # necessary for instances to behave sanely in dicts and sets.
@@ -275,8 +287,33 @@ class KeywordMatcher:
         pass
 
     @staticmethod
+    def lemmatize_keyword(german_nlp, english_nlp, keyphrase: Keyword):
+        german_lemmatized = []
+        for token in german_nlp(keyphrase.german_translation):
+            german_lemmatized.append(token.lemma_)
+        english_lemmatized = []
+        for token in english_nlp(keyphrase.english_translation):
+            english_lemmatized.append(token.lemma_)
+
+        return Keyword(german_translation=" ".join(german_lemmatized),
+                       english_translation=" ".join(english_lemmatized),
+                       type=keyphrase.type,
+                       source_language=keyphrase.source_language
+                       )
+
+
+
+    @staticmethod
     def match_grouped_dicts(keywords_1: Dict[int, List[Keyword]],
                             keywords_2: Dict[int, List[Keyword]]) -> Dict[Keyword, Tuple[List[int], List[int]]]:
+        german_model = spacy.load("de_core_news_sm")
+        english_model = spacy.load("en_core_web_sm")
+        for year, keywords in keywords_1.items():
+            for keyword in keywords:
+                keyword.lemmatize(german_model, english_model)
+        for year, keywords in keywords_2.items():
+            for keyword in keywords:
+                keyword.lemmatize(german_model, english_model)
 
         reversed_keywords_1 = defaultdict(set)
         ger_translations = defaultdict(list)
@@ -304,6 +341,7 @@ class KeywordMatcher:
         for keyword in reversed_keywords_2:
             if keyword in reversed_keywords_1:
                 matched_keywords.add(keyword)
+
 
         return {keyword: (reversed_keywords_1[keyword], reversed_keywords_2[keyword]) for keyword in matched_keywords}
 
