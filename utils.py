@@ -196,10 +196,10 @@ class DocumentsFilter:
                    is_one_of_doc_ids: [int] = None,
                    has_authors: [str] = None,
                    has_tags: [str] = None,
-                   has_one_of_keywords_with_english_translation: [str] = None,
-                   has_one_of_keywords_with_german_translation: [str] = None,
                    is_one_of_parties: [str] = None,
-                   ratings_in_range: range = None) -> [Document]:
+                   ratings_in_range: range = None,
+                   has_one_of_keywords_with_english_translation: [str] = None,
+                   has_one_of_keywords_with_german_translation: [str] = None) -> [Document]:
 
         filtered: [Document] = []
 
@@ -213,17 +213,36 @@ class DocumentsFilter:
                             break
                     if not does_contain: continue
 
-                if date_in_range and d.date and d.date not in date_in_range: continue
+                if date_in_range:
+                    if not d.date or d.date not in date_in_range: continue
 
-                if is_one_of_languages and d.language is not None and d.language not in is_one_of_languages: continue
+                if is_one_of_languages:
+                    if not d.language or d.language not in is_one_of_languages: continue
 
-                if is_one_of_doc_ids and d.doc_id and d.doc_id not in is_one_of_doc_ids: continue
+                if is_one_of_doc_ids:
+                    if not d.doc_id or d.doc_id not in is_one_of_doc_ids: continue
 
-                if has_authors and d.author and d.author not in has_authors: continue
+                if has_authors:
+                    if not d.author or d.author not in has_authors: continue
 
-                if has_tags and d.tags and not set(d.tags).issubset(set(has_tags)): continue
+                if has_tags:
+                    if not t.tags or not set(d.tags).issubset(set(has_tags)): continue
 
-                if has_one_of_keywords_with_english_translation and d.keywords:
+                if is_one_of_parties:
+                    revised_parties = [].extend(is_one_of_parties)
+                    for p in is_one_of_languages:
+                        p = p.lower()
+                        if p == 'english':
+                            revised_parties.append('en')
+                        if p == 'german':
+                            revised_parties.append('de')
+                    if not d.party or d.party.lower() not in revised_parties: continue
+
+                if ratings_in_range:
+                    if not d.rating or d.rating not in ratings_in_range: continue
+
+                if has_one_of_keywords_with_english_translation:
+                    if not d.keywords: continue
                     keywords_en = [x.english_translation for x in d.keywords]
                     matched_keyword = False
                     for k in has_one_of_keywords_with_english_translation:
@@ -232,7 +251,8 @@ class DocumentsFilter:
                             break
                     if not matched_keyword: continue
 
-                if has_one_of_keywords_with_german_translation and d.keywords:
+                if has_one_of_keywords_with_german_translation:
+                    if not d.keywords: continue
                     keywords_de = [x.german_translation for x in d.keywords]
                     matched_keyword = False
                     for k in has_one_of_keywords_with_german_translation:
@@ -240,10 +260,6 @@ class DocumentsFilter:
                             matched_keyword = True
                             break
                     if not matched_keyword: continue
-
-                if is_one_of_parties and d.party and d.party not in is_one_of_parties: continue
-
-                if ratings_in_range and d.rating and d.rating not in ratings_in_range: continue
 
                 filtered.append(d)
             except:
