@@ -10,7 +10,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import numpy as np
 import logging
 
-from utils import Document, ConfigLoader, DataHandler, Keyword, KeywordTranslator, KeyWordList, KeywordType
+from utils import Document, ConfigLoader, DataHandler, Keyword, KeywordTranslator, KeyWordList, KeywordType, DocumentsFilter
 
 
 class KeyPhraseExtractor:
@@ -121,9 +121,18 @@ def main():
     # corpus = DataHandler.load_corpus(config["corpora"]["abstract_corpus"])
     # corpus = DataHandler.load_corpus(config["corpora"]["bundestag_corpus"])
     corpus = DataHandler.load_corpus(config["corpora"]["sustainability_corpus"])
+
+    print(len(corpus))
+    test = DocumentsFilter.filter(corpus, has_tags=['test'])
+    print(set([x.tags for x in test]))
+    print(len(test))
+
+    exit(0)
+
     corpus = corpus[:100]
     # build yearwise pseudo documents
     # corpus = corpus[:100]
+
     pseudo_docs = Document.year_wise_pseudo_documents(corpus)
 
     # extract keywords
@@ -138,6 +147,9 @@ def main():
     # print(KeyPhraseExtractor.get_top_k_keywords(key_words_pre_group, 10))
     # format: {year->list fo keywords}
 
+
+
+
     kwt = KeywordTranslator(cache_file=config["translator"]["cache_file"])
 
     counter = 0
@@ -150,7 +162,7 @@ def main():
             counter +=1
         break
 
-    exit(0)
+
 
     print('extracting keywords with rake ...')
     rake_keywords = KeyPhraseExtractor.rake(document=corpus[0])
