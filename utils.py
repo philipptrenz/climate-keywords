@@ -15,15 +15,17 @@ import spacy
 
 class ConfigLoader:
     @staticmethod
-    def get_config():
-        if os.path.exists("config.json"):
+    def get_config(relative_path=""):
+        path = os.path.join(relative_path, "config.json")
+        if os.path.exists(path):
             logging.info('importing config from config.json ...')
-            with open("config.json") as json_file:
+            with open(path) as json_file:
                 return json.load(json_file)
 
-        elif os.path.exists("default.config.json"):
+        elif os.path.exists(os.path.join(relative_path, "default.config.json")):
+            path = os.path.join(relative_path, "default.config.json")
             logging.info('importing config from default.config.json ...')
-            with open("default.config.json") as json_file:
+            with open(path) as json_file:
                 return json.load(json_file)
         else:
             raise Exception("config file missing!")
@@ -211,17 +213,17 @@ class DocumentsFilter:
                             break
                     if not does_contain: continue
 
-                if date_in_range and d.date not in date_in_range: continue
+                if date_in_range and d.date and d.date not in date_in_range: continue
 
-                if is_one_of_languages and d.language not in is_one_of_languages: continue
+                if is_one_of_languages and d.language is not None and d.language not in is_one_of_languages: continue
 
-                if is_one_of_doc_ids and d.doc_id not in is_one_of_doc_ids: continue
+                if is_one_of_doc_ids and d.doc_id and d.doc_id not in is_one_of_doc_ids: continue
 
-                if has_authors and d.author not in has_authors: continue
+                if has_authors and d.author and d.author not in has_authors: continue
 
                 if has_tags and d.tags and not set(d.tags).issubset(set(has_tags)): continue
 
-                if has_one_of_keywords_with_english_translation:
+                if has_one_of_keywords_with_english_translation and d.keywords:
                     keywords_en = [x.english_translation for x in d.keywords]
                     matched_keyword = False
                     for k in has_one_of_keywords_with_english_translation:
@@ -230,7 +232,7 @@ class DocumentsFilter:
                             break
                     if not matched_keyword: continue
 
-                if has_one_of_keywords_with_german_translation:
+                if has_one_of_keywords_with_german_translation and d.keywords:
                     keywords_de = [x.german_translation for x in d.keywords]
                     matched_keyword = False
                     for k in has_one_of_keywords_with_german_translation:
@@ -239,9 +241,9 @@ class DocumentsFilter:
                             break
                     if not matched_keyword: continue
 
-                if is_one_of_parties and d.party not in is_one_of_parties: continue
+                if is_one_of_parties and d.party and d.party not in is_one_of_parties: continue
 
-                if ratings_in_range and d.rating not in ratings_in_range: continue
+                if ratings_in_range and d.rating and d.rating not in ratings_in_range: continue
 
                 filtered.append(d)
             except:
@@ -588,6 +590,8 @@ if __name__ == '__main__':
         print('before: {}\t| {}\t | {}'.format(keyword.english_translation, keyword.german_translation, keyword.source_language))
         kwt.translate(keyword)
         print('after:  {}\t| {}\t | {}\n'.format(keyword.english_translation, keyword.german_translation, keyword.source_language))
+
+    print('translated')
 
     translate(Keyword(english_translation="axis of evil"))
 
