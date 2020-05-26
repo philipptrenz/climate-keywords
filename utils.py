@@ -1,6 +1,6 @@
 from enum import Enum
 from collections import defaultdict, Counter
-from typing import List, Set, Dict, NamedTuple, Tuple
+from typing import List, Set, Dict, NamedTuple, Tuple, Union
 import pandas as pd
 from tqdm import tqdm
 import os
@@ -126,7 +126,7 @@ class Document:
         self.keywords = keywords
 
     @staticmethod
-    def assign_keywords(documents: List["Document"], keywords: Dict[int, List[str]] = None,
+    def assign_keywords(documents: List["Document"], keywords: Dict[Union[int, str], List[str]] = None,
                         keyword_type: KeywordType = KeywordType.UNKNOWN,
                         translated_keywords: Dict[int, List[Keyword]] = None):
 
@@ -508,14 +508,22 @@ class DataHandler:
         with open(path, encoding="utf-8") as f:
             data = f.read()
 
-        records = data.split("ER ")
-        print(len(records))
+        data_replaced = re.sub(r"\nER\n?\n(FN|VR|PT|AU|AF|BA|BF|CA|GP|BE|TI|SO|SE|BS|LA|DT|CT|CY|CL|SP|HO|DE|ID|AB|C1|RP|EM|RI"
+                               r"|OI|FU|FX|CR|NR|TC|Z9|U1|U2|PU|PI|PA|SN|EI|BN|J9|JI|PD|PY|VL|IS|SI|PN|SU|MA|BP|EP|AR"
+                               r"|DI|D2|EA|EY|PG|P2|WC|SC|GA|PM|UT|OA|HP|HC|DA|ER|EF)", r"###!!!#?#!!!###\g<1>", data)
+        records = data_replaced.split("###!!!#?#!!!###")
+
+
         abstracts = []
         wos_categories = re.compile(
-            '(FN|VR|PT|AU|AF|BA|BF|CA|GP|BE|TI|SO|SE|BS|LA|DT|CT|CY|CL|SP|HO|DE|ID|AB|C1|RP|EM|RI'
+            '^(FN|VR|PT|AU|AF|BA|BF|CA|GP|BE|TI|SO|SE|BS|LA|DT|CT|CY|CL|SP|HO|DE|ID|AB|C1|RP|EM|RI'
             '|OI|FU|FX|CR|NR|TC|Z9|U1|U2|PU|PI|PA|SN|EI|BN|J9|JI|PD|PY|VL|IS|SI|PN|SU|MA|BP|EP|AR'
             '|DI|D2|EA|EY|PG|P2|WC|SC|GA|PM|UT|OA|HP|HC|DA|ER|EF)\\s(.*)', re.MULTILINE)
-
+        no_text_counter = 0
+        no_year_counter = 0
+        no_year_and_no_text_counter = 0
+        no_year_but_text_counter = 0
+        no_text_but_year_counter = 0
         for i, record in tqdm(enumerate(records), desc="Load abstracts", total=len(records)):
             attributes = re.findall(wos_categories, record)
 
@@ -523,16 +531,55 @@ class DataHandler:
                                    {attribute[0]: ' '.join(list(attribute[1:])).strip() for attribute in attributes})
             text = wos_dict["AB"]
             year = wos_dict["PY"]
+
+            if year is None:
+                year = wos_dict["EY"]
+
+            if text is None:
+                if wos_dict["TI"]:
+                    text = wos_dict["TI"]
+                    if wos_dict["DE"]:
+                        text += " " + wos_dict["DE"]
+                else:
+                    if wos_dict["DE"]:
+                        text = wos_dict["DE"]
+
+            if text is None and year is None:
+                no_text_but_year_counter += 1
+            if text and year is None:
+                no_year_but_text_counter += 1
+            if text is None and year:
+                no_text_but_year_counter += 1
+            if text is None:
+                no_text_counter += 1
+            if year is None:
+                no_year_counter += 1
+
             if text and year:
                 # print(text)
-                if not wos_dict["PY"].isdecimal():
-                    print(wos_dict["PY"])
-                # print(wos_dict["AU"])
+                if not year.isdecimal():
+                    print(year)
+
+                authors = wos_dict["AF"]
+                if authors is None:
+                    authors = wos_dict["BF"]
+                    if authors is None:
+                        authors = wos_dict["GP"]
+
                 abstracts.append(Document(text=text,
-                                          date=wos_dict["PY"],
+                                          date=year,
                                           language="English",
                                           doc_id=f'sc_{i}',
-                                          author=wos_dict["AU"]))
+                                          tags=wos_dict["DE"],
+                                          author=authors))
+            else:
+                print(record)
+                print("##########################################")
+                print("##########################################")
+                print("##########################################")
+
+        print(no_year_but_text_counter, no_text_but_year_counter, no_year_and_no_text_counter, no_text_counter,
+              no_year_counter, len(abstracts), no_text_counter+no_year_counter+len(abstracts))
 
         return abstracts
 

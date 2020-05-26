@@ -100,11 +100,11 @@ def main():
     config = ConfigLoader.get_config()
 
     # deletes unusable documents and replaces date with year int
-    # cleaning_abstracts(config, overwrite=False)
+    # cleaning_abstracts(config, overwrite=True)
     # cleaning_sustainability(config, overwrite=False)
     # cleaning_bundestag(config, overwrite=False)
 
-    cleaning_authors(config, overwrite=False)
+    cleaning_authors(config, overwrite=True)
 
 
 if __name__ == '__main__':

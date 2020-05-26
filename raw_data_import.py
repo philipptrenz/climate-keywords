@@ -84,5 +84,5 @@ if __name__ == '__main__':
     ]
 
     # read and parse data
-    for i in range(3):
+    for i in range(len(corpus_dests)):
         parse_and_preprocess_src(data_source=file_srcs[i], corpus_destination=corpus_dests[i])
