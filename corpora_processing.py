@@ -433,7 +433,7 @@ def main():
     pseudo_docs = Document.year_wise_pseudo_documents(corpus)
 
     # extract keywords
-    tfidf_keywords = KeyPhraseExtractor.singlerank_pke(documents=pseudo_docs)
+    tfidf_keywords = KeyPhraseExtractor.single_rank_pke(documents=pseudo_docs)
     # tfidf_keywords = KeyPhraseExtractor.tfidf_skl(documents=pseudo_docs)
     print(tfidf_keywords)
     rake_keywords = KeyPhraseExtractor.rake(documents=corpus)
