@@ -6,7 +6,7 @@ from nltk.corpus import stopwords
 from tqdm import tqdm
 import pke
 import string
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 import numpy as np
 import logging
 
@@ -18,20 +18,27 @@ class KeyPhraseExtractor:
     max_ngram = 4
 
     @classmethod
-    def term_frequency(cls, documents: List[Document]) -> Dict[str, List[str]]:
-        pass
+    def tf_skl(cls, documents: List[Document], top_k: int = 10) -> Dict[str, List[str]]:
+        language = documents[0].language.lower()
+        count_vectorizer = CountVectorizer(stop_words=stopwords.words(language),
+                                           ngram_range=(cls.min_nrgam, cls.max_ngram),
+                                           min_df=2)
+        tf_matrix = count_vectorizer.fit_transform([document.text for document in documents])
+        doc_id_lookup = {i: document.doc_id for i, document in enumerate(documents)}
+
+        results = {}
+        features = count_vectorizer.get_feature_names()
+
+        for i, doc in tqdm(enumerate(tf_matrix), desc="Calculating tf", total=tf_matrix.shape[0]):
+            df = pd.DataFrame(doc.T.todense(), index=features,
+                              columns=["tf"])
+            top_key_words = df.sort_values(by=["tf"], ascending=False)[:top_k]
+            results[doc_id_lookup[i]] = list(top_key_words.index)
+
+        return results
 
     @classmethod
-    def tfidf_skl(cls, documents: List[Document]) -> Dict[str, List[str]]:
-        def top_tfidf_feats(row, features, top_n=25):
-            ''' Get top n tfidf values in row and return them with their corresponding feature names.'''
-            topn_ids = np.argsort(row)[::-1][:top_n]
-            top_feats = [(features[i], row[i]) for i in topn_ids]
-            df = pd.DataFrame(top_feats)
-            df.columns = ['feature', 'tfidf']
-            print(df)
-            return df
-
+    def tfidf_skl(cls, documents: List[Document], top_k: int = 10) -> Dict[str, List[str]]:
         language = documents[0].language.lower()
         tfidf_vectorizer = TfidfVectorizer(stop_words=stopwords.words(language),
                                            ngram_range=(cls.min_nrgam, cls.max_ngram),
@@ -39,14 +46,13 @@ class KeyPhraseExtractor:
         tfidf_matrix = tfidf_vectorizer.fit_transform([document.text for document in documents])
         doc_id_lookup = {i: document.doc_id for i, document in enumerate(documents)}
 
-        k = 10
         results = {}
         features = tfidf_vectorizer.get_feature_names()
 
         for i, doc in tqdm(enumerate(tfidf_matrix), desc="Calculating tf-idf", total=tfidf_matrix.shape[0]):
             df = pd.DataFrame(doc.T.todense(), index=features,
                               columns=["tfidf"])
-            top_key_words = df.sort_values(by=["tfidf"], ascending=False)[:k]
+            top_key_words = df.sort_values(by=["tfidf"], ascending=False)[:top_k]
             results[doc_id_lookup[i]] = list(top_key_words.index)
 
         return results
