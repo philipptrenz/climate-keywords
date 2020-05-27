@@ -431,11 +431,6 @@ class KeywordMatcher:
         return reversed_keywords, ger_translations, en_translations
 
     @classmethod
-    def match_keywords(cls):
-        pass
-
-
-    @classmethod
     def match_corpora(cls, keyword_collection_1: Union[Dict[int, List[Keyword]], List[Document]],
                       keyword_collection_2: Union[Dict[int, List[Keyword]], List[Document]],
                       lemmatize: bool = True,
