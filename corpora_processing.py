@@ -89,6 +89,7 @@ class KeyPhraseExtractor:
             key_words_of_documents[document.doc_id] = keyphrases
 
         return key_words_of_documents
+
     @classmethod
     def yake_pke(cls, documents: List[Document]) -> Dict[str, List[str]]:
         key_words_of_documents = {}
@@ -433,7 +434,7 @@ def main():
     pseudo_docs = Document.year_wise_pseudo_documents(corpus)
 
     # extract keywords
-    tfidf_keywords = KeyPhraseExtractor.single_rank_pke(documents=pseudo_docs)
+    tfidf_keywords = KeyPhraseExtractor.tfidf_skl(documents=pseudo_docs)
     # tfidf_keywords = KeyPhraseExtractor.tfidf_skl(documents=pseudo_docs)
     print(tfidf_keywords)
     rake_keywords = KeyPhraseExtractor.rake(documents=corpus)
@@ -445,15 +446,12 @@ def main():
     # print(KeyPhraseExtractor.get_top_k_keywords(key_words_pre_group, 10))
     # format: {year->list fo keywords}
 
-
-
-
     kwt = KeywordTranslator(cache_file=config["translator"]["cache_file"])
 
     counter = 0
     for doc in corpus:
         for keyword in doc.keywords:
-            if counter > 10:
+            if counter > 100:
                 break
             kwt.translate(keyword)
             print(keyword)
