@@ -89,6 +89,7 @@ class KeyPhraseExtractor:
             key_words_of_documents[document.doc_id] = keyphrases
 
         return key_words_of_documents
+
     @classmethod
     def yake_pke(cls, documents: List[Document]) -> Dict[str, List[str]]:
         key_words_of_documents = {}

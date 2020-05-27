@@ -5,7 +5,6 @@ import pandas as pd
 from tqdm import tqdm
 import os
 import re
-import json
 import logging
 import googletrans
 import json
@@ -29,6 +28,7 @@ class ConfigLoader:
                 return json.load(json_file)
         else:
             raise Exception("config file missing!")
+
 
 class KeywordType(str, Enum):
 
@@ -142,7 +142,6 @@ class Document:
 
             if translated_keywords:
                 document.keywords = translated_keywords[document.doc_id]
-
 
     @staticmethod
     def year_wise_pseudo_documents(documents: List["Document"], language="English") -> List["Document"]:
@@ -385,8 +384,6 @@ class KeywordMatcher:
                        type=keyphrase.type,
                        source_language=keyphrase.source_language
                        )
-
-
 
     @staticmethod
     def match_grouped_dicts(keywords_1: Dict[int, List[Keyword]],
