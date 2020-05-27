@@ -362,19 +362,12 @@ class KeywordTranslator:
             json.dump(self.cache, f, ensure_ascii=False, indent=1, default=lambda o: o.__dict__)
 
 
-class KeyWordList():
-    def __init__(self, keywords: NamedTuple, time_spec):
-        pass
-
-
 class KeywordMatcher:
     def __init__(self):
         pass
 
     @classmethod
     def lemmatize(cls, keyword_collection: Union[Dict[int, List[Keyword]], List[Document]], german_model, english_model):
-        # german_model = spacy.load("de_core_news_sm")
-        # english_model = spacy.load("en_core_web_sm")
         for instance in keyword_collection:
             if isinstance(keyword_collection, dict):
                 keywords = keyword_collection[instance]
@@ -385,21 +378,6 @@ class KeywordMatcher:
             for keyword in keywords:
                 keyword.lemmatize(german_model, english_model)
 
-
-    # @staticmethod
-    # def lemmatize_keyword(german_nlp, english_nlp, keyphrase: Keyword):
-    #     german_lemmatized = []
-    #     for token in german_nlp(keyphrase.german_translation):
-    #         german_lemmatized.append(token.lemma_)
-    #     english_lemmatized = []
-    #     for token in english_nlp(keyphrase.english_translation):
-    #         english_lemmatized.append(token.lemma_)
-    #
-    #     return Keyword(german_translation=" ".join(german_lemmatized),
-    #                    english_translation=" ".join(english_lemmatized),
-    #                    type=keyphrase.type,
-    #                    source_language=keyphrase.source_language
-    #                    )
 
     @classmethod
     def group_by_key(cls, keyword_collection: Union[Dict[int, List[Keyword]], List[Document]],

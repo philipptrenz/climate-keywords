@@ -10,7 +10,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import numpy as np
 import logging
 
-from utils import Document, ConfigLoader, DataHandler, Keyword, KeywordTranslator, KeyWordList, KeywordType, DocumentsFilter
+from utils import Document, ConfigLoader, DataHandler, Keyword, KeywordTranslator, KeywordType, DocumentsFilter
 
 
 class KeyPhraseExtractor:
