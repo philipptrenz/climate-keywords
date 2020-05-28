@@ -1,6 +1,6 @@
 import os
 
-from utils import DataHandler, ConfigLoader
+from utils import DataHandler, ConfigLoader, Corpus, Language
 import numpy as np
 
 
@@ -11,45 +11,48 @@ def create_new_filepath_uncleaned(file_path):
 
 
 def cleaning_abstracts(config, overwrite=True):
-    corpus = DataHandler.load_corpus(config["corpora"]["abstract_corpus"])
+    corpus = Corpus(source=config["corpora"]["abstract_corpus"], language=Language.EN)
+    # corpus = DataHandler.load_corpus(config["corpora"]["abstract_corpus"])
     print("1", len(corpus))
-    corpus = [d for d in corpus if d.date and len(str(d.date)) == 4 and d.date.isnumeric()]
-    for d in corpus:
+    corpus = Corpus([d for d in corpus.get_documents() if d.date and len(str(d.date)) == 4 and d.date.isnumeric()])
+    for d in corpus.get_documents():
         d.date = int(d.date)
     print("2", len(corpus))
 
     if not overwrite:
         os.rename(src=config["corpora"]["abstract_corpus"], dst=create_new_filepath_uncleaned(config["corpora"]["abstract_corpus"]))
 
-    DataHandler.save_corpus(corpus, config["corpora"]["abstract_corpus"])
+    corpus.save_corpus(config["corpora"]["abstract_corpus"])
 
 
 def cleaning_sustainability(config, overwrite=True):
-    corpus = DataHandler.load_corpus(config["corpora"]["sustainability_corpus"])
+    corpus = Corpus(source=config["corpora"]["sustainability_corpus"], language=Language.EN)
+    # corpus = DataHandler.load_corpus(config["corpora"]["sustainability_corpus"])
     print("1", len(corpus))
-    corpus = [d for d in corpus if d.date]
-    for d in corpus:
+    corpus = Corpus(source=[d for d in corpus.documents if d.date], language=corpus.language)
+    for d in corpus.get_documents():
         d.date = int(d.date)
     print("2", len(corpus))
 
     if not overwrite:
         os.rename(src=config["corpora"]["sustainability_corpus"], dst=create_new_filepath_uncleaned(config["corpora"]["sustainability_corpus"]))
 
-    DataHandler.save_corpus(corpus, config["corpora"]["sustainability_corpus"])
+    corpus.save_corpus(config["corpora"]["sustainability_corpus"])
 
 
 def cleaning_bundestag(config, overwrite=True):
-    corpus = DataHandler.load_corpus(config["corpora"]["bundestag_corpus"])
-    corpus = [d for d in corpus if d.date]
+    corpus = Corpus(source=config["corpora"]["bundestag_corpus"], language=Language.DE)
+    # corpus = DataHandler.load_corpus(config["corpora"]["bundestag_corpus"])
+    corpus = Corpus(source=[d for d in corpus.get_documents() if d.date], language=corpus.language)
     print("1", len(corpus))
-    for d in corpus:
+    for d in corpus.get_documents():
         d.date = int(d.date)
     print("2", len(corpus))
 
     if not overwrite:
         os.rename(src=config["corpora"]["bundestag_corpus"], dst=create_new_filepath_uncleaned(config["corpora"]["bundestag_corpus"]))
 
-    DataHandler.save_corpus(corpus, config["corpora"]["bundestag_corpus"])
+    corpus.save_corpus(config["corpora"]["bundestag_corpus"])
 
 
 def cleaning_authors(config, overwrite=False):
@@ -58,12 +61,17 @@ def cleaning_authors(config, overwrite=False):
         # "sustainability_corpus",
         "abstract_corpus"
     ]
+    languages = [
+        # Language.DE,
+        # Language.EN,
+        Language.EN]
     wlc = 0
     m_a = 0
     s_a = 0
-    for corpus_name in corpus_names:
-        corpus = DataHandler.load_corpus(config["corpora"][corpus_name])
-        for d in corpus:
+    for i, corpus_name in enumerate(corpus_names):
+        corpus = Corpus(source=config["corpora"][corpus_name], language=languages[i])
+        # corpus = DataHandler.load_corpus(config["corpora"][corpus_name])
+        for d in corpus.get_documents():
             if d.author:
                 if isinstance(d.author, float) and np.isnan(d.author):
                     d.author = None
@@ -89,7 +97,7 @@ def cleaning_authors(config, overwrite=False):
         if not overwrite:
             os.rename(src=config["corpora"][corpus_name], dst=create_new_filepath_uncleaned(config["corpora"][corpus_name]))
 
-        DataHandler.save_corpus(corpus, config["corpora"][corpus_name])
+        corpus.save_corpus(config["corpora"][corpus_name])
     print(wlc, m_a, s_a)
 
 

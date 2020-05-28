@@ -1,30 +1,30 @@
 from collections import defaultdict, OrderedDict
-from typing import Callable, List
+from typing import Callable
 
-from utils import ConfigLoader, Document, DataHandler
+from utils import ConfigLoader, Language, Corpus
 
 
-def count_non_years(documents: List[Document]):
-    without_year = [d for d in documents if d.date is None]
-    print(len([d.date for d in documents if d.date and len(str(d.date)) != 4]))
-    with_year = [d for d in documents if d.date]
+def count_non_years(corpus: Corpus):
+    without_year = [d for d in corpus.get_documents() if d.date is None]
+    print(len([d.date for d in corpus.get_documents() if d.date and len(str(d.date)) != 4]))
+    with_year = [d for d in corpus.get_documents() if d.date]
     print(f'{len(without_year)} / {len(with_year)}')
 
 
-def token_number(documents: List[Document]):
+def token_number(corpus: Corpus):
     c = 0
-    for d in documents:
+    for d in corpus.get_documents():
         c += len(d.text.split())
     return c
 
 
-def yearwise_documents(documents: List[Document], aggregation_func: Callable = len, printing: bool = False):
+def yearwise_documents(corpus: Corpus, aggregation_func: Callable = len, printing: bool = False):
     year_bins = defaultdict(list)
 
-    for doc in documents:
+    for doc in corpus.get_documents():
         year_bins[doc.date].append(doc)
 
-    result = {year: aggregation_func(docs) for year, docs in year_bins.items()}
+    result = {year: aggregation_func(Corpus(source=docs, language=corpus.language)) for year, docs in year_bins.items()}
     result = OrderedDict(sorted(result.items()))
 
     years = []
@@ -43,22 +43,22 @@ def yearwise_documents(documents: List[Document], aggregation_func: Callable = l
 def main():
     config = ConfigLoader.get_config()
 
-    corpora = [DataHandler.load_corpus(config["corpora"]["abstract_corpus"]),
-               DataHandler.load_corpus(config["corpora"]["bundestag_corpus"]),
-               DataHandler.load_corpus(config["corpora"]["sustainability_corpus"])]
+    corpora = [Corpus(source=config["corpora"]["abstract_corpus"], language=Language.EN),
+               Corpus(source=config["corpora"]["bundestag_corpus"], language=Language.DE),
+               Corpus(source=config["corpora"]["sustainability_corpus"], language=Language.EN)]
 
-    count_non_years(corpora[0])
-    count_non_years(corpora[1])
-    count_non_years(corpora[2])
+    # count_non_years(corpora[0])
+    # count_non_years(corpora[1])
+    # count_non_years(corpora[2])
 
     # Results: non date vs useable date
     # abstract: 54135 / 261215, 1387 don't have a year as date but a string
     # bundestag: 0 / 877973
     # sustainability 3 / 221034
 
-    print(token_number(corpora[0]))
-    print(token_number(corpora[1]))
-    print(token_number(corpora[2]))
+    # print(token_number(corpora[0]))
+    # print(token_number(corpora[1]))
+    # print(token_number(corpora[2]))
 
     # Results: token number
     # abstract: 59314582
@@ -114,6 +114,7 @@ def main():
     # [96, 217, 8748, 59556, 98237, 119917, 153011, 212506, 237082, 291767, 329358, 375165, 444080, 476757, 529224,
     #  657520, 693466, 847938, 985064, 1255443, 1473326, 1856967, 2120475, 2548691, 2924106, 3559252, 4097080, 4829304,
     #  5716151, 7148684, 8828958]
+
 
 if __name__ == '__main__':
     main()

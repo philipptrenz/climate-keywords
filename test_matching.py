@@ -1,6 +1,6 @@
 from typing import Dict, Tuple, List, Union
 
-from utils import Keyword, KeywordMatcher, Document
+from utils import Keyword, KeywordMatcher, Document, Language
 
 
 def get_ngrams_of_matched(matched_corpus_ids, keyword_collection: Union[Dict[int, List[Keyword]], List[Document]]):
@@ -73,21 +73,21 @@ def main():
     documents1 = [Document(doc_id="B", keywords=[Keyword(german_translation="klimawandel", english_translation="climate change"),
                                                    Keyword(german_translation="nachhaltigkeit", english_translation="sustainability"),
                                                    Keyword(german_translation="Wasser", english_translation="water")],
-                           date=2020, language="English", text="climate change pollution clean energy sustainability water")]
+                           date=2020, language=Language.DE, text="climate change pollution clean energy sustainability water")]
 
     documents2 = [Document(doc_id="A", keywords=[Keyword(german_translation="nachhaltigkeit", english_translation="sustainability"),
                                                     Keyword(german_translation="klimawandel", english_translation="climate change"),
                                                     Keyword(german_translation="Erde", english_translation="Earth")],
-                           date=2011, language="English", text="Tiere zuhause Erde"),
+                           date=2011, language=Language.EN, text="Tiere zuhause Erde"),
 
                   Document(doc_id="C", keywords=[Keyword(german_translation="Verkehr", english_translation="traffic"),
                                                     Keyword(german_translation="Geld", english_translation="money"),
                                                     Keyword(german_translation="Auto", english_translation="car")],
-                           date=2018, language="English", text="Verkehr ist wichtig besonders das Auto"),
+                           date=2018, language=Language.EN, text="Verkehr ist wichtig besonders das Auto"),
                   Document(doc_id="D", keywords=[Keyword(german_translation="Geld", english_translation="money"),
                                                  Keyword(german_translation="Wasser", english_translation="sea"),
                                                  Keyword(german_translation="kernfusion", english_translation="fusion")],
-                           date=2017, language="English", text="Wasser kühlt Kernfusion aber kostet Geld")
+                           date=2017, language=Language.EN, text="Wasser kühlt Kernfusion aber kostet Geld")
                   ]
 
     km = KeywordMatcher()
