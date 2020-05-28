@@ -45,6 +45,14 @@ class KeywordSourceLanguage(str, Enum):
     DE = "de"
     EN = "en"
 
+    @staticmethod
+    def get_from_str(language: str) -> "KeywordSourceLanguage":
+        if language.lower() == "en" or language.lower()== "english" or language.lower()== "englisch":
+            return KeywordSourceLanguage.EN
+        if language.lower() == "de" or language.lower()== "deutsch" or language.lower() == "ger" or language.lower()== "german":
+            return KeywordSourceLanguage.DE
+        return KeywordSourceLanguage.UNKNOWN
+
 
 class Keyword:
     def __init__(self, english_translation: str = None, german_translation: str = None, type: KeywordType = KeywordType.UNKNOWN, source_language=KeywordSourceLanguage.UNKNOWN):
@@ -125,12 +133,34 @@ class Document:
         self.rating = rating
         self.keywords = keywords
 
-    @staticmethod
-    def assign_keywords(documents: List["Document"], keywords: Dict[Union[int, str], List[str]] = None,
+    def __str__(self):
+        return f'{self.date}: {self.text[:30]}'
+
+    __repr__ = __str__
+
+
+class Corpus:
+    def __init__(self, language: KeywordSourceLanguage, documents: Union[Dict[Union[str, int], Document], List[Document]]):
+        self.language = language
+
+        if isinstance(documents, dict):
+            self.documents = documents
+        elif isinstance(documents, list):
+            self.documents = {document.doc_id: document for document in documents}
+        else:
+            raise NotImplementedError("Not supported Document collection!")
+
+    def get_documents(self, as_list=True):
+        if as_list:
+            return self.documents.values()
+        else:
+            return self.documents
+
+    def assign_keywords(self, keywords: Dict[Union[int, str], List[str]] = None,
                         keyword_type: KeywordType = KeywordType.UNKNOWN,
                         translated_keywords: Dict[int, List[Keyword]] = None):
 
-        for document in tqdm(documents, desc="Assign keywords to documents"):
+        for document in tqdm(self.documents, desc="Assign keywords to documents"):
             if keywords:
                 if document.language == "German":
                     parsed_keywords = [Keyword(german_translation=keyword, type=keyword_type)
@@ -143,11 +173,10 @@ class Document:
             if translated_keywords:
                 document.keywords = translated_keywords[document.doc_id]
 
-    @staticmethod
-    def year_wise_pseudo_documents(documents: List["Document"], language="English") -> List["Document"]:
+    def year_wise_pseudo_documents(self, language="English") -> List[Document]:
         year_bins = defaultdict(list)
 
-        for doc in documents:
+        for doc in self.documents:
             year_bins[doc.date].append(doc)
 
         pseudo_docs = [Document(doc_id=f'pseudo_{year}',
@@ -159,7 +188,7 @@ class Document:
 
         return pseudo_docs
 
-    @classmethod
+
     def group_keywords_year_wise(cls, documents_with_keywords: List["Document"], top_k_per_year=None) \
             -> Dict[int, List[str]]:
 
@@ -179,10 +208,6 @@ class Document:
     def transform_pseudo_docs_keywords_to_dict(keywords: Dict[str, List[str]]) -> Dict[int, List[str]]:
         return {int(id.replace("pseudo_", "")): keyword_list for id, keyword_list in keywords.items()}
 
-    def __str__(self):
-        return f'{self.date}: {self.text[:30]}'
-
-    __repr__ = __str__
 
 
 class DocumentsFilter:
