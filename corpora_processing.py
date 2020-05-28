@@ -148,7 +148,7 @@ class KeyPhraseExtractor:
             corpus.assign_keywords(keywords={document.doc_id: keyphrases}, keyword_type=KeywordType.YAKE_PKE)
 
     @classmethod
-    def text_rank_pke(cls, corpus: Corpus) -> Dict[str, List[str]]:
+    def text_rank_pke(cls, corpus: Corpus):
         # define the set of valid Part-of-Speeches
         pos = {'NOUN', 'PROPN', 'ADJ'}
         number_keywords = 10
