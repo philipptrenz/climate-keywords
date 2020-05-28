@@ -264,6 +264,7 @@ class Corpus:
 
     __repr__ = __str__
 
+
 class CorpusFilter:
 
     @staticmethod
@@ -277,7 +278,7 @@ class CorpusFilter:
                    is_one_of_parties: [str] = None,
                    ratings_in_range: range = None,
                    has_one_of_keywords_with_english_translation: [str] = None,
-                   has_one_of_keywords_with_german_translation: [str] = None) -> [Document]:
+                   has_one_of_keywords_with_german_translation: [str] = None) -> Corpus:
 
         filtered: [Document] = []
 
@@ -345,7 +346,7 @@ class CorpusFilter:
                 logging.exception("An exception occured while applying filters, skipping document")
                 continue
 
-        return filtered
+        return Corpus(source=filtered, language=corpus.language, has_assigned_keywords=corpus.has_assigned_keywords)
 
 
 class KeywordTranslator:
