@@ -2,7 +2,7 @@ from typing import List
 from tqdm import tqdm
 import spacy
 
-from utils import Document, ConfigLoader, DataHandler
+from utils import Document, ConfigLoader, DataHandler, Corpus, Language
 
 
 class Preprocessor:
@@ -50,19 +50,23 @@ class Preprocessor:
                      and token.pos_ in pos_filter]
                 )
 
-        for i, document in tqdm(enumerate(documents)):
-            document.text = ' '.join(tokenized[i])
+        for j, document in tqdm(enumerate(documents)):
+            document.text = ' '.join(tokenized[j])
 
 
 def parse_and_preprocess_src(data_source, corpus_destination):
     if "bundestag" in data_source.lower():
         raw_corpus = DataHandler.get_bundestag_speeches(dir=data_source)
+        language = Language.DE
     elif "sustainability" in data_source.lower():
         raw_corpus = DataHandler.get_sustainability_data(path=data_source)
+        language = Language.EN
     else:
         raw_corpus = DataHandler.get_abstracts(path=data_source)
+        language = Language.EN
     Preprocessor.preprocess(raw_corpus)
-    DataHandler.save_corpus(raw_corpus, corpus_destination)
+    corpus = Corpus(source=raw_corpus, language=language)
+    corpus.save_corpus(corpus_destination)
 
 
 if __name__ == '__main__':

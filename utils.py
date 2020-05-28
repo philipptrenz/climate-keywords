@@ -46,23 +46,23 @@ class KeywordType(str, Enum):
     MULTIPARTITE_RANK_PKE = "multipartite_rank_pke"
 
 
-class KeywordSourceLanguage(str, Enum):
+class Language(str, Enum):
 
     UNKNOWN = "unknown"
     DE = "de"
     EN = "en"
 
     @staticmethod
-    def get_from_str(language: str) -> "KeywordSourceLanguage":
-        if language.lower() == "en" or language.lower()== "english" or language.lower()== "englisch":
-            return KeywordSourceLanguage.EN
-        if language.lower() == "de" or language.lower()== "deutsch" or language.lower() == "ger" or language.lower()== "german":
-            return KeywordSourceLanguage.DE
-        return KeywordSourceLanguage.UNKNOWN
+    def get_from_str(language: str) -> "Language":
+        if language.lower() == "en" or language.lower() == "english" or language.lower() == "englisch":
+            return Language.EN
+        if language.lower() == "de" or language.lower() == "deutsch" or language.lower() == "ger" or language.lower() == "german":
+            return Language.DE
+        return Language.UNKNOWN
 
 
 class Keyword:
-    def __init__(self, english_translation: str = None, german_translation: str = None, type: KeywordType = KeywordType.UNKNOWN, source_language=KeywordSourceLanguage.UNKNOWN):
+    def __init__(self, english_translation: str = None, german_translation: str = None, type: KeywordType = KeywordType.UNKNOWN, source_language=Language.UNKNOWN):
 
         if not english_translation and not german_translation:
             raise Exception("Keyword cannot be intialized without any translation")
@@ -73,14 +73,14 @@ class Keyword:
 
         if english_translation:
             self.english_translation = english_translation
-            self.source_language = KeywordSourceLanguage.EN
+            self.source_language = Language.EN
 
         if german_translation:
             self.german_translation = german_translation
-            self.source_language = KeywordSourceLanguage.DE
+            self.source_language = Language.DE
 
         if english_translation and german_translation:
-            self.source_language = KeywordSourceLanguage.UNKNOWN
+            self.source_language = Language.UNKNOWN
 
         self.type = type
 
@@ -124,11 +124,11 @@ class Keyword:
             english_translation=data["english_translation"],
             german_translation=data["german_translation"],
             type=KeywordType(data["type"]),
-            source_language=KeywordSourceLanguage(data["source_language"]))
+            source_language=Language(data["source_language"]))
 
 
 class Document:
-    def __init__(self, text: str, date, language: str, doc_id: str, tags=None, author=None, party=None, rating=None,
+    def __init__(self, text: str, date, language: Language, doc_id: str, tags=None, author=None, party=None, rating=None,
                  keywords=None):
         self.text = text
         self.date = date
@@ -147,9 +147,14 @@ class Document:
 
 
 class Corpus:
-    def __init__(self, language: KeywordSourceLanguage, documents: Union[Dict[Union[str, int], Document], List[Document]]):
+    def __init__(self, language: Language, source: Union[Dict[Union[str, int], Document], List[Document], str]):
         self.language = language
+        self.has_assigned_keywords = False
 
+        if isinstance(source, str):
+            documents = self.load_corpus(path=source)
+        else:
+            documents = source
         if isinstance(documents, dict):
             self.documents = documents
         elif isinstance(documents, list):
@@ -180,7 +185,9 @@ class Corpus:
             if translated_keywords:
                 document.keywords = translated_keywords[document.doc_id]
 
-    def year_wise_pseudo_documents(self, language="English") -> List[Document]:
+        self.has_assigned_keywords = True
+
+    def year_wise_pseudo_documents(self, language: Language = Language.EN) -> List[Document]:
         year_bins = defaultdict(list)
 
         for doc in self.documents:
@@ -195,25 +202,53 @@ class Corpus:
 
         return pseudo_docs
 
+    def group_keywords_year_wise(self, top_k_per_year=None) -> Dict[int, List[str]]:
+        if self.has_assigned_keywords:
+            year_bins = defaultdict(list)
+            for doc in self.documents:
+                year_bins[doc.date].extend(doc.keywords)
 
-    def group_keywords_year_wise(cls, documents_with_keywords: List["Document"], top_k_per_year=None) \
-            -> Dict[int, List[str]]:
+            grouped_keywords = defaultdict(list)
+            for year, keyword_list in year_bins.items():
+                keyword_counter = Counter(keyword_list)
+                most_common_keywords = [keyword for keyword, freq in keyword_counter.most_common(top_k_per_year)]
+                grouped_keywords[year] = most_common_keywords
 
-        year_bins = defaultdict(list)
-        for doc in documents_with_keywords:
-            year_bins[doc.date].extend(doc.keywords)
+            return grouped_keywords
+        else:
+            raise UserWarning("No keywords assigned for grouping!")
 
-        grouped_keywords = defaultdict(list)
-        for year, keyword_list in year_bins.items():
-            keyword_counter = Counter(keyword_list)
-            most_common_keywords = [keyword for keyword, freq in keyword_counter.most_common(top_k_per_year)]
-            grouped_keywords[year] = most_common_keywords
+    def save_corpus(self, path: str):
+        data = [doc.__dict__ for doc in self.get_documents()]
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=1,  default=lambda o: o.__dict__)
+        logging.info(f'saved {path}')
 
-        return grouped_keywords
+    @staticmethod
+    def load_corpus(path: str) -> List[Document]:
+        logging.info(f"load {path}")
+        with open(path, 'r', encoding='utf-8') as file:
+            data = json.loads(file.read())
+
+        corpus = [Document(text=doc["text"],
+                           date=doc["date"],
+                           language=doc["language"],
+                           doc_id=doc["doc_id"],
+                           author=doc["author"],
+                           tags=doc["tags"],
+                           keywords=doc["keywords"],
+                           party=doc["party"],
+                           rating=doc["rating"]) for doc in data]
+        logging.info(f"{path} loaded")
+
+        return corpus
 
     @staticmethod
     def transform_pseudo_docs_keywords_to_dict(keywords: Dict[str, List[str]]) -> Dict[int, List[str]]:
-        return {int(id.replace("pseudo_", "")): keyword_list for id, keyword_list in keywords.items()}
+        return {int(i.replace("pseudo_", "")): keyword_list for i, keyword_list in keywords.items()}
+
+    def __len__(self):
+        return len(self.documents)
 
 
 
@@ -318,13 +353,13 @@ class KeywordTranslator:
 
     def translate(self, keyword: Keyword):
 
-        if keyword.source_language is KeywordSourceLanguage.UNKNOWN:
+        if keyword.source_language is Language.UNKNOWN:
             logging.debug("KeywordTranslator: source is unknown, skipping")
 
-        elif keyword.source_language is KeywordSourceLanguage.DE:
+        elif keyword.source_language is Language.DE:
             self.translate_german2english(keyword)
 
-        elif keyword.source_language is KeywordSourceLanguage.EN:
+        elif keyword.source_language is Language.EN:
             self.translate_english2german(keyword)
 
     def translate_german2english(self, keyword):
@@ -338,7 +373,7 @@ class KeywordTranslator:
 
                 try:
                     time.sleep(self.timeout)
-                    translated = self.translator.translate(text=keyword.german_translation, src=str(KeywordSourceLanguage.DE.value), dest=str(KeywordSourceLanguage.EN.value))
+                    translated = self.translator.translate(text=keyword.german_translation, src=str(Language.DE.value), dest=str(Language.EN.value))
                     keyword.english_translation = translated.text
                     self.add_to_cache(keyword)
                     return keyword
@@ -362,7 +397,7 @@ class KeywordTranslator:
                 logging.debug("KeywordTranslator: {} | source is EN, DE not set, translating ...".format(keyword.english_translation))
                 try:
                     time.sleep(self.timeout)
-                    translated = self.translator.translate(text=keyword.english_translation, src=str(KeywordSourceLanguage.EN.value), dest=str(KeywordSourceLanguage.DE.value))
+                    translated = self.translator.translate(text=keyword.english_translation, src=str(Language.EN.value), dest=str(Language.DE.value))
                     keyword.german_translation = translated.text
                     self.add_to_cache(keyword)
 
@@ -497,7 +532,7 @@ class DataHandler:
         print(df.columns)
         return [Document(text=row["content"],
                          date=nan_resolver(row["PY"]),
-                         language="English",
+                         language=Language.EN,
                          doc_id=f'su_{i}',
                          author=row["authors"],
                          tags=nan_resolver(row["tags"])) for i, row in
@@ -581,7 +616,7 @@ class DataHandler:
 
                 abstracts.append(Document(text=text,
                                           date=year,
-                                          language="English",
+                                          language=Language.EN,
                                           doc_id=f'sc_{i}',
                                           tags=wos_dict["DE"],
                                           author=authors))
@@ -612,7 +647,7 @@ class DataHandler:
             df = pd.read_csv(os.path.join(dir, file))
             speeches.extend([Document(text=row["Speech text"],
                                       date=row["Date"][:4],
-                                      language="German",
+                                      language=Language.DE,
                                       doc_id=f'po_{i}',
                                       author=row["Speaker"],
                                       party=row["Speaker party"],
@@ -620,32 +655,6 @@ class DataHandler:
                              for i, row in df.iterrows() if not pd.isna(row["Speech text"])])
 
         return speeches
-
-    @staticmethod
-    def save_corpus(corpus: List[Document], path: str):
-        data = [doc.__dict__ for doc in corpus]
-        with open(path, 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=1)
-        logging.info(f'saved {path}')
-
-    @staticmethod
-    def load_corpus(path: str) -> List["Document"]:
-        logging.info(f"load {path}")
-        with open(path, 'r', encoding='utf-8') as file:
-            data = json.loads(file.read())
-
-        corpus = [Document(text=doc["text"],
-                           date=doc["date"],
-                           language=doc["language"],
-                           doc_id=doc["doc_id"],
-                           author=doc["author"],
-                           tags=doc["tags"],
-                           keywords=doc["keywords"],
-                           party=doc["party"],
-                           rating=doc["rating"]) for doc in data]
-        logging.info(f"{path} loaded")
-
-        return corpus
 
 
 if __name__ == '__main__':
