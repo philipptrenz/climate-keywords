@@ -361,65 +361,68 @@ class KeywordTranslator:
             json.dump(self.cache, f, ensure_ascii=False, indent=1, default=lambda o: o.__dict__)
 
 
-class KeyWordList():
-    def __init__(self, keywords: NamedTuple, time_spec):
-        pass
-
-
 class KeywordMatcher:
     def __init__(self):
         pass
 
-    @staticmethod
-    def lemmatize_keyword(german_nlp, english_nlp, keyphrase: Keyword):
-        german_lemmatized = []
-        for token in german_nlp(keyphrase.german_translation):
-            german_lemmatized.append(token.lemma_)
-        english_lemmatized = []
-        for token in english_nlp(keyphrase.english_translation):
-            english_lemmatized.append(token.lemma_)
+    @classmethod
+    def lemmatize(cls, keyword_collection: Union[Dict[int, List[Keyword]], List[Document]], german_model, english_model):
+        for instance in keyword_collection:
+            if isinstance(keyword_collection, dict):
+                keywords = keyword_collection[instance]
+            elif isinstance(keyword_collection, list):
+                keywords = instance.keywords
+            else:
+                raise NotImplementedError("Not supported type!")
+            for keyword in keywords:
+                keyword.lemmatize(german_model, english_model)
 
-        return Keyword(german_translation=" ".join(german_lemmatized),
-                       english_translation=" ".join(english_lemmatized),
-                       type=keyphrase.type,
-                       source_language=keyphrase.source_language
-                       )
+    @classmethod
+    def group_by_key(cls, keyword_collection: Union[Dict[int, List[Keyword]], List[Document]],
+                     ger_translations: Dict[str, Set[str]] = None,
+                     en_translations: Dict[str, Set[str]] = None):
+        reversed_keywords = defaultdict(set)
+        if ger_translations is None:
+            ger_translations = defaultdict(set)
+        if en_translations is None:
+            en_translations = defaultdict(set)
 
-    @staticmethod
-    def match_grouped_dicts(keywords_1: Dict[int, List[Keyword]],
-                            keywords_2: Dict[int, List[Keyword]],
-                            lemmatize: bool = True,
-                            simplify_result: bool = True) -> Tuple[Dict[Keyword, Tuple[List[int], List[int]]],
-                                                                   Dict[str, str]]:
+        for instance in keyword_collection:
+
+            if isinstance(keyword_collection, dict):
+                keywords = keyword_collection[instance]
+                identifier = instance
+            elif isinstance(keyword_collection, list):
+                keywords = instance.keywords
+                identifier = instance.doc_id
+            else:
+                raise NotImplementedError("Not suppported type!")
+
+            for keyword in keywords:
+                reversed_keywords[keyword.german_translation].add(identifier)
+                reversed_keywords[keyword.english_translation].add(identifier)
+                ger_translations[keyword.german_translation].add(keyword.english_translation)
+                en_translations[keyword.english_translation].add(keyword.german_translation)
+
+        return reversed_keywords, ger_translations, en_translations
+
+    @classmethod
+    def match_corpora(cls, keyword_collection_1: Union[Dict[int, List[Keyword]], List[Document]],
+                      keyword_collection_2: Union[Dict[int, List[Keyword]], List[Document]],
+                      lemmatize: bool = True,
+                      simplify_result: bool = True) -> Tuple[Dict[Keyword, Tuple[List[int], List[int]]], Dict[str, str]]:
 
         if lemmatize:
             german_model = spacy.load("de_core_news_sm")
             english_model = spacy.load("en_core_web_sm")
-            for year, keywords in keywords_1.items():
-                for keyword in keywords:
-                    keyword.lemmatize(german_model, english_model)
-            for year, keywords in keywords_2.items():
-                for keyword in keywords:
-                    keyword.lemmatize(german_model, english_model)
+            cls.lemmatize(keyword_collection_1, german_model, english_model)
+            cls.lemmatize(keyword_collection_2, german_model, english_model)
 
-        reversed_keywords_1 = defaultdict(set)
-        ger_translations = defaultdict(set)
-        en_translations = defaultdict(set)
-        for year, keywords in keywords_1.items():
-            for keyword in keywords:
-                reversed_keywords_1[keyword.german_translation].add(year)
-                reversed_keywords_1[keyword.english_translation].add(year)
-                ger_translations[keyword.german_translation].add(keyword.english_translation)
-                en_translations[keyword.english_translation].add(keyword.german_translation)
+        # groups ids or years by keywords
+        reversed_keywords_1, ger_translations, en_translations = cls.group_by_key(keyword_collection_1)
+        reversed_keywords_2, ger_translations, en_translations = cls.group_by_key(keyword_collection_2, ger_translations, en_translations)
 
-        reversed_keywords_2 = defaultdict(set)
-        for year, keywords in keywords_2.items():
-            for keyword in keywords:
-                reversed_keywords_2[keyword.german_translation].add(year)
-                reversed_keywords_2[keyword.english_translation].add(year)
-                ger_translations[keyword.german_translation].add(keyword.english_translation)
-                en_translations[keyword.english_translation].add(keyword.german_translation)
-
+        # matches years or ids by iterating through keywords in common
         matched_keywords = set()
         for keyword in reversed_keywords_1:
             if keyword in reversed_keywords_2:
@@ -431,6 +434,7 @@ class KeywordMatcher:
 
         result_dict = {keyword: (reversed_keywords_1[keyword], reversed_keywords_2[keyword]) for keyword in matched_keywords}
 
+        # uses only english keyword versions
         if simplify_result:
             filtered_result = {}
             for keyword, result in result_dict.items():
@@ -443,32 +447,12 @@ class KeywordMatcher:
                             filtered_result[translation] = result
                 if keyword in en_translations.keys():
                     filtered_result[keyword] = result_dict[keyword]
-            useful_translations = {keyword: translations for keyword, translations in en_translations.items()
-                                   if keyword in filtered_result}
-            # print(useful_translations)
-            return filtered_result, useful_translations
+
+            result_dict = filtered_result
 
         useful_translations = {keyword: translations for keyword, translations in en_translations.items()
                                if keyword in result_dict}
         return result_dict, useful_translations
-
-    @staticmethod
-    def match_corpora(corpus_1: List[Document],
-                      corpus_2: List[Document]) -> Dict[Keyword, Tuple[List[int], List[str]]]:
-        reversed_keywords_1 = defaultdict[List]
-        for document in corpus_1:
-            for keyword in document.keywords:
-                reversed_keywords_1[keyword].append(document.doc_id)
-
-        reversed_keywords_2 = defaultdict[List]
-        for document in corpus_2:
-            for keyword in document.keywords:
-                reversed_keywords_2[keyword].append(document.doc_id)
-
-        # todo: implement real matching and check of both translation options
-        matched_keywords = ... #set(reversed_keywords_1).intersection(set(reversed_keywords_2))
-
-        return {keyword: (reversed_keywords_1[keyword], reversed_keywords_2) for keyword in matched_keywords}
 
 
 class DataHandler:
