@@ -33,12 +33,15 @@ class KeyPhraseExtractor:
 
         features = count_vectorizer.get_feature_names()
 
+        keywords = {}
+
         for i, doc in tqdm(enumerate(tf_matrix), desc="Calculating tf", total=tf_matrix.shape[0]):
             df = pd.DataFrame(doc.T.todense(), index=features,
                               columns=["tf"])
             top_key_words = df.sort_values(by=["tf"], ascending=False)[:top_k]
+            keywords[doc_id_lookup[i]] = list(top_key_words.index)
 
-            corpus.assign_keywords(keywords={doc_id_lookup[i]: list(top_key_words.index)}, keyword_type=KeywordType.TF_SKL)
+        corpus.assign_keywords(keywords=keywords, keyword_type=KeywordType.TF_SKL)
 
     @classmethod
     def tfidf_skl(cls, corpus: Corpus, top_k: int = 10):
@@ -61,7 +64,7 @@ class KeyPhraseExtractor:
             df = pd.DataFrame(doc.T.todense(), index=features,
                               columns=["tfidf"])
             top_key_words = df.sort_values(by=["tfidf"], ascending=False)[:top_k]
-            keywords.update({doc_id_lookup[i]: list(top_key_words.index)})
+            keywords[doc_id_lookup[i]] = list(top_key_words.index)
 
         corpus.assign_keywords(keywords=keywords, keyword_type=KeywordType.TFIDF_SKL)
 
@@ -393,9 +396,12 @@ class KeyPhraseExtractor:
                      language=language,
                      min_length=cls.min_nrgam,
                      max_length=cls.max_ngram)
+
+            keywords = {}
             for document in tqdm(corpus.get_documents(as_list=True), desc="Calculating RAKE"):
                 r.extract_keywords_from_text(document.text)
-                corpus.assign_keywords(keywords={document.doc_id: r.get_ranked_phrases()}, keyword_type=KeywordType.RAKE)
+                keywords[document.doc_id] = r.get_ranked_phrases()
+            corpus.assign_keywords(keywords=keywords, keyword_type=KeywordType.RAKE)
 
         else:
             results = {}
@@ -455,8 +461,8 @@ def main():
     KeyPhraseExtractor.tfidf_skl(corpus=pseudo_corpus)
     print([d.keywords for d in pseudo_corpus.get_documents()])
 
-    rake_keywords = KeyPhraseExtractor.rake(corpus=corpus)
-    corpus.assign_keywords(corpus, rake_keywords, keyword_type=KeywordType.RAKE)
+    KeyPhraseExtractor.rake(corpus=corpus)
+    print([d.keywords for d in corpus.get_documents()])
     # key_words_post_group = Document.group_keywords_year_wise(corpus)
     # key_words_pre_group = Document.transform_pseudo_docs_keywords_to_dict(KeyPhraseExtractor.rake(documents=pseudo_corpus))
 
@@ -467,19 +473,19 @@ def main():
     kwt = KeywordTranslator(cache_file=config["translator"]["cache_file"])
 
     counter = 0
-    for doc in corpus:
+    for doc in corpus.get_documents():
         for keyword in doc.keywords:
             if counter > 100:
                 break
             kwt.translate(keyword)
             print(keyword)
-            counter +=1
+            counter += 1
         break
 
 
 
     print('extracting keywords with rake ...')
-    rake_keywords = KeyPhraseExtractor.rake(corpus=corpus[0])
+    rake_keywords = KeyPhraseExtractor.rake(corpus=corpus.get_documents()[0])
     rake_keywords_keys = list(rake_keywords.keys())
     print('rake keywords dict keys:', rake_keywords_keys)
 

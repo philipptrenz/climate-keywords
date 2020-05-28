@@ -175,13 +175,14 @@ class Corpus:
                         translated_keywords: Dict[int, List[Keyword]] = None):
         for document in tqdm(self.get_documents(), desc="Assign keywords to documents"):
             if keywords:
-                if document.language == Language.DE:
-                    parsed_keywords = [Keyword(german_translation=keyword, type=keyword_type)
-                                       for keyword in keywords[document.doc_id]]
-                else:
-                    parsed_keywords = [Keyword(english_translation=keyword, type=keyword_type)
-                                       for keyword in keywords[document.doc_id]]
-                document.keywords = parsed_keywords
+                if document.doc_id in keywords:
+                    if document.language == Language.DE:
+                        parsed_keywords = [Keyword(german_translation=keyword, type=keyword_type)
+                                           for keyword in keywords[document.doc_id]]
+                    else:
+                        parsed_keywords = [Keyword(english_translation=keyword, type=keyword_type)
+                                           for keyword in keywords[document.doc_id]]
+                    document.keywords = parsed_keywords
 
             if translated_keywords:
                 document.keywords = translated_keywords[document.doc_id]
