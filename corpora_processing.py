@@ -10,7 +10,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 import numpy as np
 import logging
 
-from utils import Corpus, Document, ConfigLoader, DataHandler, Keyword, KeywordTranslator, KeywordType, KeywordSourceLanguage, DocumentsFilter
+from utils import Corpus, Document, ConfigLoader, DataHandler, Keyword, KeywordTranslator, KeywordType, Language, DocumentsFilter
 
 
 class KeyPhraseExtractor:
@@ -20,9 +20,9 @@ class KeyPhraseExtractor:
     @classmethod
     def tf_skl(cls, corpus: Corpus, top_k: int = 10):
 
-        if isinstance(corpus.language, KeywordSourceLanguage.EN):
+        if isinstance(corpus.language, Language.EN):
             stop_words = stopwords.words("English")
-        elif isinstance(corpus.language, KeywordSourceLanguage.DE):
+        elif isinstance(corpus.language, Language.DE):
             stop_words = stopwords.words("German")
 
         count_vectorizer = CountVectorizer(stop_words=stop_words,
@@ -42,9 +42,9 @@ class KeyPhraseExtractor:
 
     @classmethod
     def tfidf_skl(cls, corpus: Corpus, top_k: int = 10) -> Dict[str, List[str]]:
-        if isinstance(corpus.language, KeywordSourceLanguage.EN):
+        if isinstance(corpus.language, Language.EN):
             stop_words = stopwords.words("english")
-        elif isinstance(corpus.language, KeywordSourceLanguage.DE):
+        elif isinstance(corpus.language, Language.DE):
             stop_words = stopwords.words("german")
 
         tfidf_vectorizer = TfidfVectorizer(stop_words=stop_words,
@@ -71,7 +71,7 @@ class KeyPhraseExtractor:
         extractor = pke.unsupervised.TfIdf()
         # 2. load the content of the document.
 
-        if corpus.language == KeywordSourceLanguage.DE:
+        if corpus.language == Language.DE:
             lan = "de"
         else:
             lan = "en"
@@ -108,7 +108,7 @@ class KeyPhraseExtractor:
         # 1. create a YAKE extractor.
         extractor = pke.unsupervised.YAKE()
 
-        if corpus.language == KeywordSourceLanguage.DE:
+        if corpus.language == Language.DE:
             lan = "de"
             stop_list = stopwords.words('german')
         else:
@@ -149,7 +149,7 @@ class KeyPhraseExtractor:
         # 1. create a TextRank extractor.
         extractor = pke.unsupervised.TextRank()
 
-        if corpus.language == KeywordSourceLanguage.DE:
+        if corpus.language == Language.DE:
             lan = "de"
         else:
             lan = "en"
@@ -182,7 +182,7 @@ class KeyPhraseExtractor:
         # 1. create a SingleRank extractor.
         extractor = pke.unsupervised.SingleRank()
 
-        if corpus.language == KeywordSourceLanguage.DE:
+        if corpus.language == Language.DE:
             lan = "de"
         else:
             lan = "en"
@@ -220,7 +220,7 @@ class KeyPhraseExtractor:
         # 1. create a TopicRank extractor.
         extractor = pke.unsupervised.TopicRank()
 
-        if corpus.language == KeywordSourceLanguage.DE:
+        if corpus.language == Language.DE:
             lan = "de"
             stop_list = stopwords.words('german')
         else:
@@ -261,7 +261,7 @@ class KeyPhraseExtractor:
         # 1. create a TopicalPageRank extractor.
         extractor = pke.unsupervised.TopicalPageRank()
 
-        if corpus.language == KeywordSourceLanguage.DE:
+        if corpus.language == Language.DE:
             lan = "de"
         else:
             lan = "en"
@@ -301,7 +301,7 @@ class KeyPhraseExtractor:
         # 1. create a PositionRank extractor.
         extractor = pke.unsupervised.PositionRank()
 
-        if corpus.language == KeywordSourceLanguage.DE:
+        if corpus.language == Language.DE:
             lan = "de"
         else:
             lan = "en"
@@ -380,7 +380,7 @@ class KeyPhraseExtractor:
 
         if isinstance(input, Corpus):
             corpus = input
-            if corpus.language == KeywordSourceLanguage.DE:
+            if corpus.language == Language.DE:
                 language = 'german'
             else:
                 language = 'english'
@@ -398,7 +398,7 @@ class KeyPhraseExtractor:
             results = {}
 
             document: Document = input
-            if document.language == KeywordSourceLanguage.DE:
+            if document.language == Language.DE:
                 language = 'german'
             else:
                 language = 'english'
