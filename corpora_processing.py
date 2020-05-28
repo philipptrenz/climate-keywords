@@ -20,9 +20,9 @@ class KeyPhraseExtractor:
     @classmethod
     def tf_skl(cls, corpus: Corpus, top_k: int = 10):
 
-        if isinstance(corpus.language, Language.EN):
+        if corpus.language == Language.EN:
             stop_words = stopwords.words("English")
-        elif isinstance(corpus.language, Language.DE):
+        elif corpus.language == Language.DE:
             stop_words = stopwords.words("German")
 
         count_vectorizer = CountVectorizer(stop_words=stop_words,
@@ -41,10 +41,10 @@ class KeyPhraseExtractor:
             corpus.assign_keywords(keywords={doc_id_lookup[i]: list(top_key_words.index)}, keyword_type=KeywordType.TF_SKL)
 
     @classmethod
-    def tfidf_skl(cls, corpus: Corpus, top_k: int = 10) -> Dict[str, List[str]]:
-        if isinstance(corpus.language, Language.EN):
+    def tfidf_skl(cls, corpus: Corpus, top_k: int = 10):
+        if corpus.language == Language.EN:
             stop_words = stopwords.words("english")
-        elif isinstance(corpus.language, Language.DE):
+        elif corpus.language == Language.DE:
             stop_words = stopwords.words("german")
 
         tfidf_vectorizer = TfidfVectorizer(stop_words=stop_words,
@@ -55,12 +55,15 @@ class KeyPhraseExtractor:
 
         features = tfidf_vectorizer.get_feature_names()
 
+        keywords = {}
+
         for i, doc in tqdm(enumerate(tfidf_matrix), desc="Calculating tf-idf", total=tfidf_matrix.shape[0]):
             df = pd.DataFrame(doc.T.todense(), index=features,
                               columns=["tfidf"])
             top_key_words = df.sort_values(by=["tfidf"], ascending=False)[:top_k]
+            keywords.update({doc_id_lookup[i]: list(top_key_words.index)})
 
-            corpus.assign_keywords(keywords={doc_id_lookup[i]: list(top_key_words.index)}, keyword_type=KeywordType.TFIDF_SKL)
+        corpus.assign_keywords(keywords=keywords, keyword_type=KeywordType.TFIDF_SKL)
 
     @classmethod
     def tfidf_pke(cls, corpus: Corpus):
@@ -373,13 +376,13 @@ class KeyPhraseExtractor:
             corpus.assign_keywords(keywords={document.doc_id: keyphrases}, keyword_type=KeywordType.MULTIPARTITE_RANK_PKE)
 
     @classmethod
-    def rake(cls, input: Union[Corpus, Document]):
+    def rake(cls, corpus: Union[Corpus, Document]):
         # additional parameters:
         # ranking_metric
         # punctuations
 
-        if isinstance(input, Corpus):
-            corpus = input
+        if isinstance(corpus, Corpus):
+            corpus = corpus
             if corpus.language == Language.DE:
                 language = 'german'
             else:
@@ -397,7 +400,7 @@ class KeyPhraseExtractor:
         else:
             results = {}
 
-            document: Document = input
+            document: Document = corpus
             if document.language == Language.DE:
                 language = 'german'
             else:
@@ -432,9 +435,9 @@ def main():
     # load configuration parameters from config file
     config = ConfigLoader.get_config()
 
-    # corpus = DataHandler.load_corpus(config["corpora"]["abstract_corpus"])
-    # corpus = DataHandler.load_corpus(config["corpora"]["bundestag_corpus"])
-    corpus = DataHandler.load_corpus(config["corpora"]["sustainability_corpus"])
+    # corpus = Corpus(source=config["corpora"]["abstract_corpus"], language=Language.EN)
+    # corpus = Corpus(source=config["corpora"]["bundestag_corpus"], language=Language.DE)
+    corpus = Corpus(source=config["corpora"]["sustainability_corpus"], language=Language.EN)
 
     # print(len(corpus))
     # test = DocumentsFilter.filter(corpus, has_tags=['test'])
@@ -443,20 +446,19 @@ def main():
     #
     # exit(0)
 
-    corpus = corpus[:100]
+    corpus = corpus.get_n_documents_as_corpus(n=100)
+
     # build yearwise pseudo documents
-    # corpus = corpus[:100]
 
-    pseudo_docs = Document.year_wise_pseudo_documents(corpus)
-
+    pseudo_corpus = corpus.year_wise_pseudo_documents()
     # extract keywords
-    tfidf_keywords = KeyPhraseExtractor.tfidf_skl(documents=pseudo_docs)
-    # tfidf_keywords = KeyPhraseExtractor.tfidf_skl(documents=pseudo_docs)
-    print(tfidf_keywords)
-    rake_keywords = KeyPhraseExtractor.rake(documents=corpus)
-    Document.assign_keywords(corpus, rake_keywords, keyword_type=KeywordType.RAKE)
+    KeyPhraseExtractor.tfidf_skl(corpus=pseudo_corpus)
+    print([d.keywords for d in pseudo_corpus.get_documents()])
+
+    rake_keywords = KeyPhraseExtractor.rake(corpus=corpus)
+    corpus.assign_keywords(corpus, rake_keywords, keyword_type=KeywordType.RAKE)
     # key_words_post_group = Document.group_keywords_year_wise(corpus)
-    # key_words_pre_group = Document.transform_pseudo_docs_keywords_to_dict(KeyPhraseExtractor.rake(documents=pseudo_docs))
+    # key_words_pre_group = Document.transform_pseudo_docs_keywords_to_dict(KeyPhraseExtractor.rake(documents=pseudo_corpus))
 
     # print(KeyPhraseExtractor.get_top_k_keywords(key_words_post_group, 10))
     # print(KeyPhraseExtractor.get_top_k_keywords(key_words_pre_group, 10))
@@ -477,7 +479,7 @@ def main():
 
 
     print('extracting keywords with rake ...')
-    rake_keywords = KeyPhraseExtractor.rake(document=corpus[0])
+    rake_keywords = KeyPhraseExtractor.rake(corpus=corpus[0])
     rake_keywords_keys = list(rake_keywords.keys())
     print('rake keywords dict keys:', rake_keywords_keys)
 

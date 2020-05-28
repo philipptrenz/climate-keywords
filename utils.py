@@ -147,9 +147,11 @@ class Document:
 
 
 class Corpus:
-    def __init__(self, language: Language, source: Union[Dict[Union[str, int], Document], List[Document], str]):
+    def __init__(self, source: Union[Dict[Union[str, int], Document], List[Document], str],
+                 language: Language,
+                 has_assigned_keywords=False):
         self.language = language
-        self.has_assigned_keywords = False
+        self.has_assigned_keywords = has_assigned_keywords
 
         if isinstance(source, str):
             documents = self.load_corpus(path=source)
@@ -162,19 +164,18 @@ class Corpus:
         else:
             raise NotImplementedError("Not supported Document collection!")
 
-    def get_documents(self, as_list=True):
+    def get_documents(self, as_list=True) -> Union[List[Document], Dict[Union[str, int], Document]]:
         if as_list:
-            return self.documents.values()
+            return list(self.documents.values())
         else:
             return self.documents
 
     def assign_keywords(self, keywords: Dict[Union[int, str], List[str]] = None,
                         keyword_type: KeywordType = KeywordType.UNKNOWN,
                         translated_keywords: Dict[int, List[Keyword]] = None):
-
-        for document in tqdm(self.documents, desc="Assign keywords to documents"):
+        for document in tqdm(self.get_documents(), desc="Assign keywords to documents"):
             if keywords:
-                if document.language == "German":
+                if document.language == Language.DE:
                     parsed_keywords = [Keyword(german_translation=keyword, type=keyword_type)
                                        for keyword in keywords[document.doc_id]]
                 else:
@@ -187,20 +188,20 @@ class Corpus:
 
         self.has_assigned_keywords = True
 
-    def year_wise_pseudo_documents(self, language: Language = Language.EN) -> List[Document]:
+    def year_wise_pseudo_documents(self) -> "Corpus":
         year_bins = defaultdict(list)
 
-        for doc in self.documents:
+        for doc in self.get_documents():
             year_bins[doc.date].append(doc)
 
         pseudo_docs = [Document(doc_id=f'pseudo_{year}',
                                 date=year,
                                 text=" ".join([doc.text for doc in docs]),
-                                language=language
+                                language=self.language
                                 )
                        for year, docs in tqdm(year_bins.items(), desc="Construct pseudo docs", total=len(year_bins))]
 
-        return pseudo_docs
+        return Corpus(source=pseudo_docs, language=self.language)
 
     def group_keywords_year_wise(self, top_k_per_year=None) -> Dict[int, List[str]]:
         if self.has_assigned_keywords:
@@ -217,6 +218,13 @@ class Corpus:
             return grouped_keywords
         else:
             raise UserWarning("No keywords assigned for grouping!")
+
+    def get_n_documents_as_corpus(self, n: int) -> "Corpus":
+        documents = self.get_documents(as_list=True)
+        documents = documents[:n]
+        return Corpus(source=documents,
+                      language=self.language,
+                      has_assigned_keywords=self.has_assigned_keywords)
 
     def save_corpus(self, path: str):
         data = [doc.__dict__ for doc in self.get_documents()]
@@ -249,6 +257,11 @@ class Corpus:
 
     def __len__(self):
         return len(self.documents)
+
+    def __str__(self):
+        return f'docs={len(self)}, lan={self.language}, keywords={self.has_assigned_keywords}'
+
+    __repr__ = __str__
 
 
 
