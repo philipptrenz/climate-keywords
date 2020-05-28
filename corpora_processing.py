@@ -1,5 +1,5 @@
 from collections import defaultdict, Counter, OrderedDict
-from typing import List, Set, Dict, NamedTuple, Callable
+from typing import List, Set, Dict, NamedTuple, Callable, Union
 import pandas as pd
 from rake_nltk import Rake
 from nltk.corpus import stopwords
@@ -10,7 +10,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 import numpy as np
 import logging
 
-from utils import Document, ConfigLoader, DataHandler, Keyword, KeywordTranslator, KeywordType, DocumentsFilter
+from utils import Corpus, Document, ConfigLoader, DataHandler, Keyword, KeywordTranslator, KeywordType, KeywordSourceLanguage, DocumentsFilter
 
 
 class KeyPhraseExtractor:
@@ -18,58 +18,65 @@ class KeyPhraseExtractor:
     max_ngram = 4
 
     @classmethod
-    def tf_skl(cls, documents: List[Document], top_k: int = 10) -> Dict[str, List[str]]:
-        language = documents[0].language.lower()
-        count_vectorizer = CountVectorizer(stop_words=stopwords.words(language),
+    def tf_skl(cls, corpus: Corpus, top_k: int = 10):
+
+        if isinstance(corpus.language, KeywordSourceLanguage.EN):
+            stop_words = stopwords.words("English")
+        elif isinstance(corpus.language, KeywordSourceLanguage.DE):
+            stop_words = stopwords.words("German")
+
+        count_vectorizer = CountVectorizer(stop_words=stop_words,
                                            ngram_range=(cls.min_nrgam, cls.max_ngram),
                                            min_df=2)
-        tf_matrix = count_vectorizer.fit_transform([document.text for document in documents])
-        doc_id_lookup = {i: document.doc_id for i, document in enumerate(documents)}
+        tf_matrix = count_vectorizer.fit_transform([document.text for document in corpus.get_documents(as_list=True)])
+        doc_id_lookup = {i: document.doc_id for i, document in enumerate(corpus.get_documents(as_list=True))}
 
-        results = {}
         features = count_vectorizer.get_feature_names()
 
         for i, doc in tqdm(enumerate(tf_matrix), desc="Calculating tf", total=tf_matrix.shape[0]):
             df = pd.DataFrame(doc.T.todense(), index=features,
                               columns=["tf"])
             top_key_words = df.sort_values(by=["tf"], ascending=False)[:top_k]
-            results[doc_id_lookup[i]] = list(top_key_words.index)
 
-        return results
+            corpus.assign_keywords(keywords={doc_id_lookup[i]: list(top_key_words.index)}, keyword_type=KeywordType.TF_SKL)
 
     @classmethod
-    def tfidf_skl(cls, documents: List[Document], top_k: int = 10) -> Dict[str, List[str]]:
-        language = documents[0].language.lower()
-        tfidf_vectorizer = TfidfVectorizer(stop_words=stopwords.words(language),
+    def tfidf_skl(cls, corpus: Corpus, top_k: int = 10) -> Dict[str, List[str]]:
+        if isinstance(corpus.language, KeywordSourceLanguage.EN):
+            stop_words = stopwords.words("english")
+        elif isinstance(corpus.language, KeywordSourceLanguage.DE):
+            stop_words = stopwords.words("german")
+
+        tfidf_vectorizer = TfidfVectorizer(stop_words=stop_words,
                                            ngram_range=(cls.min_nrgam, cls.max_ngram),
                                            min_df=2)
-        tfidf_matrix = tfidf_vectorizer.fit_transform([document.text for document in documents])
-        doc_id_lookup = {i: document.doc_id for i, document in enumerate(documents)}
+        tfidf_matrix = tfidf_vectorizer.fit_transform([document.text for document in corpus.get_documents(as_list=True)])
+        doc_id_lookup = {i: document.doc_id for i, document in enumerate(corpus.get_documents(as_list=True))}
 
-        results = {}
         features = tfidf_vectorizer.get_feature_names()
 
         for i, doc in tqdm(enumerate(tfidf_matrix), desc="Calculating tf-idf", total=tfidf_matrix.shape[0]):
             df = pd.DataFrame(doc.T.todense(), index=features,
                               columns=["tfidf"])
             top_key_words = df.sort_values(by=["tfidf"], ascending=False)[:top_k]
-            results[doc_id_lookup[i]] = list(top_key_words.index)
 
-        return results
+            corpus.assign_keywords(keywords={doc_id_lookup[i]: list(top_key_words.index)}, keyword_type=KeywordType.TFIDF_SKL)
 
     @classmethod
-    def tfidf_pke(cls, documents: List[Document]) -> Dict[str, List[str]]:
+    def tfidf_pke(cls, corpus: Corpus):
         key_words_of_documents = {}
         number_keywords = 10
         stop_list = list(string.punctuation)
         # 1. create a TfIdf extractor.
         extractor = pke.unsupervised.TfIdf()
         # 2. load the content of the document.
-        for document in documents:
-            if document.language == "German":
-                lan = "de"
-            else:
-                lan = "en"
+
+        if corpus.language == KeywordSourceLanguage.DE:
+            lan = "de"
+        else:
+            lan = "en"
+
+        for document in corpus.get_documents(as_list=True):
             extractor.load_document(input=document.text[:10000],
                                     language=lan,
                                     normalization="lemmatization"
@@ -92,24 +99,24 @@ class KeyPhraseExtractor:
             extractor.candidate_weighting()
             # 5. get the 10-highest scored candidates as keyphrases
             keyphrases = extractor.get_n_best(n=number_keywords)
-            key_words_of_documents[document.doc_id] = keyphrases
 
-        return key_words_of_documents
+            corpus.assign_keywords(keywords={document.doc_id: keyphrases}, keyword_type=KeywordType.TFIDF_PKE)
 
     @classmethod
-    def yake_pke(cls, documents: List[Document]) -> Dict[str, List[str]]:
-        key_words_of_documents = {}
+    def yake_pke(cls, corpus: Corpus):
         number_keywords = 10
         # 1. create a YAKE extractor.
         extractor = pke.unsupervised.YAKE()
+
+        if corpus.language == KeywordSourceLanguage.DE:
+            lan = "de"
+            stop_list = stopwords.words('german')
+        else:
+            lan = "en"
+            stop_list = stopwords.words('english')
+
         # 2. load the content of the document.
-        for document in documents:
-            if document.language == "German":
-                lan = "de"
-                stop_list = stopwords.words('german')
-            else:
-                lan = "en"
-                stop_list = stopwords.words('english')
+        for document in corpus.get_documents(as_list=True):
             extractor.load_document(input=document.text[:10000],
                                     language=lan,
                                     normalization="lemmatization"
@@ -131,24 +138,24 @@ class KeyPhraseExtractor:
             #    distance and a threshold.
             threshold = 0.8
             keyphrases = extractor.get_n_best(n=number_keywords, threshold=threshold)
-            key_words_of_documents[document.doc_id] = keyphrases
 
-        return key_words_of_documents
+            corpus.assign_keywords(keywords={document.doc_id: keyphrases}, keyword_type=KeywordType.YAKE_PKE)
 
     @classmethod
-    def text_rank_pke(cls, documents: List[Document]) -> Dict[str, List[str]]:
+    def text_rank_pke(cls, corpus: Corpus) -> Dict[str, List[str]]:
         # define the set of valid Part-of-Speeches
         pos = {'NOUN', 'PROPN', 'ADJ'}
-        key_words_of_documents = {}
         number_keywords = 10
         # 1. create a TextRank extractor.
         extractor = pke.unsupervised.TextRank()
+
+        if corpus.language == KeywordSourceLanguage.DE:
+            lan = "de"
+        else:
+            lan = "en"
+
         # 2. load the content of the document.
-        for document in documents:
-            if document.language == "German":
-                lan = "de"
-            else:
-                lan = "en"
+        for document in corpus.get_documents(as_list=True):
 
             extractor.load_document(input=document.text[:10000],
                                     language=lan,
@@ -164,24 +171,24 @@ class KeyPhraseExtractor:
 
             # 4. get the 10-highest scored candidates as keyphrases
             keyphrases = extractor.get_n_best(n=number_keywords)
-            key_words_of_documents[document.doc_id] = keyphrases
 
-        return key_words_of_documents
+            corpus.assign_keywords(keywords={document.doc_id: keyphrases}, keyword_type=KeywordType.TEXT_RANK_PKE)
 
     @classmethod
-    def single_rank_pke(cls, documents: List[Document]) -> Dict[str, List[str]]:
+    def single_rank_pke(cls, corpus: Corpus):
         # define the set of valid Part-of-Speeches
         pos = {'NOUN', 'PROPN', 'ADJ'}
-        key_words_of_documents = {}
         number_keywords = 10
         # 1. create a SingleRank extractor.
         extractor = pke.unsupervised.SingleRank()
+
+        if corpus.language == KeywordSourceLanguage.DE:
+            lan = "de"
+        else:
+            lan = "en"
+
         # 2. load the content of the document.
-        for document in documents:
-            if document.language == "German":
-                lan = "de"
-            else:
-                lan = "en"
+        for document in corpus.get_documents(as_list=True):
 
             extractor.load_document(input=document.text[:10000],
                                     language=lan,
@@ -201,28 +208,27 @@ class KeyPhraseExtractor:
             # 5. get the 10-highest scored candidates as keyphrases
             # 5. get the 10-highest scored candidates as keyphrases
             keyphrases = extractor.get_n_best(n=number_keywords)
-            key_words_of_documents[document.doc_id] = keyphrases
-
-        return key_words_of_documents
+            corpus.assign_keywords(keywords={document.doc_id: keyphrases}, keyword_type=KeywordType.SINGLE_RANK_PKE)
 
     @classmethod
-    def topic_rank_pke(cls, documents: List[Document]) -> Dict[str, List[str]]:
+    def topic_rank_pke(cls, corpus: Corpus):
         # define the set of valid Part-of-Speeches
         pos = {'NOUN', 'PROPN', 'ADJ'}
 
-        key_words_of_documents = {}
         number_keywords = 10
 
         # 1. create a TopicRank extractor.
         extractor = pke.unsupervised.TopicRank()
+
+        if corpus.language == KeywordSourceLanguage.DE:
+            lan = "de"
+            stop_list = stopwords.words('german')
+        else:
+            lan = "en"
+            stop_list = stopwords.words('english')
+
         # 2. load the content of the document.
-        for document in documents:
-            if document.language == "German":
-                lan = "de"
-                stop_list = stopwords.words('german')
-            else:
-                lan = "en"
-                stop_list = stopwords.words('english')
+        for document in corpus.get_documents(as_list=True):
 
             stop_list += list(string.punctuation)
             stop_list += ['-lrb-', '-rrb-', '-lcb-', '-rcb-', '-lsb-', '-rsb-']
@@ -241,29 +247,27 @@ class KeyPhraseExtractor:
 
             # 5. get the 10-highest scored candidates as keyphrases
             keyphrases = extractor.get_n_best(n=number_keywords)
-            key_words_of_documents[document.doc_id] = keyphrases
-
-        return key_words_of_documents
+            corpus.assign_keywords(keywords={document.doc_id: keyphrases}, keyword_type=KeywordType.TOPIC_RANK_PKE)
 
     @classmethod
-    def topical_page_rank_pke(cls, documents: List[Document]) -> Dict[str, List[str]]:
+    def topical_page_rank_pke(cls, corpus: Corpus):
         # define the set of valid Part-of-Speeches
         pos = {'NOUN', 'PROPN', 'ADJ'}
         # define the grammar for selecting the keyphrase candidates
         grammar = "NP: {<ADJ>*<NOUN|PROPN>+}"
 
-        key_words_of_documents = {}
         number_keywords = 10
 
         # 1. create a TopicalPageRank extractor.
         extractor = pke.unsupervised.TopicalPageRank()
 
+        if corpus.language == KeywordSourceLanguage.DE:
+            lan = "de"
+        else:
+            lan = "en"
+
         # 2. load the content of the document.
-        for document in documents:
-            if document.language == "German":
-                lan = "de"
-            else:
-                lan = "en"
+        for document in corpus.get_documents(as_list=True):
 
             extractor.load_document(input=document.text[:10000],
                                     language=lan,
@@ -283,29 +287,27 @@ class KeyPhraseExtractor:
             # 5. get the 10-highest scored candidates as keyphrases
             # 5. get the 10-highest scored candidates as keyphrases
             keyphrases = extractor.get_n_best(n=number_keywords)
-            key_words_of_documents[document.doc_id] = keyphrases
-
-        return key_words_of_documents
+            corpus.assign_keywords(keywords={document.doc_id: keyphrases}, keyword_type=KeywordType.TOPICAL_PAGE_RANK_PKE)
 
     @classmethod
-    def position_rank_pke(cls, documents: List[Document]) -> Dict[str, List[str]]:
+    def position_rank_pke(cls, corpus: Corpus) -> Dict[str, List[str]]:
         # define the set of valid Part-of-Speeches
         pos = {'NOUN', 'PROPN', 'ADJ'}
         # define the grammar for selecting the keyphrase candidates
         grammar = "NP: {<ADJ>*<NOUN|PROPN>+}"
 
-        key_words_of_documents = {}
         number_keywords = 10
 
         # 1. create a PositionRank extractor.
         extractor = pke.unsupervised.PositionRank()
 
+        if corpus.language == KeywordSourceLanguage.DE:
+            lan = "de"
+        else:
+            lan = "en"
+
         # 2. load the content of the document.
-        for document in documents:
-            if document.language == "German":
-                lan = "de"
-            else:
-                lan = "en"
+        for document in corpus.get_documents(as_list=True):
 
             extractor.load_document(input=document.text[:10000],
                                     language=lan,
@@ -327,27 +329,27 @@ class KeyPhraseExtractor:
             # 5. get the 10-highest scored candidates as keyphrases
             # 5. get the 10-highest scored candidates as keyphrases
             keyphrases = extractor.get_n_best(n=number_keywords)
-            key_words_of_documents[document.doc_id] = keyphrases
-
-        return key_words_of_documents
+            corpus.assign_keywords(keywords={document.doc_id: keyphrases}, keyword_type=KeywordType.POSITION_RANK_PKE)
 
     @classmethod
-    def multipartite_rank_pke(cls, documents: List[Document]) -> Dict[str, List[str]]:
+    def multipartite_rank_pke(cls, corpus: Corpus):
         # define the set of valid Part-of-Speeches
         pos = {'NOUN', 'PROPN', 'ADJ'}
 
         # 1. create a MultipartiteRank extractor.
         extractor = pke.unsupervised.MultipartiteRank()
+
+        if corpus.language == "German":
+            lan = "de"
+            stop_list = stopwords.words('german')
+        else:
+            lan = "en"
+            stop_list = stopwords.words('english')
+
         # 2. load the content of the document.
         key_words_of_documents = {}
         number_keywords = 10
-        for document in documents:
-            if document.language == "German":
-                lan = "de"
-                stop_list = stopwords.words('german')
-            else:
-                lan = "en"
-                stop_list = stopwords.words('english')
+        for document in corpus.get_documents(as_list=True):
 
             stop_list += list(string.punctuation)
             stop_list += ['-lrb-', '-rrb-', '-lcb-', '-rcb-', '-lsb-', '-rsb-']
@@ -368,19 +370,39 @@ class KeyPhraseExtractor:
 
             # 5. get the 10-highest scored candidates as keyphrases
             keyphrases = extractor.get_n_best(n=number_keywords)
-            key_words_of_documents[document.doc_id] = keyphrases
-
-        return key_words_of_documents
+            corpus.assign_keywords(keywords={document.doc_id: keyphrases}, keyword_type=KeywordType.MULTIPARTITE_RANK_PKE)
 
     @classmethod
-    def rake(cls, documents: List[Document] = None, document: Document = None) -> Dict[str, List[str]]:
+    def rake(cls, input: Union[Corpus, Document]):
         # additional parameters:
         # ranking_metric
         # punctuations
 
-        results = {}
-        if document:
-            language = document.language.lower()
+        if isinstance(input, Corpus):
+            corpus = input
+            if corpus.language == KeywordSourceLanguage.DE:
+                language = 'german'
+            else:
+                language = 'english'
+            logging.info(f"{language} is used")
+            r = Rake(ranking_metric=None,
+                     stopwords=stopwords.words(language),
+                     language=language,
+                     min_length=cls.min_nrgam,
+                     max_length=cls.max_ngram)
+            for document in tqdm(corpus.get_documents(as_list=True), desc="Calculating RAKE"):
+                r.extract_keywords_from_text(document.text)
+                corpus.assign_keywords(keywords={document.doc_id: r.get_ranked_phrases()}, keyword_type=KeywordType.RAKE)
+
+        else:
+            results = {}
+
+            document: Document = input
+            if document.language == KeywordSourceLanguage.DE:
+                language = 'german'
+            else:
+                language = 'english'
+
             logging.info(f"{language} is used")
             r = Rake(ranking_metric=None,
                      stopwords=stopwords.words(language),
@@ -390,20 +412,8 @@ class KeyPhraseExtractor:
             r.extract_keywords_from_text(document.text)
             document.keywords = r.get_ranked_phrases()
             results[document.doc_id] = document.keywords
-        else:
-            language = documents[0].language.lower()
-            logging.info(f"{language} is used")
-            r = Rake(ranking_metric=None,
-                     stopwords=stopwords.words(language),
-                     language=language,
-                     min_length=cls.min_nrgam,
-                     max_length=cls.max_ngram)
-            for document in tqdm(documents, desc="Calculating RAKE"):
-                r.extract_keywords_from_text(document.text)
-                document.keywords = r.get_ranked_phrases()
-                results[document.doc_id] = document.keywords
 
-        return results
+            return results
 
     @classmethod
     def key_word_count(cls, keywords: Dict[str, List[str]], top_k=100):

@@ -33,10 +33,17 @@ class ConfigLoader:
 class KeywordType(str, Enum):
 
     UNKNOWN = "unknown"
+    TF_SKL = "tf_skl"
     TFIDF_SKL = "tfidf_skl"
     TFIDF_PKE = "tfidf_pke"
     RAKE = "rake"
-    TEXTRANK = "textrank"
+    TEXT_RANK_PKE = "text_rank_pke"
+    SINGLE_RANK_PKE = "single_rank_pke"
+    YAKE_PKE = "yake_pke"
+    TOPIC_RANK_PKE = "topic_rank_pke"
+    TOPICAL_PAGE_RANK_PKE = "topical_page_rank_pke"
+    POSITION_RANK_PKE = "position_rank_pke"
+    MULTIPARTITE_RANK_PKE = "multipartite_rank_pke"
 
 
 class KeywordSourceLanguage(str, Enum):
