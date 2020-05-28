@@ -264,13 +264,11 @@ class Corpus:
 
     __repr__ = __str__
 
-
-
-class DocumentsFilter:
+class CorpusFilter:
 
     @staticmethod
-    def filter(documents: [Document],
-                   text_contains: [str] = None,
+    def filter(corpus: Corpus,
+                   text_contains_one_of: [str] = None,
                    date_in_range: range = None,
                    is_one_of_languages: [str] = None,
                    is_one_of_doc_ids: [int] = None,
@@ -283,15 +281,16 @@ class DocumentsFilter:
 
         filtered: [Document] = []
 
-        for d in documents:
+        for d in corpus.get_documents(as_list=True):
             try:
-                if text_contains:
-                    does_contain = True
-                    for t in text_contains:
-                        if t not in d.text:
-                            does_contain = False
+                if text_contains_one_of:
+                    does_contain = False
+                    for t in text_contains_one_of:
+                        if re.search(t, d.text, re.I):
+                            does_contain = True
                             break
-                    if not does_contain: continue
+                    if not does_contain:
+                        continue
 
                 if date_in_range:
                     if not d.date or d.date not in date_in_range: continue
