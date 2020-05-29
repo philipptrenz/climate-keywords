@@ -63,8 +63,11 @@ def parse_and_preprocess_src(data_source, corpus_destination):
     else:
         raw_corpus = DataHandler.get_abstracts(path=data_source)
     language = raw_corpus[0].language
+    print('loaded', len(raw_corpus), 'documents')
     Preprocessor.preprocess(raw_corpus, language=language)
+    print('preprocessed', len(raw_corpus), 'documents')
     corpus = Corpus(source=raw_corpus, language=language)
+    print('parsed', len(corpus.get_documents(as_list=True)), 'documents to a Corpus')
     corpus.save_corpus(corpus_destination)
 
 
@@ -75,15 +78,15 @@ if __name__ == '__main__':
     # define data sources
     file_srcs = [
         config["datasets"]["bundestag"]["directory"],
-        config["datasets"]["abstracts"]["sustainability"],
-        config["datasets"]["abstracts"]["climate_literature"]
+        #config["datasets"]["abstracts"]["sustainability"],
+        #config["datasets"]["abstracts"]["climate_literature"]
     ]
 
     # define corpus output sources
     corpus_dests = [
         config["corpora"]["bundestag_corpus"],
-        config["corpora"]["sustainability_corpus"],
-        config["corpora"]["abstract_corpus"]
+        #config["corpora"]["sustainability_corpus"],
+        #config["corpora"]["abstract_corpus"]
     ]
 
     # read and parse data
