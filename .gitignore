@@ -6,3 +6,4 @@ __pycache__/
 /data/bundestag_corpus.json
 /data/sustainability_corpus.json
 /data/translation_cache.json
+.ipynb_checkpoints/
