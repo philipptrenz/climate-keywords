@@ -57,13 +57,13 @@ def cleaning_bundestag(config, overwrite=True):
 
 def cleaning_authors(config, overwrite=False):
     corpus_names = [
-        # "bundestag_corpus",
-        # "sustainability_corpus",
+        "bundestag_corpus",
+        "sustainability_corpus",
         "abstract_corpus"
     ]
     languages = [
-        # Language.DE,
-        # Language.EN,
+        Language.DE,
+        Language.EN,
         Language.EN]
     wlc = 0
     m_a = 0
@@ -108,9 +108,9 @@ def main():
     config = ConfigLoader.get_config()
 
     # deletes unusable documents and replaces date with year int
-    # cleaning_abstracts(config, overwrite=True)
-    # cleaning_sustainability(config, overwrite=False)
-    # cleaning_bundestag(config, overwrite=False)
+    cleaning_abstracts(config, overwrite=False)
+    cleaning_sustainability(config, overwrite=False)
+    cleaning_bundestag(config, overwrite=False)
 
     cleaning_authors(config, overwrite=True)
 

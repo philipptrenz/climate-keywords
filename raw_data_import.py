@@ -1,6 +1,7 @@
 from typing import List
 from tqdm import tqdm
 import spacy
+import re
 
 from utils import Document, ConfigLoader, DataHandler, Corpus, Language
 
@@ -8,7 +9,7 @@ from utils import Document, ConfigLoader, DataHandler, Corpus, Language
 class Preprocessor:
 
     @staticmethod
-    def preprocess(documents: List[Document], lemmatize: bool = True, lower: bool = False,
+    def preprocess(documents: List[Document], language: Language, lemmatize: bool = True, lower: bool = False,
                    pos_filter: list = None, remove_stopwords: bool = False,
                    remove_punctuation: bool = False):
 
@@ -22,7 +23,7 @@ class Preprocessor:
                 representation = representation.lower()
             return representation
 
-        if documents[0].language == "German":
+        if language == Language.DE:
             lan = "German"
             nlp = spacy.load("de_core_news_sm")
         else:
@@ -55,16 +56,14 @@ class Preprocessor:
 
 
 def parse_and_preprocess_src(data_source, corpus_destination):
-    if "bundestag" in data_source.lower():
+    if re.search("bundestag", data_source.lower()):
         raw_corpus = DataHandler.get_bundestag_speeches(dir=data_source)
-        language = Language.DE
-    elif "sustainability" in data_source.lower():
+    elif re.search("sustainability", data_source.lower()):
         raw_corpus = DataHandler.get_sustainability_data(path=data_source)
-        language = Language.EN
     else:
         raw_corpus = DataHandler.get_abstracts(path=data_source)
-        language = Language.EN
-    Preprocessor.preprocess(raw_corpus)
+    language = raw_corpus[0].language
+    Preprocessor.preprocess(raw_corpus, language=language)
     corpus = Corpus(source=raw_corpus, language=language)
     corpus.save_corpus(corpus_destination)
 
@@ -75,15 +74,15 @@ if __name__ == '__main__':
 
     # define data sources
     file_srcs = [
-        # config["datasets"]["bundestag"]["directory"],
-        # config["datasets"]["abstracts"]["sustainability"],
+        config["datasets"]["bundestag"]["directory"],
+        config["datasets"]["abstracts"]["sustainability"],
         config["datasets"]["abstracts"]["climate_literature"]
     ]
 
     # define corpus output sources
     corpus_dests = [
-        # config["corpora"]["bundestag_corpus"],
-        # config["corpora"]["sustainability_corpus"],
+        config["corpora"]["bundestag_corpus"],
+        config["corpora"]["sustainability_corpus"],
         config["corpora"]["abstract_corpus"]
     ]
 
