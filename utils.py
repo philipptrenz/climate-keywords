@@ -233,6 +233,13 @@ class Corpus:
             json.dump(data, f, ensure_ascii=False, indent=1,  default=lambda o: o.__dict__)
         logging.info(f'saved {path}')
 
+    def get_years(self) -> [str]:
+        years = set()
+        for d in self.get_documents(as_list=True):
+            if d.date:
+                years.add(d.date)
+        return sorted(list(years))
+
     @staticmethod
     def load_corpus(path: str) -> List[Document]:
         logging.info(f"load {path}")
