@@ -53,6 +53,8 @@ class Preprocessor:
 
         for j, document in tqdm(enumerate(documents)):
             document.text = ' '.join(tokenized[j])
+            doc_id = document.doc_id
+            document.doc_id = f"{str(j).zfill(8)}_({doc_id})"
 
 
 def parse_and_preprocess_src(data_source, corpus_destination):
