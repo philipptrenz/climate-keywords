@@ -148,8 +148,10 @@ class Document:
 
 class Corpus:
     def __init__(self, source: Union[Dict[Union[str, int], Document], List[Document], str],
+                 name: str,
                  language: Language,
                  has_assigned_keywords=False):
+        self.name = name
         self.language = language
         self.has_assigned_keywords = has_assigned_keywords
 
