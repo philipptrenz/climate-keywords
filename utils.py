@@ -660,20 +660,23 @@ class DataHandler:
             break
 
         for f in files:
-            if f.startswith('.'):
+            if f.startswith('.') or not f[-4:] == '.csv':
                 files.remove(f)
 
         speeches = []
+        index = 0
         for file in tqdm(files, desc="load Bundestag speeches", total=len(files)):
             df = pd.read_csv(os.path.join(dir, file))
-            speeches.extend([Document(text=row["Speech text"],
-                                      date=row["Date"][:4],
-                                      language=Language.DE,
-                                      doc_id=f'po_{i}',
-                                      author=row["Speaker"],
-                                      party=row["Speaker party"],
-                                      rating=row["Interjection count"])
-                             for i, row in df.iterrows() if not pd.isna(row["Speech text"])])
+            for i, row in df.iterrows():
+                if not pd.isna(row["Speech text"]):
+                    speeches.append(Document(text=row["Speech text"],
+                                    date=row["Date"][:4],
+                                    language=Language.DE,
+                                    doc_id=f'po_{index}',
+                                    author=row["Speaker"],
+                                    party=row["Speaker party"],
+                                    rating=row["Interjection count"]))
+                    index += 1
 
         return speeches
 
