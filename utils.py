@@ -291,7 +291,7 @@ class CorpusFilter:
 
         filtered: [Document] = []
 
-        for d in corpus.get_documents(as_list=True):
+        for d in tqdm(corpus.get_documents(as_list=True), desc=f"Filtering \'{corpus.name}\' corpus "):
             try:
                 if text_contains_one_of:
                     does_contain = False
