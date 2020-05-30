@@ -355,7 +355,7 @@ class CorpusFilter:
                 logging.exception("An exception occured while applying filters, skipping document")
                 continue
 
-        return Corpus(source=filtered, language=corpus.language, has_assigned_keywords=corpus.has_assigned_keywords)
+        return Corpus(source=filtered, name=corpus.name,language=corpus.language, has_assigned_keywords=corpus.has_assigned_keywords)
 
 
 class KeywordTranslator:
