@@ -204,7 +204,7 @@ class Corpus:
                                 )
                        for year, docs in tqdm(year_bins.items(), desc="Construct pseudo docs", total=len(year_bins))]
 
-        return Corpus(source=pseudo_docs, language=self.language)
+        return Corpus(source=pseudo_docs, name=self.name, language=self.language)
 
     def group_keywords_year_wise(self, top_k_per_year=None) -> Dict[int, List[str]]:
         if self.has_assigned_keywords:
