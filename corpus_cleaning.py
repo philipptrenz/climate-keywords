@@ -41,9 +41,9 @@ def cleaning_sustainability(config, overwrite=True):
 
 
 def cleaning_bundestag(config, overwrite=True):
-    corpus = Corpus(source=config["corpora"]["bundestag_corpus"], language=Language.DE)
+    corpus = Corpus(source=config["corpora"]["bundestag_corpus"], language=Language.DE, name="bundestag")
     # corpus = DataHandler.load_corpus(config["corpora"]["bundestag_corpus"])
-    corpus = Corpus(source=[d for d in corpus.get_documents() if d.date], language=corpus.language)
+    corpus = Corpus(source=[d for d in corpus.get_documents() if d.date], language=corpus.language, name="bundestag")
     print("1", len(corpus))
     for d in corpus.get_documents():
         d.date = int(d.date)
@@ -58,8 +58,8 @@ def cleaning_bundestag(config, overwrite=True):
 def cleaning_authors(config, overwrite=False):
     corpus_names = [
         "bundestag_corpus",
-        "sustainability_corpus",
-        "abstract_corpus"
+        # "sustainability_corpus",
+        # "abstract_corpus"
     ]
     languages = [
         Language.DE,
@@ -69,7 +69,7 @@ def cleaning_authors(config, overwrite=False):
     m_a = 0
     s_a = 0
     for i, corpus_name in enumerate(corpus_names):
-        corpus = Corpus(source=config["corpora"][corpus_name], language=languages[i])
+        corpus = Corpus(source=config["corpora"][corpus_name], language=languages[i], name=corpus_name)
         # corpus = DataHandler.load_corpus(config["corpora"][corpus_name])
         for d in corpus.get_documents():
             if d.author:
@@ -108,7 +108,7 @@ def main():
     # deletes unusable documents and replaces date with year int
     #cleaning_abstracts(config, overwrite=False)
     #cleaning_sustainability(config, overwrite=False)
-    cleaning_bundestag(config, overwrite=False)
+    cleaning_bundestag(config, overwrite=True)
 
     cleaning_authors(config, overwrite=True)
 
