@@ -57,16 +57,19 @@ class Preprocessor:
 
 def parse_and_preprocess_src(data_source, corpus_destination):
     if re.search("bundestag", data_source.lower()):
+        name = "bundestag"
         raw_corpus = DataHandler.get_bundestag_speeches(dir=data_source)
     elif re.search("sustainability", data_source.lower()):
+        name = "sustainability"
         raw_corpus = DataHandler.get_sustainability_data(path=data_source)
     else:
+        name = "abstracts"
         raw_corpus = DataHandler.get_abstracts(path=data_source)
     language = raw_corpus[0].language
     print('loaded', len(raw_corpus), 'documents')
     Preprocessor.preprocess(raw_corpus, language=language)
     print('preprocessed', len(raw_corpus), 'documents')
-    corpus = Corpus(source=raw_corpus, language=language)
+    corpus = Corpus(source=raw_corpus, language=language, name=name)
     print('parsed', len(corpus.get_documents(as_list=True)), 'documents to a Corpus')
     corpus.save_corpus(corpus_destination)
 
