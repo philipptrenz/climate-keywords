@@ -24,7 +24,7 @@ def yearwise_documents(corpus: Corpus, aggregation_func: Callable = len, printin
     for doc in corpus.get_documents():
         year_bins[doc.date].append(doc)
 
-    result = {year: aggregation_func(Corpus(source=docs, language=corpus.language)) for year, docs in year_bins.items()}
+    result = {year: aggregation_func(Corpus(source=docs, language=corpus.language, name="None")) for year, docs in year_bins.items()}
     result = OrderedDict(sorted(result.items()))
 
     years = []
@@ -35,8 +35,8 @@ def yearwise_documents(corpus: Corpus, aggregation_func: Callable = len, printin
         if printing:
             print(f'{year}: {count}')
 
-    print(years)
-    print(counts)
+    # print(years)
+    # print(counts)
     return years, counts
 
 
@@ -115,6 +115,12 @@ def main():
     #  657520, 693466, 847938, 985064, 1255443, 1473326, 1856967, 2120475, 2548691, 2924106, 3559252, 4097080, 4829304,
     #  5716151, 7148684, 8828958]
 
+def simple_bar_histogram(bin_data, count_data):
+    plt.bar(x=bin_data, height=count_data, color='lawngreen', align='center')
+    locator = mdates.AutoDateLocator()
+    ax.xaxis.set_major_locator(mdates.YearLocator())
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
+    plt.show()
 
 if __name__ == '__main__':
     main()
