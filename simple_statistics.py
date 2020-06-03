@@ -11,10 +11,7 @@ def count_non_years(corpus: Corpus):
 
 
 def token_number(corpus: Corpus):
-    c = 0
-    for d in corpus.get_documents():
-        c += len(d.text.split())
-    return c
+    return corpus.token_number()
 
 
 def yearwise_documents(corpus: Corpus, aggregation_func: Callable = len, printing: bool = False):
@@ -42,9 +39,9 @@ def yearwise_documents(corpus: Corpus, aggregation_func: Callable = len, printin
 def main():
     config = ConfigLoader.get_config()
 
-    corpora = [Corpus(source=config["corpora"]["abstract_corpus"], language=Language.EN),
-               Corpus(source=config["corpora"]["bundestag_corpus"], language=Language.DE),
-               Corpus(source=config["corpora"]["sustainability_corpus"], language=Language.EN)]
+    corpora = [Corpus(source=config["corpora"]["abstract_corpus"], language=Language.EN, name="abstract_corpus"),
+               Corpus(source=config["corpora"]["bundestag_corpus"], language=Language.DE, name="bundestag_corpus"),
+               Corpus(source=config["corpora"]["sustainability_corpus"], language=Language.EN, name="sustainability_corpus")]
 
     # count_non_years(corpora[0])
     # count_non_years(corpora[1])
@@ -63,7 +60,6 @@ def main():
     # abstract: 59314582
     # bundestag: 226300348
     # sustainability: 52878146
-
 
     yearwise_documents(corpora[0], aggregation_func=len)
     # [1900, 1904, 1951, 1961, 1965, 1972, 1974, 1975, 1976, 1978, 1979, 1980, 1981, 1983, 1984, 1985, 1986, 1987, 1988,
@@ -113,11 +109,6 @@ def main():
     # [96, 217, 8748, 59556, 98237, 119917, 153011, 212506, 237082, 291767, 329358, 375165, 444080, 476757, 529224,
     #  657520, 693466, 847938, 985064, 1255443, 1473326, 1856967, 2120475, 2548691, 2924106, 3559252, 4097080, 4829304,
     #  5716151, 7148684, 8828958]
-
-
-
-
-
 
 
 if __name__ == '__main__':

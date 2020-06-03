@@ -1,5 +1,7 @@
 from enum import Enum
 from collections import defaultdict, Counter
+import random
+import numpy as np
 from typing import List, Set, Dict, NamedTuple, Tuple, Union
 import pandas as pd
 from tqdm import tqdm
@@ -260,6 +262,36 @@ class Corpus:
         logging.info(f"{path} loaded")
 
         return corpus
+
+    def token_number(self):
+        c = 0
+        for d in self.get_documents():
+            c += len(d.text.split())
+        return c
+
+    def year_wise(self, ids: bool = False) -> Dict[int, List[Union[str, int, Document]]]:
+        year_bins = defaultdict(list)
+
+        for doc in self.get_documents():
+            if ids:
+                year_bins[doc.date].append(doc.doc_id)
+            else:
+                year_bins[doc.date].append(doc)
+
+        return year_bins
+
+    def sample(self, number_documents=100, as_corpus=True):
+        if len(self) < number_documents:
+            return self
+        if as_corpus:
+            result = Corpus(source=random.sample(self.get_documents(), k=number_documents),
+                            language=self.language,
+                            has_assigned_keywords=self.has_assigned_keywords,
+                            name=f'{self.name}_sample')
+        else:
+            result = random.sample(self.get_documents(), k=number_documents)
+        return result
+
 
     @staticmethod
     def transform_pseudo_docs_keywords_to_dict(keywords: Dict[str, List[str]]) -> Dict[int, List[str]]:
