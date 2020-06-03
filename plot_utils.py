@@ -20,6 +20,9 @@ def multi_bar_histogram(multiple_bin_data: List[List[int]],
                         corpus_lengths: List[int] = None):
     """
     plots a multi bar histogram from different datasources
+    example:
+    multi_bar_histogram(mult_years, mult_counts, labels=["bundestag", "abstracts", "sustainability"],
+    normalize=True, corpus_lengths=[877973, 407961, 221034])
     :param multiple_bin_data: numeric data of different series organized in lists for x axis
     :param multiple_count_data: count data of different series organized in lists for y axis
     :param labels: labels for the different series
