@@ -65,7 +65,7 @@ class Language(str, Enum):
 
 class Keyword:
     def __init__(self, english_translation: str = None, german_translation: str = None,
-                 type: KeywordType = KeywordType.UNKNOWN, source_language=Language.UNKNOWN):
+                 keyword_type: KeywordType = KeywordType.UNKNOWN, source_language=Language.UNKNOWN):
 
         if not english_translation and not german_translation:
             raise Exception("Keyword cannot be intialized without any translation")
@@ -85,7 +85,7 @@ class Keyword:
         if english_translation and german_translation:
             self.source_language = Language.UNKNOWN
 
-        self.type = type
+        self.type = keyword_type
 
     def __getitem__(self, item):
         return self.__dict__[item]
@@ -93,8 +93,8 @@ class Keyword:
     def __eq__(self, other):
         if not isinstance(other, Keyword):
             return NotImplemented
-
-        return self.german_translation == other.german_translation or self.english_translation == other.english_translation
+        r = self.german_translation == other.german_translation or self.english_translation == other.english_translation
+        return r
 
     def lemmatize(self, german_nlp, english_nlp):
         german_lemmatized = []
@@ -126,7 +126,7 @@ class Keyword:
         return Keyword(
             english_translation=data["english_translation"],
             german_translation=data["german_translation"],
-            type=KeywordType(data["type"]),
+            keyword_type=KeywordType(data["type"]),
             source_language=Language(data["source_language"]))
 
 
@@ -185,10 +185,10 @@ class Corpus:
             if keywords:
                 if document.doc_id in keywords:
                     if document.language == Language.DE:
-                        parsed_keywords = [Keyword(german_translation=keyword, type=keyword_type)
+                        parsed_keywords = [Keyword(german_translation=keyword, keyword_type=keyword_type)
                                            for keyword in keywords[document.doc_id]]
                     else:
-                        parsed_keywords = [Keyword(english_translation=keyword, type=keyword_type)
+                        parsed_keywords = [Keyword(english_translation=keyword, keyword_type=keyword_type)
                                            for keyword in keywords[document.doc_id]]
                     document.keywords = parsed_keywords
 
@@ -349,6 +349,7 @@ class CorpusFilter:
         filtered: [Document] = []
 
         for d in tqdm(corpus.get_documents(as_list=True), desc=f"Filtering \'{corpus.name}\' corpus "):
+            # noinspection PyBroadException
             try:
                 if text_contains_one_of:
                     does_contain = False
@@ -359,20 +360,26 @@ class CorpusFilter:
                     if not does_contain:
                         continue
 
+                # fixme: unsure about the loop where this should belong too, call of t later throws warning
                 if date_in_range:
-                    if not d.date or d.date not in date_in_range: continue
+                    if not d.date or d.date not in date_in_range:
+                        continue
 
                 if is_one_of_languages:
-                    if not d.language or d.language not in is_one_of_languages: continue
+                    if not d.language or d.language not in is_one_of_languages:
+                        continue
 
                 if is_one_of_doc_ids:
-                    if not d.doc_id or d.doc_id not in is_one_of_doc_ids: continue
+                    if not d.doc_id or d.doc_id not in is_one_of_doc_ids:
+                        continue
 
                 if has_authors:
-                    if not d.author or d.author not in has_authors: continue
+                    if not d.author or d.author not in has_authors:
+                        continue
 
                 if has_tags:
-                    if not t.tags or not set(d.tags).issubset(set(has_tags)): continue
+                    if not t.tags or not set(d.tags).issubset(set(has_tags)):
+                        continue
 
                 if is_one_of_parties:
                     revised_parties = [].extend(is_one_of_parties)
@@ -382,30 +389,36 @@ class CorpusFilter:
                             revised_parties.append('en')
                         if p == 'german':
                             revised_parties.append('de')
-                    if not d.party or d.party.lower() not in revised_parties: continue
+                    if not d.party or d.party.lower() not in revised_parties:
+                        continue
 
                 if ratings_in_range:
-                    if not d.rating or d.rating not in ratings_in_range: continue
+                    if not d.rating or d.rating not in ratings_in_range:
+                        continue
 
                 if has_one_of_keywords_with_english_translation:
-                    if not d.keywords: continue
+                    if not d.keywords:
+                        continue
                     keywords_en = [x.english_translation for x in d.keywords]
                     matched_keyword = False
                     for k in has_one_of_keywords_with_english_translation:
                         if k in keywords_en:
                             matched_keyword = True
                             break
-                    if not matched_keyword: continue
+                    if not matched_keyword:
+                        continue
 
                 if has_one_of_keywords_with_german_translation:
-                    if not d.keywords: continue
+                    if not d.keywords:
+                        continue
                     keywords_de = [x.german_translation for x in d.keywords]
                     matched_keyword = False
                     for k in has_one_of_keywords_with_german_translation:
                         if k in keywords_de:
                             matched_keyword = True
                             break
-                    if not matched_keyword: continue
+                    if not matched_keyword:
+                        continue
 
                 filtered.append(d)
             except:
@@ -423,7 +436,7 @@ class KeywordTranslator:
     def __init__(self, cache_file='translator_cache.json', timeout=1.0):
         self.translator = googletrans.Translator()
         self.cache_file = cache_file
-        self.timeout = 1.0
+        self.timeout = timeout
         try:
             self.load_cache_from_file()
         except Exception as e:
@@ -502,12 +515,11 @@ class KeywordTranslator:
                 return None
 
     def translate_corpus(self, corpus: Corpus):
-        kwt = KeywordTranslator()
         list_of_keywords = []
 
         for document in corpus.get_documents():
             for kw in document.keywords:
-                kwt.translate(kw)
+                self.translate(kw)
                 list_of_keywords.append(kw)
                 print('{} \t {} \t\t\t {}'.format(kw.source_language, kw.english_translation, kw.german_translation))
 
@@ -582,8 +594,8 @@ class KeywordMatcher:
     def match_corpora(cls, keyword_collection_1: Union[Dict[int, List[Keyword]], List[Document]],
                       keyword_collection_2: Union[Dict[int, List[Keyword]], List[Document]],
                       lemmatize: bool = True,
-                      simplify_result: bool = True) -> Tuple[
-        Dict[Keyword, Tuple[List[int], List[int]]], Dict[str, str]]:
+                      simplify_result: bool = True) \
+            -> Tuple[Dict[Keyword, Tuple[List[int], List[int]]], Dict[str, str]]:
 
         if lemmatize:
             german_model = spacy.load("de_core_news_sm")
@@ -697,7 +709,7 @@ class DataHandler:
                 if wos_dict["TI"]:
                     text = wos_dict["TI"]
                     if wos_dict["DE"]:
-                        text += " " + wos_dict["DE"]
+                        text += " " + str(wos_dict["DE"])
                 else:
                     if wos_dict["DE"]:
                         text = wos_dict["DE"]
@@ -724,7 +736,7 @@ class DataHandler:
                     if authors is None:
                         authors = wos_dict["GP"]
 
-                abstracts.append(Document(text=text,
+                abstracts.append(Document(text=str(text),
                                           date=year,
                                           language=Language.EN,
                                           doc_id=f'sc_{i}',
@@ -733,8 +745,6 @@ class DataHandler:
             else:
                 print(record)
                 print("##########################################")
-                print("##########################################")
-                print("##########################################")
 
         print(no_year_but_text_counter, no_text_but_year_counter, no_year_and_no_text_counter, no_text_counter,
               no_year_counter, len(abstracts), no_text_counter + no_year_counter + len(abstracts))
@@ -742,9 +752,9 @@ class DataHandler:
         return abstracts
 
     @staticmethod
-    def get_bundestag_speeches(dir):
+    def get_bundestag_speeches(directory):
         files = []
-        for (dirpath, dirnames, filenames) in os.walk(dir):
+        for (dirpath, dirnames, filenames) in os.walk(directory):
             files.extend(filenames)
             break
 
@@ -755,7 +765,7 @@ class DataHandler:
         speeches = []
         index = 0
         for file in tqdm(files, desc="load Bundestag speeches", total=len(files)):
-            df = pd.read_csv(os.path.join(dir, file))
+            df = pd.read_csv(os.path.join(directory, file))
             for i, row in df.iterrows():
                 if not pd.isna(row["Speech text"]):
                     speeches.append(Document(text=row["Speech text"],

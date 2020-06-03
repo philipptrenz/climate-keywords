@@ -58,7 +58,7 @@ class Preprocessor:
 def parse_and_preprocess_src(data_source, corpus_destination):
     if re.search("bundestag", data_source.lower()):
         name = "bundestag"
-        raw_corpus = DataHandler.get_bundestag_speeches(dir=data_source)
+        raw_corpus = DataHandler.get_bundestag_speeches(directory=data_source)
     elif re.search("sustainability", data_source.lower()):
         name = "sustainability"
         raw_corpus = DataHandler.get_sustainability_data(path=data_source)

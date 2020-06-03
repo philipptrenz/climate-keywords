@@ -494,7 +494,7 @@ def main():
     list_of_keywords = []
 
     for k in rake_keywords[rake_keywords_keys[0]]:
-        kw = Keyword(german_translation=k, type=KeywordType.RAKE)
+        kw = Keyword(german_translation=k, keyword_type=KeywordType.RAKE)
         kwt.translate(kw)
         list_of_keywords.append(kw)
         print('{} \t {} \t\t\t {}'.format(kw.source_language, kw.english_translation, kw.german_translation))
