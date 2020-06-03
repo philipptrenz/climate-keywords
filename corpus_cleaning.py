@@ -11,10 +11,11 @@ def create_new_filepath_uncleaned(file_path):
 
 
 def cleaning_abstracts(config, overwrite=True):
-    corpus = Corpus(source=config["corpora"]["abstract_corpus"], language=Language.EN)
+    corpus = Corpus(source=config["corpora"]["abstract_corpus"], language=Language.EN, name="abstract_corpus")
     # corpus = DataHandler.load_corpus(config["corpora"]["abstract_corpus"])
     print("1", len(corpus))
-    corpus = Corpus([d for d in corpus.get_documents() if d.date and len(str(d.date)) == 4 and d.date.isnumeric()])
+    corpus = Corpus([d for d in corpus.get_documents() if d.date and len(str(d.date)) == 4 and d.date.isnumeric()],
+                    name=corpus.name)
     for d in corpus.get_documents():
         d.date = int(d.date)
     print("2", len(corpus))
@@ -26,10 +27,10 @@ def cleaning_abstracts(config, overwrite=True):
 
 
 def cleaning_sustainability(config, overwrite=True):
-    corpus = Corpus(source=config["corpora"]["sustainability_corpus"], language=Language.EN)
+    corpus = Corpus(source=config["corpora"]["sustainability_corpus"], language=Language.EN, name="sustainability_corpus")
     # corpus = DataHandler.load_corpus(config["corpora"]["sustainability_corpus"])
     print("1", len(corpus))
-    corpus = Corpus(source=[d for d in corpus.documents if d.date], language=corpus.language)
+    corpus = Corpus(source=[d for d in corpus.documents if d.date], language=corpus.language, name=corpus.name)
     for d in corpus.get_documents():
         d.date = int(d.date)
     print("2", len(corpus))
@@ -41,9 +42,9 @@ def cleaning_sustainability(config, overwrite=True):
 
 
 def cleaning_bundestag(config, overwrite=True):
-    corpus = Corpus(source=config["corpora"]["bundestag_corpus"], language=Language.DE, name="bundestag")
+    corpus = Corpus(source=config["corpora"]["bundestag_corpus"], language=Language.DE, name="bundestag_corpus")
     # corpus = DataHandler.load_corpus(config["corpora"]["bundestag_corpus"])
-    corpus = Corpus(source=[d for d in corpus.get_documents() if d.date], language=corpus.language, name="bundestag")
+    corpus = Corpus(source=[d for d in corpus.get_documents() if d.date], language=corpus.language, name=corpus.name)
     print("1", len(corpus))
     for d in corpus.get_documents():
         d.date = int(d.date)

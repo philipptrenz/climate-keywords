@@ -402,6 +402,7 @@ class KeyPhraseExtractor:
                 r.extract_keywords_from_text(document.text)
                 keywords[document.doc_id] = r.get_ranked_phrases()
             corpus.assign_keywords(keywords=keywords, keyword_type=KeywordType.RAKE)
+            return corpus
 
         else:
             results = {}
@@ -441,9 +442,9 @@ def main():
     # load configuration parameters from config file
     config = ConfigLoader.get_config()
 
-    # corpus = Corpus(source=config["corpora"]["abstract_corpus"], language=Language.EN)
-    # corpus = Corpus(source=config["corpora"]["bundestag_corpus"], language=Language.DE)
-    corpus = Corpus(source=config["corpora"]["sustainability_corpus"], language=Language.EN)
+    # corpus = Corpus(source=config["corpora"]["abstract_corpus"], language=Language.EN, name="abstract_corpus")
+    # corpus = Corpus(source=config["corpora"]["bundestag_corpus"], language=Language.DE, name="bundestag_corpus")
+    corpus = Corpus(source=config["corpora"]["sustainability_corpus"], language=Language.EN, name="sustainability_corpus")
 
     # print(len(corpus))
     # test = DocumentsFilter.filter(corpus, has_tags=['test'])

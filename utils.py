@@ -1,17 +1,17 @@
-from enum import Enum
-from collections import defaultdict, Counter
-import random
-import numpy as np
-from typing import List, Set, Dict, NamedTuple, Tuple, Union
-import pandas as pd
-from tqdm import tqdm
-import os
-import re
-import logging
-import googletrans
 import json
+import logging
+import os
+import random
+import re
 import time
+from collections import defaultdict, Counter
+from enum import Enum
+from typing import List, Set, Dict, Tuple, Union
+
+import googletrans
+import pandas as pd
 import spacy
+from tqdm import tqdm
 
 
 class ConfigLoader:
@@ -33,7 +33,6 @@ class ConfigLoader:
 
 
 class KeywordType(str, Enum):
-
     UNKNOWN = "unknown"
     TF_SKL = "tf_skl"
     TFIDF_SKL = "tfidf_skl"
@@ -49,22 +48,24 @@ class KeywordType(str, Enum):
 
 
 class Language(str, Enum):
-
     UNKNOWN = "unknown"
     DE = "de"
     EN = "en"
 
     @staticmethod
     def get_from_str(language: str) -> "Language":
-        if language.lower() == "en" or language.lower() == "english" or language.lower() == "englisch":
+        if language.lower() == "en" or language.lower() == "english" or \
+                language.lower() == "englisch":
             return Language.EN
-        if language.lower() == "de" or language.lower() == "deutsch" or language.lower() == "ger" or language.lower() == "german":
+        if language.lower() == "de" or language.lower() == "deutsch" or \
+                language.lower() == "ger" or language.lower() == "german":
             return Language.DE
         return Language.UNKNOWN
 
 
 class Keyword:
-    def __init__(self, english_translation: str = None, german_translation: str = None, type: KeywordType = KeywordType.UNKNOWN, source_language=Language.UNKNOWN):
+    def __init__(self, english_translation: str = None, german_translation: str = None,
+                 type: KeywordType = KeywordType.UNKNOWN, source_language=Language.UNKNOWN):
 
         if not english_translation and not german_translation:
             raise Exception("Keyword cannot be intialized without any translation")
@@ -130,7 +131,8 @@ class Keyword:
 
 
 class Document:
-    def __init__(self, text: str, date, language: Language, doc_id: str, tags=None, author=None, party=None, rating=None,
+    def __init__(self, text: str, date, language: Language, doc_id: str, tags=None, author=None, party=None,
+                 rating=None,
                  keywords=None):
         self.text = text
         self.date = date
@@ -152,10 +154,12 @@ class Corpus:
     def __init__(self, source: Union[Dict[Union[str, int], Document], List[Document], str],
                  name: str,
                  language: Language,
-                 has_assigned_keywords=False):
+                 has_assigned_keywords=False,
+                 has_translated_keywords=False):
         self.name = name
         self.language = language
         self.has_assigned_keywords = has_assigned_keywords
+        self.has_translated_keywords = has_translated_keywords
 
         if isinstance(source, str):
             documents = self.load_corpus(path=source)
@@ -206,7 +210,11 @@ class Corpus:
                                 )
                        for year, docs in tqdm(year_bins.items(), desc="Construct pseudo docs", total=len(year_bins))]
 
-        return Corpus(source=pseudo_docs, name=self.name, language=self.language)
+        return Corpus(source=pseudo_docs,
+                      name=self.name,
+                      language=self.language,
+                      has_assigned_keywords=self.has_assigned_keywords,
+                      has_translated_keywords=self.has_translated_keywords)
 
     def group_keywords_year_wise(self, top_k_per_year=None) -> Dict[int, List[str]]:
         if self.has_assigned_keywords:
@@ -229,12 +237,14 @@ class Corpus:
         documents = documents[:n]
         return Corpus(source=documents,
                       language=self.language,
-                      has_assigned_keywords=self.has_assigned_keywords)
+                      has_assigned_keywords=self.has_assigned_keywords,
+                      has_translated_keywords=self.has_translated_keywords,
+                      name=f'{self.name}_top{n}')
 
     def save_corpus(self, path: str):
         data = [doc.__dict__ for doc in self.get_documents()]
         with open(path, 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=1,  default=lambda o: o.__dict__)
+            json.dump(data, f, ensure_ascii=False, indent=1, default=lambda o: o.__dict__)
         logging.info(f'saved {path}')
 
     def get_years(self) -> [str]:
@@ -287,11 +297,26 @@ class Corpus:
             result = Corpus(source=random.sample(self.get_documents(), k=number_documents),
                             language=self.language,
                             has_assigned_keywords=self.has_assigned_keywords,
+                            has_translated_keywords=self.has_translated_keywords,
                             name=f'{self.name}_sample')
         else:
             result = random.sample(self.get_documents(), k=number_documents)
         return result
 
+    def translate_keywords(self, restrict_per_document=None):
+        keyword_translator = KeywordTranslator()
+        list_of_keywords = []
+
+        for document in self.get_documents():
+            for i, kw in enumerate(document.keywords):
+                if restrict_per_document and i > restrict_per_document:
+                    break
+                keyword_translator.translate(kw)
+                list_of_keywords.append(kw)
+                print('{} \t {} \t\t\t {}'.format(kw.source_language, kw.english_translation, kw.german_translation))
+
+        self.has_translated_keywords = True
+        return list_of_keywords
 
     @staticmethod
     def transform_pseudo_docs_keywords_to_dict(keywords: Dict[str, List[str]]) -> Dict[int, List[str]]:
@@ -301,7 +326,7 @@ class Corpus:
         return len(self.documents)
 
     def __str__(self):
-        return f'docs={len(self)}, lan={self.language}, keywords={self.has_assigned_keywords}'
+        return f'docs={len(self)}, lan={self.language}, keywords={self.has_assigned_keywords}, name={self.name}'
 
     __repr__ = __str__
 
@@ -310,16 +335,16 @@ class CorpusFilter:
 
     @staticmethod
     def filter(corpus: Corpus,
-                   text_contains_one_of: [str] = None,
-                   date_in_range: range = None,
-                   is_one_of_languages: [str] = None,
-                   is_one_of_doc_ids: [int] = None,
-                   has_authors: [str] = None,
-                   has_tags: [str] = None,
-                   is_one_of_parties: [str] = None,
-                   ratings_in_range: range = None,
-                   has_one_of_keywords_with_english_translation: [str] = None,
-                   has_one_of_keywords_with_german_translation: [str] = None) -> Corpus:
+               text_contains_one_of: [str] = None,
+               date_in_range: range = None,
+               is_one_of_languages: [str] = None,
+               is_one_of_doc_ids: [int] = None,
+               has_authors: [str] = None,
+               has_tags: [str] = None,
+               is_one_of_parties: [str] = None,
+               ratings_in_range: range = None,
+               has_one_of_keywords_with_english_translation: [str] = None,
+               has_one_of_keywords_with_german_translation: [str] = None) -> Corpus:
 
         filtered: [Document] = []
 
@@ -387,7 +412,11 @@ class CorpusFilter:
                 logging.exception("An exception occured while applying filters, skipping document")
                 continue
 
-        return Corpus(source=filtered, name=corpus.name,language=corpus.language, has_assigned_keywords=corpus.has_assigned_keywords)
+        return Corpus(source=filtered,
+                      name=corpus.name,
+                      language=corpus.language,
+                      has_assigned_keywords=corpus.has_assigned_keywords,
+                      has_translated_keywords=corpus.has_translated_keywords)
 
 
 class KeywordTranslator:
@@ -424,11 +453,13 @@ class KeywordTranslator:
             return keyword
         else:
             if not keyword.english_translation:
-                logging.debug("KeywordTranslator: {} | source is DE, EN not set, translating ...".format(keyword.german_translation))
+                logging.debug("KeywordTranslator: {} | source is DE, EN not set, translating ...".format(
+                    keyword.german_translation))
 
                 try:
                     time.sleep(self.timeout)
-                    translated = self.translator.translate(text=keyword.german_translation, src=str(Language.DE.value), dest=str(Language.EN.value))
+                    translated = self.translator.translate(text=keyword.german_translation, src=str(Language.DE.value),
+                                                           dest=str(Language.EN.value))
                     keyword.english_translation = translated.text
                     self.add_to_cache(keyword)
                     return keyword
@@ -437,7 +468,9 @@ class KeywordTranslator:
                     logging.error(e)
 
             else:
-                logging.debug("KeywordTranslator: {}, {} | source is DE, but EN already set, skipping translation".format(keyword.german_translation, keyword.english_translation))
+                logging.debug(
+                    "KeywordTranslator: {}, {} | source is DE, but EN already set, skipping translation".format(
+                        keyword.german_translation, keyword.english_translation))
                 return None
 
     def translate_english2german(self, keyword):
@@ -449,10 +482,12 @@ class KeywordTranslator:
         else:
 
             if not keyword.german_translation:
-                logging.debug("KeywordTranslator: {} | source is EN, DE not set, translating ...".format(keyword.english_translation))
+                logging.debug("KeywordTranslator: {} | source is EN, DE not set, translating ...".format(
+                    keyword.english_translation))
                 try:
                     time.sleep(self.timeout)
-                    translated = self.translator.translate(text=keyword.english_translation, src=str(Language.EN.value), dest=str(Language.DE.value))
+                    translated = self.translator.translate(text=keyword.english_translation, src=str(Language.EN.value),
+                                                           dest=str(Language.DE.value))
                     keyword.german_translation = translated.text
                     self.add_to_cache(keyword)
 
@@ -461,8 +496,22 @@ class KeywordTranslator:
                     logging.error("While trying to translate, an error occured:")
                     logging.error(e)
             else:
-                logging.debug("KeywordTranslator: {}, {}| source is EN, but DE already set, skipping translation".format(keyword.english_translation, keyword.german_translation))
+                logging.debug(
+                    "KeywordTranslator: {}, {}| source is EN, but DE already set, skipping translation".format(
+                        keyword.english_translation, keyword.german_translation))
                 return None
+
+    def translate_corpus(self, corpus: Corpus):
+        kwt = KeywordTranslator()
+        list_of_keywords = []
+
+        for document in corpus.get_documents():
+            for kw in document.keywords:
+                kwt.translate(kw)
+                list_of_keywords.append(kw)
+                print('{} \t {} \t\t\t {}'.format(kw.source_language, kw.english_translation, kw.german_translation))
+
+        return list_of_keywords
 
     def load_cache_from_file(self):
         self.cache = dict()
@@ -488,7 +537,8 @@ class KeywordMatcher:
         pass
 
     @classmethod
-    def lemmatize(cls, keyword_collection: Union[Dict[int, List[Keyword]], List[Document]], german_model, english_model):
+    def lemmatize(cls, keyword_collection: Union[Dict[int, List[Keyword]], List[Document]], german_model,
+                  english_model):
         for instance in keyword_collection:
             if isinstance(keyword_collection, dict):
                 keywords = keyword_collection[instance]
@@ -532,7 +582,8 @@ class KeywordMatcher:
     def match_corpora(cls, keyword_collection_1: Union[Dict[int, List[Keyword]], List[Document]],
                       keyword_collection_2: Union[Dict[int, List[Keyword]], List[Document]],
                       lemmatize: bool = True,
-                      simplify_result: bool = True) -> Tuple[Dict[Keyword, Tuple[List[int], List[int]]], Dict[str, str]]:
+                      simplify_result: bool = True) -> Tuple[
+        Dict[Keyword, Tuple[List[int], List[int]]], Dict[str, str]]:
 
         if lemmatize:
             german_model = spacy.load("de_core_news_sm")
@@ -542,7 +593,8 @@ class KeywordMatcher:
 
         # groups ids or years by keywords
         reversed_keywords_1, ger_translations, en_translations = cls.group_by_key(keyword_collection_1)
-        reversed_keywords_2, ger_translations, en_translations = cls.group_by_key(keyword_collection_2, ger_translations, en_translations)
+        reversed_keywords_2, ger_translations, en_translations = cls.group_by_key(keyword_collection_2,
+                                                                                  ger_translations, en_translations)
 
         # matches years or ids by iterating through keywords in common
         matched_keywords = set()
@@ -554,7 +606,8 @@ class KeywordMatcher:
             if keyword in reversed_keywords_1:
                 matched_keywords.add(keyword)
 
-        result_dict = {keyword: (reversed_keywords_1[keyword], reversed_keywords_2[keyword]) for keyword in matched_keywords}
+        result_dict = {keyword: (reversed_keywords_1[keyword], reversed_keywords_2[keyword]) for keyword in
+                       matched_keywords}
 
         # uses only english keyword versions
         if simplify_result:
@@ -563,7 +616,9 @@ class KeywordMatcher:
                 if keyword in ger_translations.keys():
                     for translation in ger_translations[keyword]:
                         if translation in result_dict.keys():
-                            new_result = (result[0].union(result_dict[translation][0]), result[1].union(result_dict[translation][1]))
+                            new_result = (
+                                result[0].union(result_dict[translation][0]),
+                                result[1].union(result_dict[translation][1]))
                             filtered_result[translation] = new_result
                         else:
                             filtered_result[translation] = result
@@ -611,11 +666,11 @@ class DataHandler:
         with open(path, encoding="utf-8") as f:
             data = f.read()
 
-        data_replaced = re.sub(r"\nER\n?\n(FN|VR|PT|AU|AF|BA|BF|CA|GP|BE|TI|SO|SE|BS|LA|DT|CT|CY|CL|SP|HO|DE|ID|AB|C1|RP|EM|RI"
-                               r"|OI|FU|FX|CR|NR|TC|Z9|U1|U2|PU|PI|PA|SN|EI|BN|J9|JI|PD|PY|VL|IS|SI|PN|SU|MA|BP|EP|AR"
-                               r"|DI|D2|EA|EY|PG|P2|WC|SC|GA|PM|UT|OA|HP|HC|DA|ER|EF)", r"###!!!#?#!!!###\g<1>", data)
+        data_replaced = re.sub(
+            r"\nER\n?\n(FN|VR|PT|AU|AF|BA|BF|CA|GP|BE|TI|SO|SE|BS|LA|DT|CT|CY|CL|SP|HO|DE|ID|AB|C1|RP|EM|RI"
+            r"|OI|FU|FX|CR|NR|TC|Z9|U1|U2|PU|PI|PA|SN|EI|BN|J9|JI|PD|PY|VL|IS|SI|PN|SU|MA|BP|EP|AR"
+            r"|DI|D2|EA|EY|PG|P2|WC|SC|GA|PM|UT|OA|HP|HC|DA|ER|EF)", r"###!!!#?#!!!###\g<1>", data)
         records = data_replaced.split("###!!!#?#!!!###")
-
 
         abstracts = []
         wos_categories = re.compile(
@@ -682,7 +737,7 @@ class DataHandler:
                 print("##########################################")
 
         print(no_year_but_text_counter, no_text_but_year_counter, no_year_and_no_text_counter, no_text_counter,
-              no_year_counter, len(abstracts), no_text_counter+no_year_counter+len(abstracts))
+              no_year_counter, len(abstracts), no_text_counter + no_year_counter + len(abstracts))
 
         return abstracts
 
@@ -704,12 +759,12 @@ class DataHandler:
             for i, row in df.iterrows():
                 if not pd.isna(row["Speech text"]):
                     speeches.append(Document(text=row["Speech text"],
-                                    date=row["Date"][:4],
-                                    language=Language.DE,
-                                    doc_id=f'po_{index}',
-                                    author=row["Speaker"],
-                                    party=row["Speaker party"],
-                                    rating=row["Interjection count"]))
+                                             date=row["Date"][:4],
+                                             language=Language.DE,
+                                             doc_id=f'po_{index}',
+                                             author=row["Speaker"],
+                                             party=row["Speaker party"],
+                                             rating=row["Interjection count"]))
                     index += 1
 
         return speeches
@@ -734,10 +789,14 @@ if __name__ == '__main__':
     # key word translator example
     kwt = KeywordTranslator()
 
+
     def translate(keyword):
-        print('before: {}\t| {}\t | {}'.format(keyword.english_translation, keyword.german_translation, keyword.source_language))
+        print('before: {}\t| {}\t | {}'.format(keyword.english_translation, keyword.german_translation,
+                                               keyword.source_language))
         kwt.translate(keyword)
-        print('after:  {}\t| {}\t | {}\n'.format(keyword.english_translation, keyword.german_translation, keyword.source_language))
+        print('after:  {}\t| {}\t | {}\n'.format(keyword.english_translation, keyword.german_translation,
+                                                 keyword.source_language))
+
 
     print('translated')
 
@@ -746,7 +805,3 @@ if __name__ == '__main__':
     translate(Keyword(german_translation="Achse des Bösen"))
 
     translate(Keyword(english_translation="axis of evil", german_translation="Achse des Bösen"))
-
-
-
-
