@@ -1,7 +1,8 @@
 import os
 
-from utils import DataHandler, ConfigLoader, Corpus, Language
 import numpy as np
+
+from utils import ConfigLoader, Corpus, Language
 
 
 def create_new_filepath_uncleaned(file_path):
@@ -15,19 +16,21 @@ def cleaning_abstracts(config, overwrite=True):
     # corpus = DataHandler.load_corpus(config["corpora"]["abstract_corpus"])
     print("1", len(corpus))
     corpus = Corpus([d for d in corpus.get_documents() if d.date and len(str(d.date)) == 4 and d.date.isnumeric()],
-                    name=corpus.name)
+                    name=corpus.name, language=Language.EN)
     for d in corpus.get_documents():
         d.date = int(d.date)
     print("2", len(corpus))
 
     if not overwrite:
-        os.rename(src=config["corpora"]["abstract_corpus"], dst=create_new_filepath_uncleaned(config["corpora"]["abstract_corpus"]))
+        os.rename(src=config["corpora"]["abstract_corpus"],
+                  dst=create_new_filepath_uncleaned(config["corpora"]["abstract_corpus"]))
 
     corpus.save_corpus(config["corpora"]["abstract_corpus"])
 
 
 def cleaning_sustainability(config, overwrite=True):
-    corpus = Corpus(source=config["corpora"]["sustainability_corpus"], language=Language.EN, name="sustainability_corpus")
+    corpus = Corpus(source=config["corpora"]["sustainability_corpus"],
+                    language=Language.EN, name="sustainability_corpus")
     # corpus = DataHandler.load_corpus(config["corpora"]["sustainability_corpus"])
     print("1", len(corpus))
     corpus = Corpus(source=[d for d in corpus.documents if d.date], language=corpus.language, name=corpus.name)
@@ -36,7 +39,8 @@ def cleaning_sustainability(config, overwrite=True):
     print("2", len(corpus))
 
     if not overwrite:
-        os.rename(src=config["corpora"]["sustainability_corpus"], dst=create_new_filepath_uncleaned(config["corpora"]["sustainability_corpus"]))
+        os.rename(src=config["corpora"]["sustainability_corpus"],
+                  dst=create_new_filepath_uncleaned(config["corpora"]["sustainability_corpus"]))
 
     corpus.save_corpus(config["corpora"]["sustainability_corpus"])
 
@@ -51,7 +55,8 @@ def cleaning_bundestag(config, overwrite=True):
     print("2", len(corpus))
 
     if not overwrite:
-        os.rename(src=config["corpora"]["bundestag_corpus"], dst=create_new_filepath_uncleaned(config["corpora"]["bundestag_corpus"]))
+        os.rename(src=config["corpora"]["bundestag_corpus"],
+                  dst=create_new_filepath_uncleaned(config["corpora"]["bundestag_corpus"]))
 
     corpus.save_corpus(config["corpora"]["bundestag_corpus"])
 
@@ -80,14 +85,20 @@ def cleaning_authors(config, overwrite=False):
                     if corpus_name == "bundestag_corpus":
                         authors = [d.author]
                     elif corpus_name == "sustainability_corpus":
-                        authors = [a.strip() for a in d.author.split(',')]
-                        authors = [f'{j}. {i}' for i, j in zip(authors[::2], authors[1::2])]
+                        if isinstance(d.author, str):
+                            authors = [a.strip() for a in d.author.split(',')]
+                            authors = [f'{j}. {i}' for i, j in zip(authors[::2], authors[1::2])]
+                        else:
+                            authors = d.author
                     else:
                         if d.language != "English":
                             wlc += 1
                             continue
-                        authors = [a.strip() for a in d.author.split(',')]
-                        authors = [f'{j}. {i}' for i, j in zip(authors[::2], authors[1::2])]
+                        if isinstance(d.author, str):
+                            authors = [a.strip() for a in d.author.split(',')]
+                            authors = [f'{j}. {i}' for i, j in zip(authors[::2], authors[1::2])]
+                        else:
+                            authors = d.author
                         if len(authors) > 1:
                             m_a += 1
                             print(d.author, authors)
@@ -96,7 +107,8 @@ def cleaning_authors(config, overwrite=False):
                     d.author = authors
 
         if not overwrite:
-            os.rename(src=config["corpora"][corpus_name], dst=create_new_filepath_uncleaned(config["corpora"][corpus_name]))
+            os.rename(src=config["corpora"][corpus_name],
+                      dst=create_new_filepath_uncleaned(config["corpora"][corpus_name]))
 
         corpus.save_corpus(config["corpora"][corpus_name])
     print(wlc, m_a, s_a)
@@ -107,8 +119,8 @@ def main():
     config = ConfigLoader.get_config()
 
     # deletes unusable documents and replaces date with year int
-    #cleaning_abstracts(config, overwrite=False)
-    #cleaning_sustainability(config, overwrite=False)
+    # cleaning_abstracts(config, overwrite=False)
+    # cleaning_sustainability(config, overwrite=False)
     cleaning_bundestag(config, overwrite=True)
 
     cleaning_authors(config, overwrite=True)

@@ -1,16 +1,16 @@
-from collections import defaultdict, Counter, OrderedDict
-from typing import List, Set, Dict, NamedTuple, Callable, Union
-import pandas as pd
-from rake_nltk import Rake
-from nltk.corpus import stopwords
-from tqdm import tqdm
-import pke
-import string
-from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
-import numpy as np
 import logging
+import string
+from collections import Counter
+from typing import List, Dict, Union
 
-from utils import Corpus, Document, ConfigLoader, DataHandler, Keyword, KeywordTranslator, KeywordType, Language, CorpusFilter
+import pandas as pd
+import pke
+from nltk.corpus import stopwords
+from rake_nltk import Rake
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
+from tqdm import tqdm
+
+from utils import Corpus, Document, ConfigLoader, Keyword, KeywordTranslator, KeywordType, Language
 
 
 class KeyPhraseExtractor:
@@ -24,6 +24,8 @@ class KeyPhraseExtractor:
             stop_words = stopwords.words("English")
         elif corpus.language == Language.DE:
             stop_words = stopwords.words("German")
+        else:
+            raise UserWarning("No stopwords for language!")
 
         count_vectorizer = CountVectorizer(stop_words=stop_words,
                                            ngram_range=(cls.min_nrgam, cls.max_ngram),
@@ -49,11 +51,14 @@ class KeyPhraseExtractor:
             stop_words = stopwords.words("english")
         elif corpus.language == Language.DE:
             stop_words = stopwords.words("german")
+        else:
+            raise UserWarning("No stopwords for language!")
 
         tfidf_vectorizer = TfidfVectorizer(stop_words=stop_words,
                                            ngram_range=(cls.min_nrgam, cls.max_ngram),
                                            min_df=2)
-        tfidf_matrix = tfidf_vectorizer.fit_transform([document.text for document in corpus.get_documents(as_list=True)])
+        tfidf_matrix = tfidf_vectorizer.fit_transform([document.text
+                                                       for document in corpus.get_documents(as_list=True)])
         doc_id_lookup = {i: document.doc_id for i, document in enumerate(corpus.get_documents(as_list=True))}
 
         features = tfidf_vectorizer.get_feature_names()
@@ -70,7 +75,6 @@ class KeyPhraseExtractor:
 
     @classmethod
     def tfidf_pke(cls, corpus: Corpus):
-        key_words_of_documents = {}
         number_keywords = 10
         stop_list = list(string.punctuation)
         # 1. create a TfIdf extractor.
@@ -288,15 +292,16 @@ class KeyPhraseExtractor:
             #    in a window are weighted by co-occurrence counts.
             extractor.candidate_weighting(window=10,
                                           pos=pos,
-                                          lda_model='path/to/lda_model') # todo: find model
+                                          lda_model='path/to/lda_model')  # todo: find model
 
             # 5. get the 10-highest scored candidates as keyphrases
             # 5. get the 10-highest scored candidates as keyphrases
             keyphrases = extractor.get_n_best(n=number_keywords)
-            corpus.assign_keywords(keywords={document.doc_id: keyphrases}, keyword_type=KeywordType.TOPICAL_PAGE_RANK_PKE)
+            corpus.assign_keywords(keywords={document.doc_id: keyphrases},
+                                   keyword_type=KeywordType.TOPICAL_PAGE_RANK_PKE)
 
     @classmethod
-    def position_rank_pke(cls, corpus: Corpus) -> Dict[str, List[str]]:
+    def position_rank_pke(cls, corpus: Corpus):
         # define the set of valid Part-of-Speeches
         pos = {'NOUN', 'PROPN', 'ADJ'}
         # define the grammar for selecting the keyphrase candidates
@@ -353,7 +358,6 @@ class KeyPhraseExtractor:
             stop_list = stopwords.words('english')
 
         # 2. load the content of the document.
-        key_words_of_documents = {}
         number_keywords = 10
         for document in corpus.get_documents(as_list=True):
 
@@ -376,7 +380,8 @@ class KeyPhraseExtractor:
 
             # 5. get the 10-highest scored candidates as keyphrases
             keyphrases = extractor.get_n_best(n=number_keywords)
-            corpus.assign_keywords(keywords={document.doc_id: keyphrases}, keyword_type=KeywordType.MULTIPARTITE_RANK_PKE)
+            corpus.assign_keywords(keywords={document.doc_id: keyphrases},
+                                   keyword_type=KeywordType.MULTIPARTITE_RANK_PKE)
 
     @classmethod
     def rake(cls, corpus: Union[Corpus, Document]):
@@ -444,7 +449,8 @@ def main():
 
     # corpus = Corpus(source=config["corpora"]["abstract_corpus"], language=Language.EN, name="abstract_corpus")
     # corpus = Corpus(source=config["corpora"]["bundestag_corpus"], language=Language.DE, name="bundestag_corpus")
-    corpus = Corpus(source=config["corpora"]["sustainability_corpus"], language=Language.EN, name="sustainability_corpus")
+    corpus = Corpus(source=config["corpora"]["sustainability_corpus"],
+                    language=Language.EN, name="sustainability_corpus")
 
     # print(len(corpus))
     # test = DocumentsFilter.filter(corpus, has_tags=['test'])
@@ -464,8 +470,8 @@ def main():
 
     KeyPhraseExtractor.rake(corpus=corpus)
     print([d.keywords for d in corpus.get_documents()])
-    # key_words_post_group = Document.group_keywords_year_wise(corpus)
-    # key_words_pre_group = Document.transform_pseudo_docs_keywords_to_dict(KeyPhraseExtractor.rake(documents=pseudo_corpus))
+    # key_words_post = Document.group_keywords_year_wise(corpus)
+    # key_words_pre = Document.transform_pseudo_docs_keywords_to_dict(KeyPhraseExtractor.rake(documents=pseudo_corpus))
 
     # print(KeyPhraseExtractor.get_top_k_keywords(key_words_post_group, 10))
     # print(KeyPhraseExtractor.get_top_k_keywords(key_words_pre_group, 10))
@@ -482,8 +488,6 @@ def main():
             print(keyword)
             counter += 1
         break
-
-
 
     print('extracting keywords with rake ...')
     rake_keywords = KeyPhraseExtractor.rake(corpus=corpus.get_documents()[0])
