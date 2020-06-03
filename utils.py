@@ -31,6 +31,7 @@ class ConfigLoader:
         else:
             raise Exception("config file missing!")
 
+config = ConfigLoader.get_config()
 
 class KeywordType(str, Enum):
     UNKNOWN = "unknown"
@@ -98,11 +99,17 @@ class Keyword:
 
     def lemmatize(self, german_nlp, english_nlp):
         german_lemmatized = []
-        for token in german_nlp(self.german_translation):
-            german_lemmatized.append(token.lemma_)
+        if self.german_translation is None and self.english_translation is None:
+            print(self.english_translation, self.german_translation)
+        if self.german_translation:
+            for token in german_nlp(self.german_translation):
+                german_lemmatized.append(token.lemma_)
+
         english_lemmatized = []
-        for token in english_nlp(self.english_translation):
-            english_lemmatized.append(token.lemma_)
+        if self.english_translation:
+            for token in english_nlp(self.english_translation):
+                english_lemmatized.append(token.lemma_)
+
 
         self.german_translation = " ".join(german_lemmatized)
         self.english_translation = " ".join(english_lemmatized)
@@ -290,9 +297,13 @@ class Corpus:
 
         return year_bins
 
-    def sample(self, number_documents=100, as_corpus=True):
+    def sample(self, number_documents=100, as_corpus=True, seed=None):
         if len(self) < number_documents:
             return self
+
+        if seed:
+            random.seed(seed)
+
         if as_corpus:
             result = Corpus(source=random.sample(self.get_documents(), k=number_documents),
                             language=self.language,
@@ -304,7 +315,7 @@ class Corpus:
         return result
 
     def translate_keywords(self, restrict_per_document=None):
-        keyword_translator = KeywordTranslator()
+        keyword_translator = KeywordTranslator(cache_file=config["translator"]["cache_file"])
         list_of_keywords = []
 
         for document in self.get_documents():
@@ -321,6 +332,12 @@ class Corpus:
     @staticmethod
     def transform_pseudo_docs_keywords_to_dict(keywords: Dict[str, List[str]]) -> Dict[int, List[str]]:
         return {int(i.replace("pseudo_", "")): keyword_list for i, keyword_list in keywords.items()}
+
+    def __iter__(self):
+        return self.documents.values().__iter__()
+
+    # def __next__(self):
+    #     return self.documents.__next__()
 
     def __len__(self):
         return len(self.documents)
@@ -530,7 +547,7 @@ class KeywordTranslator:
         if not os.path.exists(self.cache_file):
             raise Exception("File does not exist")
 
-        with open(self.cache_file) as json_file:
+        with open(self.cache_file, encoding='utf-8') as json_file:
             cache_data = json.load(json_file)
             for key in cache_data:
                 self.cache[key] = Keyword.from_json(cache_data[key])
@@ -541,7 +558,7 @@ class KeywordTranslator:
 
     def save_cache(self):
         with open(self.cache_file, 'w', encoding='utf-8') as f:
-            json.dump(self.cache, f, ensure_ascii=False, indent=1, default=lambda o: o.__dict__)
+            json.dump(self.cache, f, ensure_ascii=True, indent=1, default=lambda o: o.__dict__)
 
 
 class KeywordMatcher:
@@ -549,12 +566,14 @@ class KeywordMatcher:
         pass
 
     @classmethod
-    def lemmatize(cls, keyword_collection: Union[Dict[int, List[Keyword]], List[Document]], german_model,
+    def lemmatize(cls, keyword_collection: Union[Dict[int, List[Keyword]], List[Document], Corpus], german_model,
                   english_model):
         for instance in keyword_collection:
             if isinstance(keyword_collection, dict):
                 keywords = keyword_collection[instance]
             elif isinstance(keyword_collection, list):
+                keywords = instance.keywords
+            elif isinstance(keyword_collection, Corpus):
                 keywords = instance.keywords
             else:
                 raise NotImplementedError("Not supported type!")
@@ -579,14 +598,22 @@ class KeywordMatcher:
             elif isinstance(keyword_collection, list):
                 keywords = instance.keywords
                 identifier = instance.doc_id
+            elif isinstance(keyword_collection, Corpus):
+                keywords = instance.keywords
+                identifier = instance.doc_id
             else:
                 raise NotImplementedError("Not suppported type!")
 
             for keyword in keywords:
-                reversed_keywords[keyword.german_translation].add(identifier)
-                reversed_keywords[keyword.english_translation].add(identifier)
-                ger_translations[keyword.german_translation].add(keyword.english_translation)
-                en_translations[keyword.english_translation].add(keyword.german_translation)
+                if keyword.german_translation is not None and keyword.german_translation != "":
+                    reversed_keywords[keyword.german_translation].add(identifier)
+                if keyword.english_translation is not None and keyword.english_translation != "":
+                    reversed_keywords[keyword.english_translation].add(identifier)
+
+                if keyword.german_translation is not None and keyword.english_translation is not None \
+                        and keyword.german_translation != "" and keyword.english_translation != "":
+                    ger_translations[keyword.german_translation].add(keyword.english_translation)
+                    en_translations[keyword.english_translation].add(keyword.german_translation)
 
         return reversed_keywords, ger_translations, en_translations
 
@@ -797,7 +824,7 @@ if __name__ == '__main__':
     # print(monkey in list({affe, affe2}))
 
     # key word translator example
-    kwt = KeywordTranslator()
+    kwt = KeywordTranslator(cache_file=config["translator"]["cache_file"])
 
 
     def translate(keyword):

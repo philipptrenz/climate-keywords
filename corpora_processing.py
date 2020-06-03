@@ -494,7 +494,7 @@ def main():
     rake_keywords_keys = list(rake_keywords.keys())
     print('rake keywords dict keys:', rake_keywords_keys)
 
-    kwt = KeywordTranslator()
+    kwt = KeywordTranslator(cache_file=config["translator"]["cache_file"])
     list_of_keywords = []
 
     for k in rake_keywords[rake_keywords_keys[0]]:
