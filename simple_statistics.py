@@ -1,6 +1,5 @@
 from collections import defaultdict, OrderedDict
 from typing import Callable
-
 from utils import ConfigLoader, Language, Corpus
 
 
@@ -115,12 +114,11 @@ def main():
     #  657520, 693466, 847938, 985064, 1255443, 1473326, 1856967, 2120475, 2548691, 2924106, 3559252, 4097080, 4829304,
     #  5716151, 7148684, 8828958]
 
-def simple_bar_histogram(bin_data, count_data):
-    plt.bar(x=bin_data, height=count_data, color='lawngreen', align='center')
-    locator = mdates.AutoDateLocator()
-    ax.xaxis.set_major_locator(mdates.YearLocator())
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
-    plt.show()
+
+
+
+
+
 
 if __name__ == '__main__':
     main()
