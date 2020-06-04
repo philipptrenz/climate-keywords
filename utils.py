@@ -33,6 +33,7 @@ class ConfigLoader:
 
 config = ConfigLoader.get_config()
 
+
 class KeywordType(str, Enum):
     UNKNOWN = "unknown"
     TF_SKL = "tf_skl"
@@ -86,7 +87,7 @@ class Keyword:
         if english_translation and german_translation:
             self.source_language = Language.UNKNOWN
 
-        self.type = keyword_type
+        self.keyword_type = keyword_type
 
     def __getitem__(self, item):
         return self.__dict__[item]
@@ -132,7 +133,7 @@ class Keyword:
         return Keyword(
             english_translation=data["english_translation"],
             german_translation=data["german_translation"],
-            keyword_type=KeywordType(data["type"]),
+            keyword_type=KeywordType(data["keyword_type"]),
             source_language=Language(data["source_language"]))
 
 
@@ -468,15 +469,18 @@ class KeywordTranslator:
             logging.debug("KeywordTranslator: source is unknown, skipping")
 
         elif keyword.source_language is Language.DE:
+            print("g2e")
             self.translate_german2english(keyword)
 
         elif keyword.source_language is Language.EN:
+            print("e2g")
             self.translate_english2german(keyword)
 
     def translate_german2english(self, keyword):
         if keyword.german_translation in self.cache and self.cache[keyword.german_translation].english_translation:
             print('found keyword in cache, taking this one')
             keyword = self.cache[keyword.german_translation]
+            print(keyword.source_language)
             return keyword
         else:
             if not keyword.english_translation:
@@ -489,6 +493,7 @@ class KeywordTranslator:
                                                            dest=str(Language.EN.value))
                     keyword.english_translation = translated.text
                     self.add_to_cache(keyword)
+                    print(keyword.source_language)
                     return keyword
                 except Exception as e:
                     logging.error("While trying to translate, an error occured:")
