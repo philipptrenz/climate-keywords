@@ -67,14 +67,14 @@ class Language(str, Enum):
 
 class Keyword:
     def __init__(self, english_translation: str = None, german_translation: str = None,
-                 keyword_type: KeywordType = KeywordType.UNKNOWN, source_language=Language.UNKNOWN):
+                 keyword_type: KeywordType = KeywordType.UNKNOWN, source_language: Language = Language.UNKNOWN):
 
         if not english_translation and not german_translation:
             raise Exception("Keyword cannot be intialized without any translation")
 
         self.english_translation = None
         self.german_translation = None
-        self.source_language = source_language
+
 
         if english_translation:
             self.english_translation = english_translation
@@ -86,7 +86,7 @@ class Keyword:
 
         if english_translation and german_translation:
             self.source_language = Language.UNKNOWN
-
+        self.source_language = source_language
         self.keyword_type = keyword_type
 
     def __getitem__(self, item):
@@ -134,7 +134,8 @@ class Keyword:
             english_translation=data["english_translation"],
             german_translation=data["german_translation"],
             keyword_type=KeywordType(data["keyword_type"]),
-            source_language=Language(data["source_language"]))
+            source_language=Language(data["source_language"])
+        )
 
 
 class Document:
@@ -192,10 +193,12 @@ class Corpus:
             if keywords:
                 if document.doc_id in keywords:
                     if document.language == Language.DE:
-                        parsed_keywords = [Keyword(german_translation=keyword, keyword_type=keyword_type)
+                        parsed_keywords = [Keyword(german_translation=keyword, keyword_type=keyword_type,
+                                                   source_language=document.language)
                                            for keyword in keywords[document.doc_id]]
                     else:
-                        parsed_keywords = [Keyword(english_translation=keyword, keyword_type=keyword_type)
+                        parsed_keywords = [Keyword(english_translation=keyword, keyword_type=keyword_type,
+                                                   source_language=document.language)
                                            for keyword in keywords[document.doc_id]]
                     document.keywords = parsed_keywords
 
@@ -469,18 +472,15 @@ class KeywordTranslator:
             logging.debug("KeywordTranslator: source is unknown, skipping")
 
         elif keyword.source_language is Language.DE:
-            print("g2e")
             self.translate_german2english(keyword)
 
         elif keyword.source_language is Language.EN:
-            print("e2g")
             self.translate_english2german(keyword)
 
     def translate_german2english(self, keyword):
         if keyword.german_translation in self.cache and self.cache[keyword.german_translation].english_translation:
             print('found keyword in cache, taking this one')
             keyword = self.cache[keyword.german_translation]
-            print(keyword.source_language)
             return keyword
         else:
             if not keyword.english_translation:
@@ -493,7 +493,6 @@ class KeywordTranslator:
                                                            dest=str(Language.EN.value))
                     keyword.english_translation = translated.text
                     self.add_to_cache(keyword)
-                    print(keyword.source_language)
                     return keyword
                 except Exception as e:
                     logging.error("While trying to translate, an error occured:")
