@@ -53,7 +53,8 @@ def get_common_keyword_vocab(matches: Dict[Keyword, Tuple[List[int], List[int]]]
 def main():
     grouped_dict1 = {2020: [Keyword(german_translation="klimawandel", english_translation="climate change"),
                             Keyword(german_translation="nachhaltigkeit", english_translation="sustainability"),
-                            Keyword(german_translation="Wasser", english_translation="water")]}
+                            Keyword(german_translation="Wasser", english_translation="water"),
+                            Keyword(german_translation="H11", english_translation="")]}
 
     grouped_dict2 = {2011: [Keyword(german_translation="nachhaltigkeit", english_translation="sustainability"),
                             Keyword(german_translation="klimawandel", english_translation="climate change"),
@@ -65,18 +66,22 @@ def main():
 
                      2017: [Keyword(german_translation="Geld", english_translation="money"),
                             Keyword(german_translation="Wasser", english_translation="sea"),
-                            Keyword(german_translation="kernfusion", english_translation="fusion")]
+                            Keyword(german_translation="kernfusion", english_translation="fusion"),
+                            Keyword(german_translation="", english_translation="bf")]
 
                      }
 
-    km = KeywordMatcher()
-    print(km.match_corpora(grouped_dict1, grouped_dict2))
+    # km = KeywordMatcher()
+    # print(km.match_corpora(grouped_dict1, grouped_dict2))
 
     documents1 = [
         Document(doc_id="B", keywords=[Keyword(german_translation="klimawandel", english_translation="climate change"),
                                        Keyword(german_translation="nachhaltigkeit",
                                                english_translation="sustainability"),
-                                       Keyword(german_translation="Wasser", english_translation="water")],
+                                       Keyword(german_translation="Wasser", english_translation="water"),
+                                       Keyword(german_translation="H11", english_translation=""),
+                                       Keyword(german_translation="11H", english_translation=None)
+                                       ],
                  date=2020, language=Language.DE, text="climate change pollution clean energy sustainability water")]
 
     documents2 = [Document(doc_id="A",
@@ -91,18 +96,22 @@ def main():
                            date=2018, language=Language.EN, text="Verkehr ist wichtig besonders das Auto"),
                   Document(doc_id="D", keywords=[Keyword(german_translation="Geld", english_translation="money"),
                                                  Keyword(german_translation="Wasser", english_translation="sea"),
-                                                 Keyword(german_translation="kernfusion",
-                                                         english_translation="fusion")],
+                                                 Keyword(german_translation="kernfusion", english_translation="fusion"),
+                                                 Keyword(german_translation="", english_translation="bf"),
+                                                 Keyword(german_translation=None, english_translation="fb")
+                                                 ],
                            date=2017, language=Language.EN, text="Wasser kühlt Kernfusion aber kostet Geld")
                   ]
 
     km = KeywordMatcher()
-    print(km.match_corpora(documents1, documents2))
-    matches, _ = km.match_corpora(documents1, documents2)
-    get_common_keyword_vocab(matches, documents1, documents2)
-
-    matches, _ = km.match_corpora(grouped_dict1, grouped_dict2)
-    get_common_keyword_vocab(matches, grouped_dict1, grouped_dict2)
+    # print(km.match_corpora(documents1, documents2))
+    matches, translations = km.match_corpora(documents1, documents2)
+    print(matches)
+    print(translations)
+    # get_common_keyword_vocab(matches, documents1, documents2)
+    #
+    # matches, _ = km.match_corpora(grouped_dict1, grouped_dict2)
+    # get_common_keyword_vocab(matches, grouped_dict1, grouped_dict2)
 
 
 if __name__ == '__main__':
