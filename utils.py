@@ -324,7 +324,7 @@ class Corpus:
             result = random.sample(self.get_documents(), k=number_documents)
         return result
 
-    def translate_keywords(self, keyword_translator: "KeywordTranslator", restrict_per_document=None):
+    def translate_keywords(self, keyword_translator: "KeywordTranslator", restrict_per_document=None) -> List[Keyword]:
         if keyword_translator is None:
             keyword_translator = KeywordTranslator(cache_file=config["translator"]["cache_file"])
         list_of_keywords = []
