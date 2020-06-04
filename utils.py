@@ -110,7 +110,6 @@ class Keyword:
             for token in english_nlp(self.english_translation):
                 english_lemmatized.append(token.lemma_)
 
-
         self.german_translation = " ".join(german_lemmatized)
         self.english_translation = " ".join(english_lemmatized)
 
@@ -122,9 +121,9 @@ class Keyword:
         if self.english_translation and self.german_translation:
             return f'({self.english_translation} | {self.german_translation})'
         if self.english_translation:
-            return f'{self.english_translation}'
+            return f'({self.english_translation} | -)'
         if self.german_translation:
-            return f'{self.german_translation})'
+            return f'(- | {self.german_translation})'
 
     __repr__ = __str__
 
@@ -140,7 +139,7 @@ class Keyword:
 class Document:
     def __init__(self, text: str, date, language: Language, doc_id: str, tags=None, author=None, party=None,
                  rating=None,
-                 keywords=None):
+                 keywords: List[Keyword] = None):
         self.text = text
         self.date = date
         self.language = language
@@ -314,18 +313,20 @@ class Corpus:
             result = random.sample(self.get_documents(), k=number_documents)
         return result
 
-    def translate_keywords(self, restrict_per_document=None):
-        keyword_translator = KeywordTranslator(cache_file=config["translator"]["cache_file"])
+    def translate_keywords(self, keyword_translator: "KeywordTranslator", restrict_per_document=None):
+        if keyword_translator is None:
+            keyword_translator = KeywordTranslator(cache_file=config["translator"]["cache_file"])
         list_of_keywords = []
 
         for document in self.get_documents():
             for i, kw in enumerate(document.keywords):
-                if restrict_per_document and i > restrict_per_document:
+                if restrict_per_document and i >= restrict_per_document:
                     break
                 keyword_translator.translate(kw)
                 list_of_keywords.append(kw)
                 print('{} \t {} \t\t\t {}'.format(kw.source_language, kw.english_translation, kw.german_translation))
 
+        keyword_translator.save_cache()
         self.has_translated_keywords = True
         return list_of_keywords
 
@@ -335,9 +336,6 @@ class Corpus:
 
     def __iter__(self):
         return self.documents.values().__iter__()
-
-    # def __next__(self):
-    #     return self.documents.__next__()
 
     def __len__(self):
         return len(self.documents)
@@ -377,7 +375,6 @@ class CorpusFilter:
                     if not does_contain:
                         continue
 
-                # fixme: unsure about the loop where this should belong too, call of t later throws warning
                 if date_in_range:
                     if not d.date or d.date not in date_in_range:
                         continue
@@ -395,7 +392,7 @@ class CorpusFilter:
                         continue
 
                 if has_tags:
-                    if not t.tags or not set(d.tags).issubset(set(has_tags)):
+                    if not d.tags or not set(d.tags).issubset(set(has_tags)):
                         continue
 
                 if is_one_of_parties:
@@ -461,9 +458,9 @@ class KeywordTranslator:
             logging.warning(e)
             self.cache = dict()
 
-    def __del__(self):
-        self.save_cache()
-        logging.info("saved cache file")
+    # def __del__(self):
+    #     self.save_cache()
+    #     logging.info("saved cache file")
 
     def translate(self, keyword: Keyword):
 
@@ -558,7 +555,7 @@ class KeywordTranslator:
 
     def save_cache(self):
         with open(self.cache_file, 'w', encoding='utf-8') as f:
-            json.dump(self.cache, f, ensure_ascii=True, indent=1, default=lambda o: o.__dict__)
+            json.dump(self.cache, f, ensure_ascii=False, indent=1, default=lambda o: o.__dict__)
 
 
 class KeywordMatcher:
