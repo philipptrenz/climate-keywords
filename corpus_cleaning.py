@@ -1,4 +1,5 @@
 import os
+import re
 
 import numpy as np
 
@@ -112,6 +113,34 @@ def cleaning_authors(config, overwrite=False):
 
         corpus.save_corpus(config["corpora"][corpus_name])
     print(wlc, m_a, s_a)
+
+
+def remove_punctuation(corpus: Corpus):
+    for d in corpus.get_documents():
+        res = re.sub(r'[^a-zA-ZäöüÖÄÜß\-\s\.!\?]', '', d.text)
+        res = re.sub(r' +', ' ', res)
+        d.text = res
+
+
+def cleaning_punctuation(config, overwrite=False):
+    corpus_names = [
+        "bundestag_corpus",
+        "sustainability_corpus",
+        "abstract_corpus"
+    ]
+    languages = [
+        Language.DE,
+        Language.EN,
+        Language.EN]
+    for i, corpus_name in enumerate(corpus_names):
+        corpus = Corpus(source=config["corpora"][corpus_name], language=languages[i], name=corpus_name)
+        remove_punctuation(corpus)
+
+        if not overwrite:
+            os.rename(src=config["corpora"][corpus_name],
+                      dst=create_new_filepath_uncleaned(config["corpora"][corpus_name]))
+
+        corpus.save_corpus(config["corpora"][corpus_name])
 
 
 def main():
