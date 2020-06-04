@@ -75,7 +75,6 @@ class Keyword:
         self.english_translation = None
         self.german_translation = None
 
-
         if english_translation:
             self.english_translation = english_translation
             self.source_language = Language.EN
@@ -86,7 +85,10 @@ class Keyword:
 
         if english_translation and german_translation:
             self.source_language = Language.UNKNOWN
-        self.source_language = source_language
+
+        if source_language is not Language.UNKNOWN:
+            self.source_language = source_language
+
         self.keyword_type = keyword_type
 
     def __getitem__(self, item):
@@ -843,3 +845,15 @@ if __name__ == '__main__':
     translate(Keyword(german_translation="Achse des Bösen"))
 
     translate(Keyword(english_translation="axis of evil", german_translation="Achse des Bösen"))
+
+    kwt.save_cache()
+
+
+    print("saved")
+
+    import time
+    time.sleep(10)
+
+    kwt2 = KeywordTranslator(cache_file=config["translator"]["cache_file"])
+
+    kwt2.save_cache()
