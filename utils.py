@@ -122,11 +122,11 @@ class Keyword:
 
     def __str__(self):
         if self.english_translation and self.german_translation:
-            return f'({self.english_translation} | {self.german_translation})'
+            return f'{self.source_language}({self.english_translation} | {self.german_translation})'
         if self.english_translation:
-            return f'({self.english_translation} | -)'
+            return f'{self.source_language}({self.english_translation} | -)'
         if self.german_translation:
-            return f'(- | {self.german_translation})'
+            return f'{self.source_language}(- | {self.german_translation})'
 
     __repr__ = __str__
 
@@ -198,10 +198,15 @@ class Corpus:
                         parsed_keywords = [Keyword(german_translation=keyword, keyword_type=keyword_type,
                                                    source_language=document.language)
                                            for keyword in keywords[document.doc_id]]
-                    else:
+                    elif document.language == Language.EN:
                         parsed_keywords = [Keyword(english_translation=keyword, keyword_type=keyword_type,
                                                    source_language=document.language)
                                            for keyword in keywords[document.doc_id]]
+                    else:
+                        parsed_keywords = [Keyword(english_translation=keyword, keyword_type=keyword_type,
+                                                   source_language=Language.UNKNOWN)
+                                           for keyword in keywords[document.doc_id]]
+                        raise UserWarning(f"Document Language {document.language} unknown!")
                     document.keywords = parsed_keywords
 
             if translated_keywords:
@@ -274,7 +279,7 @@ class Corpus:
 
         corpus = [Document(text=doc["text"],
                            date=doc["date"],
-                           language=doc["language"],
+                           language=Language.get_from_str(doc["language"]),
                            doc_id=doc["doc_id"],
                            author=doc["author"],
                            tags=doc["tags"],
@@ -469,7 +474,6 @@ class KeywordTranslator:
     #     logging.info("saved cache file")
 
     def translate(self, keyword: Keyword):
-
         if keyword.source_language is Language.UNKNOWN:
             logging.debug("KeywordTranslator: source is unknown, skipping")
 
@@ -478,17 +482,19 @@ class KeywordTranslator:
 
         elif keyword.source_language is Language.EN:
             self.translate_english2german(keyword)
+        else:
+            raise UserWarning("Wrong language term!")
 
     def translate_german2english(self, keyword):
         if keyword.german_translation in self.cache and self.cache[keyword.german_translation].english_translation:
-            print('found keyword in cache, taking this one')
-            keyword = self.cache[keyword.german_translation]
+            print(f"found keyword '{keyword.german_translation}' in cache, taking this one")
+            # keyword = self.cache[keyword.german_translation]
+            keyword.english_translation = self.cache[keyword.german_translation].english_translation
             return keyword
         else:
             if not keyword.english_translation:
                 logging.debug("KeywordTranslator: {} | source is DE, EN not set, translating ...".format(
                     keyword.german_translation))
-
                 try:
                     time.sleep(self.timeout)
                     translated = self.translator.translate(text=keyword.german_translation, src=str(Language.DE.value),
@@ -509,8 +515,9 @@ class KeywordTranslator:
     def translate_english2german(self, keyword):
 
         if keyword.english_translation in self.cache and self.cache[keyword.english_translation].german_translation:
-            print('found keyword in cache, taking this one')
-            keyword = self.cache[keyword.english_translation]
+            print(f"found keyword '{keyword.english_translation}' in cache, taking this one")
+            # keyword = self.cache[keyword.english_translation]
+            keyword.german_translation = self.cache[keyword.english_translation].german_translation
             return keyword
         else:
 
