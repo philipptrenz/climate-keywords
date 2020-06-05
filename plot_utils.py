@@ -17,7 +17,8 @@ def multi_bar_histogram(multiple_bin_data: List[List[int]],
                         multiple_count_data: List[List[int]],
                         labels: List[str],
                         normalize: bool = True,
-                        corpus_lengths: List[int] = None):
+                        corpus_lengths: List[int] = None,
+                        y_scale: str = "linear"):
     """
     plots a multi bar histogram from different datasources
     example:
@@ -43,4 +44,5 @@ def multi_bar_histogram(multiple_bin_data: List[List[int]],
     for bin_data, count_data, label in zip(multiple_bin_data, c, labels):
         plt.bar(x=bin_data, height=count_data, align='center', alpha=0.5, label=label)
     plt.legend(loc='best')
+    plt.yscale(y_scale)
     plt.show()
