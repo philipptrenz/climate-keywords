@@ -21,7 +21,7 @@ def yearwise_documents(corpus: Corpus, aggregation_func: Callable = len, printin
         year_bins[doc.date].append(doc)
 
     result = {year: aggregation_func(Corpus(source=docs, language=corpus.language, name=f'{corpus.name}_yearwise'))
-              for year, docs in year_bins.items()}
+              for year, docs in year_bins.items() if year is not None}
     result = OrderedDict(sorted(result.items()))
 
     years = []
