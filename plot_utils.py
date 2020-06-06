@@ -2,7 +2,7 @@ from typing import List, Union
 from matplotlib import pyplot as plt
 
 
-def simple_bar_histogram(bin_data: List[Union[int, str]], count_data: List[int]):
+def simple_bar_histogram(bin_data: List[Union[int, str]], count_data: List[int], y_scale: str = "linear"):
     """
     plots a simple bar histogram
     :param bin_data: data for x axis
@@ -10,6 +10,7 @@ def simple_bar_histogram(bin_data: List[Union[int, str]], count_data: List[int])
     :return:
     """
     plt.bar(x=bin_data, height=count_data, color='lawngreen', align='center', alpha=0.5)
+    plt.yscale(y_scale)
     plt.show()
 
 
