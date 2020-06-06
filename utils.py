@@ -36,6 +36,7 @@ class ConfigLoader:
         else:
             raise Exception("config file missing!")
 
+
 config = ConfigLoader.get_config()
 
 
@@ -208,9 +209,9 @@ class Corpus:
                                                    source_language=document.language)
                                            for keyword in keywords[document.doc_id]]
                     else:
-                        parsed_keywords = [Keyword(english_translation=keyword, keyword_type=keyword_type,
-                                                   source_language=Language.UNKNOWN)
-                                           for keyword in keywords[document.doc_id]]
+                        # parsed_keywords = [Keyword(english_translation=keyword, keyword_type=keyword_type,
+                        #                            source_language=Language.UNKNOWN)
+                        #                    for keyword in keywords[document.doc_id]]
                         raise UserWarning(f"Document Language {document.language} unknown!")
                     document.keywords = parsed_keywords
 
@@ -475,7 +476,7 @@ class KeywordTranslator:
             # appflow.run_console()
             self.translator = g_translate.Client(credentials=appflow.credentials)
 
-        else: # fallback
+        else:  # fallback
             self.translator = googletrans.Translator()
         self.cache_file = cache_file
         self.timeout = timeout
@@ -524,7 +525,8 @@ class KeywordTranslator:
 
                     else:
                         time.sleep(self.timeout)
-                        translated = self.translator.translate(text=keyword.german_translation, src=str(Language.DE.value),
+                        translated = self.translator.translate(text=keyword.german_translation,
+                                                               src=str(Language.DE.value),
                                                                dest=str(Language.EN.value))
                         keyword.english_translation = translated.text
 
@@ -564,7 +566,8 @@ class KeywordTranslator:
 
                     else:
                         time.sleep(self.timeout)
-                        translated = self.translator.translate(text=keyword.english_translation, src=str(Language.EN.value),
+                        translated = self.translator.translate(text=keyword.english_translation,
+                                                               src=str(Language.EN.value),
                                                                dest=str(Language.DE.value))
                         keyword.german_translation = translated.text
 
@@ -872,7 +875,8 @@ if __name__ == '__main__':
     # print(monkey in list({affe, affe2}))
 
     # key word translator example
-    kwt = KeywordTranslator(cache_file=config["translator"]["cache_file"], google_client_secrets_file=config["translator"]["google_client_secret_file"])
+    kwt = KeywordTranslator(cache_file=config["translator"]["cache_file"],
+                            google_client_secrets_file=config["translator"]["google_client_secret_file"])
 
 
     def translate(keyword):

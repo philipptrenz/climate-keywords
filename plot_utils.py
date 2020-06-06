@@ -7,6 +7,7 @@ def simple_bar_histogram(bin_data: List[Union[int, str]], count_data: List[int],
     plots a simple bar histogram
     :param bin_data: data for x axis
     :param count_data: data for y axis
+    :param y_scale: the scale of the y axis(linear vs log)
     :return:
     """
     plt.bar(x=bin_data, height=count_data, color='lawngreen', align='center', alpha=0.5)
@@ -30,6 +31,7 @@ def multi_bar_histogram(multiple_bin_data: List[List[int]],
     :param labels: labels for the different series
     :param normalize: normalizes the count data by sum of series or other provided values with corpus_lengths
     :param corpus_lengths: provided corpus lengths for normalization
+    :param y_scale: the scale of the y axis(linear vs log)
     :return:
     """
     c = []

@@ -51,26 +51,26 @@ def get_common_keyword_vocab(matches: Dict[Keyword, Tuple[List[int], List[int]]]
 
 
 def main():
-    grouped_dict1 = {2020: [Keyword(german_translation="klimawandel", english_translation="climate change"),
-                            Keyword(german_translation="nachhaltigkeit", english_translation="sustainability"),
-                            Keyword(german_translation="Wasser", english_translation="water"),
-                            Keyword(german_translation="H11", english_translation="")]}
-
-    grouped_dict2 = {2011: [Keyword(german_translation="nachhaltigkeit", english_translation="sustainability"),
-                            Keyword(german_translation="klimawandel", english_translation="climate change"),
-                            Keyword(german_translation="Erde", english_translation="Earth")],
-
-                     2018: [Keyword(german_translation="Verkehr", english_translation="traffic"),
-                            Keyword(german_translation="Geld", english_translation="money"),
-                            Keyword(german_translation="Auto", english_translation="car")],
-
-                     2017: [Keyword(german_translation="Geld", english_translation="money"),
-                            Keyword(german_translation="Wasser", english_translation="sea"),
-                            Keyword(german_translation="kernfusion", english_translation="fusion"),
-                            Keyword(german_translation="", english_translation="bf")]
-
-                     }
-
+    # grouped_dict1 = {2020: [Keyword(german_translation="klimawandel", english_translation="climate change"),
+    #                         Keyword(german_translation="nachhaltigkeit", english_translation="sustainability"),
+    #                         Keyword(german_translation="Wasser", english_translation="water"),
+    #                         Keyword(german_translation="H11", english_translation="")]}
+    #
+    # grouped_dict2 = {2011: [Keyword(german_translation="nachhaltigkeit", english_translation="sustainability"),
+    #                         Keyword(german_translation="klimawandel", english_translation="climate change"),
+    #                         Keyword(german_translation="Erde", english_translation="Earth")],
+    #
+    #                  2018: [Keyword(german_translation="Verkehr", english_translation="traffic"),
+    #                         Keyword(german_translation="Geld", english_translation="money"),
+    #                         Keyword(german_translation="Auto", english_translation="car")],
+    #
+    #                  2017: [Keyword(german_translation="Geld", english_translation="money"),
+    #                         Keyword(german_translation="Wasser", english_translation="sea"),
+    #                         Keyword(german_translation="kernfusion", english_translation="fusion"),
+    #                         Keyword(german_translation="", english_translation="bf")]
+    #
+    #                  }
+    #
     # km = KeywordMatcher()
     # print(km.match_corpora(grouped_dict1, grouped_dict2))
 
