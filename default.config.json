@@ -14,6 +14,7 @@
     "sustainability_corpus": "/path/to/file.json"
   },
   "translator": {
-    "cache_file": ""
+    "cache_file": "",
+    "google_translate_key": ""
   }
 }

@@ -7,11 +7,16 @@ import time
 from collections import defaultdict, Counter
 from enum import Enum
 from typing import List, Set, Dict, Tuple, Union
+import six
 
-import googletrans
 import pandas as pd
 import spacy
 from tqdm import tqdm
+
+import googletrans
+
+from google.cloud import translate_v2 as g_translate
+from google_auth_oauthlib import flow
 
 
 class ConfigLoader:
@@ -458,8 +463,20 @@ class CorpusFilter:
 
 
 class KeywordTranslator:
-    def __init__(self, cache_file='translator_cache.json', timeout=1.0):
-        self.translator = googletrans.Translator()
+    def __init__(self, cache_file='translator_cache.json', timeout=1.0, google_client_secrets_file=None):
+        if google_client_secrets_file:
+
+            appflow = flow.InstalledAppFlow.from_client_secrets_file(
+                google_client_secrets_file,
+                scopes=[
+                    'https://www.googleapis.com/auth/cloud-platform'
+                ])
+            appflow.run_local_server()  # launch browser
+            # appflow.run_console()
+            self.translator = g_translate.Client(credentials=appflow.credentials)
+
+        else: # fallback
+            self.translator = googletrans.Translator()
         self.cache_file = cache_file
         self.timeout = timeout
         try:
@@ -496,10 +513,21 @@ class KeywordTranslator:
                 logging.debug("KeywordTranslator: {} | source is DE, EN not set, translating ...".format(
                     keyword.german_translation))
                 try:
-                    time.sleep(self.timeout)
-                    translated = self.translator.translate(text=keyword.german_translation, src=str(Language.DE.value),
-                                                           dest=str(Language.EN.value))
-                    keyword.english_translation = translated.text
+                    if isinstance(self.translator, g_translate.Client):
+
+                        text_input = str(keyword.german_translation)
+                        if isinstance(text_input, six.binary_type):
+                            text_input = text_input.decode('utf-8')
+
+                        result = self.translator.translate(text_input, target_language=keyword.source_language.value)
+                        keyword.english_translation = result['translatedText']
+
+                    else:
+                        time.sleep(self.timeout)
+                        translated = self.translator.translate(text=keyword.german_translation, src=str(Language.DE.value),
+                                                               dest=str(Language.EN.value))
+                        keyword.english_translation = translated.text
+
                     self.add_to_cache(keyword)
                     return keyword
                 except Exception as e:
@@ -525,12 +553,22 @@ class KeywordTranslator:
                 logging.debug("KeywordTranslator: {} | source is EN, DE not set, translating ...".format(
                     keyword.english_translation))
                 try:
-                    time.sleep(self.timeout)
-                    translated = self.translator.translate(text=keyword.english_translation, src=str(Language.EN.value),
-                                                           dest=str(Language.DE.value))
-                    keyword.german_translation = translated.text
-                    self.add_to_cache(keyword)
+                    if isinstance(self.translator, g_translate.Client):
 
+                        text_input = str(keyword.english_translation)
+                        if isinstance(text_input, six.binary_type):
+                            text_input = text_input.decode('utf-8')
+
+                        result = self.translator.translate(text_input, target_language=keyword.source_language.value)
+                        keyword.german_translation = result['translatedText']
+
+                    else:
+                        time.sleep(self.timeout)
+                        translated = self.translator.translate(text=keyword.english_translation, src=str(Language.EN.value),
+                                                               dest=str(Language.DE.value))
+                        keyword.german_translation = translated.text
+
+                    self.add_to_cache(keyword)
                     return keyword
                 except Exception as e:
                     logging.error("While trying to translate, an error occured:")
@@ -834,7 +872,7 @@ if __name__ == '__main__':
     # print(monkey in list({affe, affe2}))
 
     # key word translator example
-    kwt = KeywordTranslator(cache_file=config["translator"]["cache_file"])
+    kwt = KeywordTranslator(cache_file=config["translator"]["cache_file"], google_client_secrets_file=config["translator"]["google_client_secret_file"])
 
 
     def translate(keyword):
@@ -854,13 +892,3 @@ if __name__ == '__main__':
     translate(Keyword(english_translation="axis of evil", german_translation="Achse des Bösen"))
 
     kwt.save_cache()
-
-
-    print("saved")
-
-    import time
-    time.sleep(10)
-
-    kwt2 = KeywordTranslator(cache_file=config["translator"]["cache_file"])
-
-    kwt2.save_cache()
