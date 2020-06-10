@@ -22,21 +22,21 @@ from google_auth_oauthlib import flow
 class ConfigLoader:
     @staticmethod
     def get_config(relative_path=""):
+
         path = os.path.join(relative_path, "config.json")
         if os.path.exists(path):
             logging.info('importing config from config.json ...')
             with open(path) as json_file:
                 return json.load(json_file)
 
-        elif os.path.exists(os.path.join(relative_path, "default.config.json")):
+        path = os.path.join(relative_path, "default.config.json")
+        if os.path.exists(path):
             path = os.path.join(relative_path, "default.config.json")
             logging.info('importing config from default.config.json ...')
             with open(path) as json_file:
                 return json.load(json_file)
-        else:
-            raise Exception("config file missing!")
 
-config = ConfigLoader.get_config()
+        raise Exception("config file missing!")
 
 
 class KeywordType(str, Enum):
