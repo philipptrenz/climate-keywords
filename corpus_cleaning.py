@@ -117,8 +117,8 @@ def cleaning_authors(config, overwrite=False):
 
 def remove_punctuation(corpus: Corpus):
     for d in corpus.get_documents():
-        res = re.sub(r'[^a-zA-ZäöüÖÄÜß\-\s\.!\?]', '', d.text)
-        res = re.sub(r' +', ' ', res)
+        res = re.sub(r"[^a-zA-ZäöüÖÄÜß\-\s.!?]", '', d.text)
+        res = re.sub(r" +", ' ', res)
         d.text = res
 
 
