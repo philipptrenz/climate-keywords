@@ -15,6 +15,6 @@
   },
   "translator": {
     "cache_file": "",
-    "google_translate_key": ""
+    "google_client_secret_file": ""
   }
 }
