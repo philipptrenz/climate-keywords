@@ -55,20 +55,28 @@ class Preprocessor:
             document.text = ' '.join(tokenized[j])
 
 
-def parse_and_preprocess_src(data_source, corpus_destination):
+def parse_and_preprocess_src(data_source, corpus_destination, preprocess=True):
     if re.search("bundestag", data_source.lower()):
         name = "bundestag"
         raw_corpus = DataHandler.get_bundestag_speeches(directory=data_source)
     elif re.search("sustainability", data_source.lower()):
         name = "sustainability"
         raw_corpus = DataHandler.get_sustainability_data(path=data_source)
+    elif re.search("unv1.0-tei", data_source.lower()):
+        name = "united_nations"
+        raw_corpus = DataHandler.get_un_texts(directory=data_source)
+    elif re.search("state_of_the_union", data_source.lower()):
+        name = "state_of_the_union"
+        raw_corpus = DataHandler.get_state_of_the_union(directory=data_source)
     else:
         name = "abstracts"
         raw_corpus = DataHandler.get_abstracts(path=data_source)
+
     language = raw_corpus[0].language
     print('loaded', len(raw_corpus), 'documents')
-    Preprocessor.preprocess(raw_corpus, language=language)
-    print('preprocessed', len(raw_corpus), 'documents')
+    if preprocess:
+        Preprocessor.preprocess(raw_corpus, language=language)
+        print('preprocessed', len(raw_corpus), 'documents')
     corpus = Corpus(source=raw_corpus, language=language, name=name)
     print('parsed', len(corpus.get_documents(as_list=True)), 'documents to a Corpus')
     corpus.save_corpus(corpus_destination)
@@ -80,18 +88,22 @@ if __name__ == '__main__':
 
     # define data sources
     file_srcs = [
-        config["datasets"]["bundestag"]["directory"],
+        # config["datasets"]["bundestag"]["directory"],
+        config["datasets"]["united_nations"]["directory"],
+        # config["datasets"]["state_of_the_union"]["directory"],
         # config["datasets"]["abstracts"]["sustainability"],
         # config["datasets"]["abstracts"]["climate_literature"]
     ]
 
     # define corpus output sources
     corpus_dests = [
-        config["corpora"]["bundestag_corpus"],
+        # config["corpora"]["bundestag_corpus"],
+        config["corpora"]["united_nations_corpus"],
+        # config["corpora"]["state_of_the_union_corpus"],
         # config["corpora"]["sustainability_corpus"],
         # config["corpora"]["abstract_corpus"]
     ]
 
     # read and parse data
     for i in range(len(corpus_dests)):
-        parse_and_preprocess_src(data_source=file_srcs[i], corpus_destination=corpus_dests[i])
+        parse_and_preprocess_src(data_source=file_srcs[i], corpus_destination=corpus_dests[i], preprocess=True)

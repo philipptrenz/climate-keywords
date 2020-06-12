@@ -6,6 +6,7 @@ import re
 import time
 from collections import defaultdict, Counter
 from enum import Enum
+from pathlib import Path
 from typing import List, Set, Dict, Tuple, Union
 import six
 
@@ -17,6 +18,9 @@ import googletrans
 
 from google.cloud import translate_v2 as g_translate
 from google_auth_oauthlib import flow
+import bs4
+import xml.etree.ElementTree as et
+
 
 
 class ConfigLoader:
@@ -330,8 +334,8 @@ class Corpus:
         return result
 
     def translate_keywords(self, keyword_translator: "KeywordTranslator", restrict_per_document=None) -> List[Keyword]:
-        if keyword_translator is None:
-            keyword_translator = KeywordTranslator(cache_file=config["translator"]["cache_file"])
+        # if keyword_translator is None:
+        #     keyword_translator = KeywordTranslator(cache_file=config["translator"]["cache_file"])
         list_of_keywords = []
 
         for document in self.get_documents():
@@ -855,6 +859,75 @@ class DataHandler:
                     index += 1
 
         return speeches
+
+    @staticmethod
+    def get_un_texts(directory):
+        files = []
+        for path in Path(directory).rglob('*.xml'):
+            files.append(path.absolute())
+
+        texts = []
+        index = 0
+        for file in tqdm(files, desc="load UN texts", total=len(files)):
+            try:
+                root = et.parse(file).getroot()
+            except et.ParseError:
+                print("Parse Error:", file)
+                continue
+
+            text = []
+
+            date = None
+            for type_tag in root.findall('teiHeader/fileDesc/publicationStmt/date'):
+                try:
+                    date = int(type_tag.text[:4])
+                except ValueError:
+                    date = re.search(r'UNv1\.0-TEI[\\/]+en[\\/]+(\d\d\d\d)', str(file)).group(1)
+            if date is None:
+                raise UserWarning("No date")
+            for type_tag in root.findall('text/body/p/s'):
+                if type_tag.text:
+                    text.append(type_tag.text)
+            try:
+                text = [t for t in text if t]
+                text = " ".join(text)
+            except TypeError:
+                print("Text Type Error", file, text)
+                continue
+            texts.append(Document(text=text,
+                                  date=date,
+                                  language=Language.EN,
+                                  doc_id=f'un_{index}'))
+            index += 1
+
+        return texts
+
+    @staticmethod
+    def get_state_of_the_union(directory: str):
+        president_infos = pd.read_csv(os.path.join(directory, "presidents.csv"))
+        president2infos= {row["President"].split()[-1]: {"party": row["Party"],
+                                                         "full name": row["President"]}
+                           for i, row in president_infos.iterrows()}
+
+        speeches = os.path.join(directory, "speeches")
+
+        files = []
+        for path in Path(speeches).rglob('*.txt'):
+            files.append(path.absolute())
+
+        documents = []
+        for index, file in enumerate(files):
+            with open(str(file), mode="r", encoding="utf-8") as f:
+                data = f.read()
+                date = re.search(r'_(\d\d\d\d)\.txt', str(file)).group(1)
+                president = re.search(r'(.*)_(\d\d\d\d)\.txt', str(file.name)).group(1)
+                documents.append(Document(text=re.sub(r'\s+', " ",  data),
+                                          date=date,
+                                          author=president2infos[president]["full name"],
+                                          party=president2infos[president]["party"],
+                                          language=Language.EN,
+                                          doc_id=f'sotu_{index}'))
+        return documents
 
 
 if __name__ == '__main__':

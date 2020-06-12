@@ -6,12 +6,20 @@
     "abstracts": {
       "sustainability": "/path/to/file.csv",
       "climate_literature": "/path/to/file.json.txt"
+    },
+    "united_nations": {
+      "directory": "/path/to/dir"
+    },
+    "state_of_the_union": {
+      "directory": "/path/to/dir"
     }
   },
   "corpora": {
     "abstract_corpus": "/path/to/file.json",
     "bundestag_corpus": "/path/to/file.json",
-    "sustainability_corpus": "/path/to/file.json"
+    "sustainability_corpus": "/path/to/file.json",
+    "united_nations_corpus": "/path/to/file.json",
+    "state_of_the_union_corpus": "/path/to/file.json"
   },
   "translator": {
     "cache_file": "",
