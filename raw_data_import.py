@@ -90,8 +90,8 @@ if __name__ == '__main__':
     # define data sources
     file_srcs = [
         # config["datasets"]["bundestag"]["directory"],
-        config["datasets"]["united_nations"]["directory"],
-        # config["datasets"]["state_of_the_union"]["directory"],
+        # config["datasets"]["united_nations"]["directory"],
+        config["datasets"]["state_of_the_union"]["directory"],
         # config["datasets"]["abstracts"]["sustainability"],
         # config["datasets"]["abstracts"]["climate_literature"]
     ]
@@ -99,8 +99,8 @@ if __name__ == '__main__':
     # define corpus output sources
     corpus_dests = [
         # config["corpora"]["bundestag_corpus"],
-        config["corpora"]["united_nations_corpus"],
-        # config["corpora"]["state_of_the_union_corpus"],
+        # config["corpora"]["united_nations_corpus"],
+        config["corpora"]["state_of_the_union_corpus"],
         # config["corpora"]["sustainability_corpus"],
         # config["corpora"]["abstract_corpus"]
     ]
