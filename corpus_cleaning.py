@@ -62,6 +62,21 @@ def cleaning_bundestag(config, overwrite=True):
     corpus.save_corpus(config["corpora"]["bundestag_corpus"])
 
 
+def cleaning_un(config, overwrite=True):
+    corpus = Corpus(source=config["corpora"]["united_nations_corpus"], language=Language.DE, name="united_nations_corpus")
+    corpus = Corpus(source=[d for d in corpus.get_documents() if d.date], language=corpus.language, name=corpus.name)
+    print("1", len(corpus))
+    for d in corpus.get_documents():
+        d.date = int(d.date)
+    print("2", len(corpus))
+
+    if not overwrite:
+        os.rename(src=config["corpora"]["united_nations_corpus"],
+                  dst=create_new_filepath_uncleaned(config["corpora"]["united_nations_corpus"]))
+
+    corpus.save_corpus(config["corpora"]["united_nations_corpus"])
+
+
 def cleaning_authors(config, overwrite=False):
     corpus_names = [
         "bundestag_corpus",
@@ -150,9 +165,10 @@ def main():
     # deletes unusable documents and replaces date with year int
     # cleaning_abstracts(config, overwrite=False)
     # cleaning_sustainability(config, overwrite=False)
-    cleaning_bundestag(config, overwrite=True)
-
-    cleaning_authors(config, overwrite=True)
+    # cleaning_bundestag(config, overwrite=True)
+    #
+    # cleaning_authors(config, overwrite=True)
+    cleaning_un(config, overwrite=False)
 
 
 if __name__ == '__main__':

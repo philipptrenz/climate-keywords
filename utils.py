@@ -616,13 +616,18 @@ class KeywordTranslator:
 
 
 class KeywordMatcher:
-    def __init__(self):
-        pass
+    def __init__(self, corpus_0, corpus_1):
+        self.corpus_0 = corpus_0
+        self.corpus_1 = corpus_1
+        self.matches = None
+        self.translations = None
+        self.already_matched = False
 
-    @classmethod
-    def lemmatize(cls, keyword_collection: Union[Dict[int, List[Keyword]], List[Document], Corpus], german_model,
+    @staticmethod
+    def lemmatize(keyword_collection: Union[Dict[int, List[Keyword]], List[Document], Corpus], german_model,
                   english_model):
-        for instance in keyword_collection:
+        for instance in tqdm(keyword_collection, total=len(keyword_collection), desc="Lemmatize...", position=0,
+                             leave=True):
             if isinstance(keyword_collection, dict):
                 keywords = keyword_collection[instance]
             elif isinstance(keyword_collection, list):
@@ -634,8 +639,8 @@ class KeywordMatcher:
             for keyword in keywords:
                 keyword.lemmatize(german_model, english_model)
 
-    @classmethod
-    def group_by_key(cls, keyword_collection: Union[Dict[int, List[Keyword]], List[Document]],
+    @staticmethod
+    def group_by_key(keyword_collection: Union[Dict[int, List[Keyword]], List[Document]],
                      ger_translations: Dict[str, Set[str]] = None,
                      en_translations: Dict[str, Set[str]] = None):
         reversed_keywords = defaultdict(set)
@@ -644,7 +649,8 @@ class KeywordMatcher:
         if en_translations is None:
             en_translations = defaultdict(set)
 
-        for instance in keyword_collection:
+        for instance in tqdm(keyword_collection, total=len(keyword_collection), desc="Group keys...", position=0,
+                             leave=True):
 
             if isinstance(keyword_collection, dict):
                 keywords = keyword_collection[instance]
@@ -671,23 +677,22 @@ class KeywordMatcher:
 
         return reversed_keywords, ger_translations, en_translations
 
-    @classmethod
-    def match_corpora(cls, keyword_collection_1: Union[Dict[int, List[Keyword]], List[Document]],
-                      keyword_collection_2: Union[Dict[int, List[Keyword]], List[Document]],
+    def match_corpora(self,
                       lemmatize: bool = True,
                       simplify_result: bool = True) \
             -> Tuple[Dict[Keyword, Tuple[List[int], List[int]]], Dict[str, str]]:
-
+        print("Start matching...")
         if lemmatize:
             german_model = spacy.load("de_core_news_sm")
             english_model = spacy.load("en_core_web_sm")
-            cls.lemmatize(keyword_collection_1, german_model, english_model)
-            cls.lemmatize(keyword_collection_2, german_model, english_model)
+            KeywordMatcher.lemmatize(self.corpus_0, german_model, english_model)
+            KeywordMatcher.lemmatize(self.corpus_1, german_model, english_model)
 
         # groups ids or years by keywords
-        reversed_keywords_1, ger_translations, en_translations = cls.group_by_key(keyword_collection_1)
-        reversed_keywords_2, ger_translations, en_translations = cls.group_by_key(keyword_collection_2,
-                                                                                  ger_translations, en_translations)
+        reversed_keywords_1, ger_translations, en_translations = KeywordMatcher.group_by_key(self.corpus_0)
+        reversed_keywords_2, ger_translations, en_translations = KeywordMatcher.group_by_key(self.corpus_1,
+                                                                                             ger_translations,
+                                                                                             en_translations)
 
         # matches years or ids by iterating through keywords in common
         matched_keywords = set()
@@ -698,14 +703,13 @@ class KeywordMatcher:
         for keyword in reversed_keywords_2:
             if keyword in reversed_keywords_1:
                 matched_keywords.add(keyword)
-
         result_dict = {keyword: (reversed_keywords_1[keyword], reversed_keywords_2[keyword]) for keyword in
-                       matched_keywords}
+                       tqdm(matched_keywords, total=len(matched_keywords), desc="Match...", position=0, leave=True)}
 
         # uses only english keyword versions
         if simplify_result:
             filtered_result = {}
-            for keyword, result in result_dict.items():
+            for keyword, result in tqdm(result_dict.items(), total=len(result_dict), desc="Simplify..."):
                 if keyword in ger_translations.keys():
                     for translation in ger_translations[keyword]:
                         if translation in result_dict.keys():
@@ -722,7 +726,81 @@ class KeywordMatcher:
 
         useful_translations = {keyword: translations for keyword, translations in en_translations.items()
                                if keyword in result_dict}
+        self.matches = result_dict
+        self.already_matched = True
         return result_dict, useful_translations
+
+    @staticmethod
+    def get_ngrams_of_matched(matched_corpus_ids,
+                              keyword_collection: Union[Dict[int, List[Keyword]], List[Document], Corpus]):
+        ngrams = set()
+
+        # for instance in keyword_collection:
+        #     if isinstance(keyword_collection, dict):
+        #         keywords = keyword_collection[instance]
+        #     elif isinstance(keyword_collection, list):
+        #         keywords = instance.keywords
+
+        for instance in keyword_collection:
+            if isinstance(keyword_collection, dict):
+                keywords = keyword_collection[instance]
+                identifier = instance
+            elif isinstance(keyword_collection, list):
+                keywords = instance.keywords
+                identifier = instance.doc_id
+            elif isinstance(keyword_collection, Corpus):
+                keywords = instance.keywords
+                identifier = instance.doc_id
+
+            else:
+                raise NotImplementedError("Not supported type!")
+
+            if identifier in matched_corpus_ids:
+                # todo: add real ngrams?
+                # ngrams.update(document.text.split())
+                candidates = [keyword.german_translation for keyword in keywords] + \
+                             [keyword.english_translation for keyword in keywords]
+                ngrams.update(candidates)
+
+        return ngrams
+
+    def get_common_keyword_vocab(self):
+        if not self.already_matched:
+            raise UserWarning("Not macthed yet, call match_corpora first")
+        matched_ids_src1 = set()
+        matched_ids_src2 = set()
+        for matched_keyword, documents in self.matches.items():
+            src1, src2 = documents
+            matched_ids_src1.update(src1)
+            matched_ids_src2.update(src2)
+
+        ngrams_1 = KeywordMatcher.get_ngrams_of_matched(matched_ids_src1, self.corpus_0)
+        ngrams_2 = KeywordMatcher.get_ngrams_of_matched(matched_ids_src2, self.corpus_1)
+        # print(ngrams_1.difference(ngrams_2))
+        # print(ngrams_2.difference(ngrams_1))
+        # print(ngrams_1.intersection(ngrams_2))
+        return ngrams_1.intersection(ngrams_2)
+
+    def get_keyword_counts(self, common_keywords):
+        tuples = []
+        for keyword in common_keywords:
+            if keyword:
+                corp_0_ids, corp_1_ids = self.matches[keyword]
+                tuples.append((len(corp_0_ids), len(corp_1_ids), keyword))
+        tuples = sorted(tuples, reverse=True)
+        return tuples
+
+    def get_first_mentions(self, common_keywords):
+        mentions = {}
+        for keyword in common_keywords:
+            if keyword:
+                corp_0_ids, corp_1_ids = self.matches[keyword]
+                corp_0 = [self.corpus_0.documents[corp_id] for corp_id in corp_0_ids]
+                corp_1 = [self.corpus_1.documents[corp_id] for corp_id in corp_1_ids]
+                years_0 = [doc.date for doc in corp_0]
+                years_1 = [doc.date for doc in corp_1]
+                mentions[keyword] = (min(years_0), min(years_1))
+        return mentions
 
 
 class DataHandler:
@@ -919,7 +997,7 @@ class DataHandler:
         for index, file in enumerate(files):
             with open(str(file), mode="r", encoding="utf-8") as f:
                 data = f.read()
-                date = re.search(r'_(\d\d\d\d)\.txt', str(file)).group(1)
+                date = int(re.search(r'_(\d\d\d\d)\.txt', str(file)).group(1))
                 president = re.search(r'(.*)_(\d\d\d\d)\.txt', str(file.name)).group(1)
                 documents.append(Document(text=re.sub(r'\s+', " ",  data),
                                           date=date,
@@ -979,27 +1057,33 @@ if __name__ == '__main__':
     print(affe == weird_monkey)
     print(monkey == patch)
 
+    # Example matching:
+    # km = KeywordMatcher(sampled_corpora[1], sampled_corpora[4])
+    # km.match_corpora(lemmatize=False, simplify_result=False)
+    # common = km.get_common_keyword_vocab()
+    # km.get_first_mentions(common)
+
     # print(monkey in list({affe, affe2}))
 
     # key word translator example
-    kwt = KeywordTranslator(cache_file=config["translator"]["cache_file"],
-                            google_client_secrets_file=config["translator"]["google_client_secret_file"])
+    # kwt = KeywordTranslator(cache_file=config["translator"]["cache_file"],
+    #                         google_client_secrets_file=config["translator"]["google_client_secret_file"])
 
 
-    def translate(keyword):
-        print('before: {}\t| {}\t | {}'.format(keyword.english_translation, keyword.german_translation,
-                                               keyword.source_language))
-        kwt.translate(keyword)
-        print('after:  {}\t| {}\t | {}\n'.format(keyword.english_translation, keyword.german_translation,
-                                                 keyword.source_language))
+    # def translate(keyword):
+    #     print('before: {}\t| {}\t | {}'.format(keyword.english_translation, keyword.german_translation,
+    #                                            keyword.source_language))
+    #     kwt.translate(keyword)
+    #     print('after:  {}\t| {}\t | {}\n'.format(keyword.english_translation, keyword.german_translation,
+    #                                              keyword.source_language))
 
 
-    print('translated')
-
-    translate(Keyword(english_translation="axis of evil"))
-
-    translate(Keyword(german_translation="Achse des Bösen"))
-
-    translate(Keyword(english_translation="axis of evil", german_translation="Achse des Bösen"))
-
-    kwt.save_cache()
+    # print('translated')
+    #
+    # translate(Keyword(english_translation="axis of evil"))
+    #
+    # translate(Keyword(german_translation="Achse des Bösen"))
+    #
+    # translate(Keyword(english_translation="axis of evil", german_translation="Achse des Bösen"))
+    #
+    # kwt.save_cache()
