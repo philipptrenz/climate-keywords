@@ -931,6 +931,41 @@ class DataHandler:
 
 
 if __name__ == '__main__':
+    # files = [
+    #     "E:/mcc/UN/UNv1.0-TEI/en/2001/e/c_12/q/t_t/1.xml",
+    #     # "E:/mcc/UN/UNv1.0-TEI/en/2013/ccpr/c/107/d/1835_1837/2008.xml"
+    # ]
+    # texts = []
+    # index = 0
+    # parser = et.XMLParser(encoding="utf-8")
+    # for file in tqdm(files, desc="load UN texts", total=len(files)):
+    #
+    #     root = et.parse(file, parser).getroot()
+    #     text = []
+    #
+    #     date = None
+    #     for type_tag in root.findall('teiHeader/fileDesc/publicationStmt/date'):
+    #         try:
+    #             date = int(type_tag.text[:4])
+    #         except ValueError:
+    #             date = re.search(r'UNv1\.0-TEI[\\/]+en[\\/]+(\d\d\d\d)', str(file)).group(1)
+    #     if date is None:
+    #         raise UserWarning("No date")
+    #     for type_tag in root.findall('text/body/p/s'):
+    #         if type_tag.text:
+    #             text.append(type_tag.text)
+    #     try:
+    #         text = [t for t in text if t]
+    #         text = " ".join(text)
+    #     except TypeError:
+    #         print("Text Type Error", file, text)
+    #         continue
+    #     texts.append(Document(text=text,
+    #                           date=date,
+    #                           language=Language.EN,
+    #                           doc_id=f'un_{index}'))
+    #     index += 1
+
     monkey = Keyword(german_translation="Affe", english_translation="Monkey")
     affe = Keyword(german_translation="Affe", english_translation="Ape")
     affe2 = Keyword(german_translation="Affe", english_translation="Ape")

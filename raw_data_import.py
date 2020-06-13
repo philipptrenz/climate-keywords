@@ -51,8 +51,9 @@ class Preprocessor:
                      and token.pos_ in pos_filter]
                 )
 
-        for j, document in tqdm(enumerate(documents)):
+        for j, document in tqdm(enumerate(documents), total=len(documents)):
             document.text = ' '.join(tokenized[j])
+            tokenized[j] = ""
 
 
 def parse_and_preprocess_src(data_source, corpus_destination, preprocess=True):
