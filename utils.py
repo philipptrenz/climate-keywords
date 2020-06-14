@@ -1,5 +1,6 @@
 import json
 import logging
+import math
 import os
 import random
 import re
@@ -781,14 +782,23 @@ class KeywordMatcher:
         # print(ngrams_1.intersection(ngrams_2))
         return ngrams_1.intersection(ngrams_2)
 
-    def get_keyword_counts(self, common_keywords):
-        tuples = []
+    def get_keyword_counts(self, common_keywords, as_dict=False):
+        if as_dict:
+            tuples = {}
+        else:
+            tuples = []
         for keyword in common_keywords:
             if keyword:
                 corp_0_ids, corp_1_ids = self.matches[keyword]
-                tuples.append((len(corp_0_ids), len(corp_1_ids), keyword))
-        tuples = sorted(tuples, reverse=True)
+                if as_dict:
+                    tuples[keyword] = (len(corp_0_ids), len(corp_1_ids))
+                else:
+                    tuples.append((len(corp_0_ids), len(corp_1_ids), keyword))
+
+        if not as_dict:
+            tuples = sorted(tuples, reverse=True)
         return tuples
+
 
     def get_first_mentions(self, common_keywords):
         mentions = {}
@@ -801,6 +811,37 @@ class KeywordMatcher:
                 years_1 = [doc.date for doc in corp_1]
                 mentions[keyword] = (min(years_0), min(years_1))
         return mentions
+
+    def liklihood_ratio_test(self, term: str, keyword_counts: Dict[str, Tuple[int, int]], n_1: int, n_2: int) -> float:
+        # k = term freq
+        # n = all freq
+        def liklihood(prob: float, k: int, n: int) -> float:
+            res = (prob ** k) * (1 - prob) ** (n - k)
+            if res == 0:
+                res = 0.000000000000001
+            return res
+
+        k_1 = keyword_counts[term][0]
+        k_2 = keyword_counts[term][1]
+
+        p_1 = k_1 / n_1
+        p_2 = k_2 / n_2
+        p = (k_1 + k_2) / (n_1 + n_2)
+        return 2 * (math.log(liklihood(p_1, k_1, n_1)) + math.log(liklihood(p_2, k_2, n_2))
+                    - math.log(liklihood(p, k_1, n_1)) - math.log(liklihood(p, k_2, n_2)))
+
+    def perform_liklihood_ratio_test(self) -> List[Tuple[str, float]]:
+        common = self.get_common_keyword_vocab()
+        keyword_counts = self.get_keyword_counts(common, as_dict=True)
+        n_1 = 0
+        n_2 = 0
+        for keyword, counts in keyword_counts.items():
+            n_1 += counts[0]
+            n_2 += counts[1]
+
+        ranked_terms = [(term, self.liklihood_ratio_test(term, keyword_counts, n_1, n_2)) for term in common if term]
+        ranked_terms = sorted(ranked_terms, key=lambda x: x[1], reverse=True)
+        return ranked_terms
 
 
 class DataHandler:
