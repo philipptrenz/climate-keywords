@@ -831,6 +831,7 @@ class KeywordMatcher:
                     - math.log(liklihood(p, k_1, n_1)) - math.log(liklihood(p, k_2, n_2)))
 
     def perform_liklihood_ratio_test(self) -> List[Tuple[str, float]]:
+        # todo: think of actually keyword frequencies
         common = self.get_common_keyword_vocab()
         keyword_counts = self.get_keyword_counts(common, as_dict=True)
         n_1 = 0
