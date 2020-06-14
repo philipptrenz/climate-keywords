@@ -782,7 +782,7 @@ class KeywordMatcher:
         # print(ngrams_1.intersection(ngrams_2))
         return ngrams_1.intersection(ngrams_2)
 
-    def get_keyword_counts(self, common_keywords, as_dict=False):
+    def get_keyword_counts(self, common_keywords, as_dict=False, tf_mode=False):
         if as_dict:
             tuples = {}
         else:
@@ -790,10 +790,22 @@ class KeywordMatcher:
         for keyword in common_keywords:
             if keyword:
                 corp_0_ids, corp_1_ids = self.matches[keyword]
-                if as_dict:
-                    tuples[keyword] = (len(corp_0_ids), len(corp_1_ids))
+                if tf_mode:
+                    corp_0_counts = 0
+                    corp_1_counts = 0
+                    for doc_id in corp_0_ids:
+                        corp_0_counts += self.corpus_0.documents[doc_id].text.count(keyword)
+                    for doc_id in corp_1_ids:
+                        corp_1_counts += self.corpus_1.documents[doc_id].text.count(keyword)
+
                 else:
-                    tuples.append((len(corp_0_ids), len(corp_1_ids), keyword))
+                    corp_0_counts = len(corp_0_ids)
+                    corp_1_counts = len(corp_1_ids)
+
+                if as_dict:
+                    tuples[keyword] = (corp_0_counts, corp_1_counts)
+                else:
+                    tuples.append((corp_0_counts, corp_1_counts, keyword))
 
         if not as_dict:
             tuples = sorted(tuples, reverse=True)
@@ -830,10 +842,9 @@ class KeywordMatcher:
         return 2 * (math.log(liklihood(p_1, k_1, n_1)) + math.log(liklihood(p_2, k_2, n_2))
                     - math.log(liklihood(p, k_1, n_1)) - math.log(liklihood(p, k_2, n_2)))
 
-    def perform_liklihood_ratio_test(self) -> List[Tuple[str, float]]:
-        # todo: think of actually keyword frequencies
+    def perform_liklihood_ratio_test(self, tf_mode=True) -> List[Tuple[str, float]]:
         common = self.get_common_keyword_vocab()
-        keyword_counts = self.get_keyword_counts(common, as_dict=True)
+        keyword_counts = self.get_keyword_counts(common, as_dict=True, tf_mode=tf_mode)
         n_1 = 0
         n_2 = 0
         for keyword, counts in keyword_counts.items():
