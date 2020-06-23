@@ -50,8 +50,8 @@
                   <div class="card-header">
                     <h3 class="card-title">Keywords</h3>
                     <div class="col-lg-3 ml-auto">
-                      <form class="input-icon my-3 my-lg-0">
-                        <input type="search" class="form-control header-search" placeholder="Search for keywords…" tabindex="1">
+                      <form class="input-icon my-3 my-lg-0" id="keyword-search-form">
+                        <input type="search" class="form-control keyword-search" placeholder="Search for keywords…" tabindex="1">
                         <div class="input-icon-addon">
                           <i class="fe fe-search"></i>
                         </div>
@@ -59,17 +59,62 @@
                     </div>
                   </div>
                   <div id="card-filter" class="card-body">
-                    <span class="tag">climate change</span>
-                    <span class="tag">fracking</span>
-                    <span class="tag">green party</span>
                   </div>
 
                   <script>
                     require(['c3', 'jquery'], function(c3, $) {
-                      $(".tag").append('<button class="tag-button"><i class="fe fe-x"></i></button>');
+
+                      $( document ).ready(function() {
+                        requestDataWithKeywords();
+                      });
+
+                      var tagButton = '<button class="tag-button"><i class="fe fe-x"></i></button>';
+                      $( ".tag" ).append( tagButton );
+
+                      $('body').on('click', '.tag-button', function() {
+                        $( this ).parent().remove();
+                      });
+
+                      $( "#keyword-search-form" ).submit(function( event ) {
+                        var value = $( ".keyword-search" ).val();
+                        $( ".keyword-search" ).val("");
+                        $( "#card-filter" ).append('<span class="tag">' + value + tagButton +'</span>');
+                        event.preventDefault();
+                      });
+
+                      // gets triggered if tags get added or deleted
+                      $('body').on('DOMSubtreeModified', '#card-filter', function(){
+                        requestDataWithKeywords();
+                      });
+
+                      function requestDataWithKeywords() {
+                        var keywords = [];
+                        $( "#card-filter > span" ).each(function() {
+                          keywords.push( $( this ).text() );
+                        });
+
+                        $.ajax({
+                          type: "POST",
+                          url: "/data",
+                          data: JSON.stringify(keywords),
+                          contentType: "application/json; charset=utf-8",
+                          dataType: "json",
+                          success: function(data){
+
+                            // TODO: receive and visualize data
+
+                          },
+                          failure: function(errMsg) {
+                              alert(errMsg);
+                          }
+                        });
+                      }
                     });
                   </script>
                   <style>
+                    .tag {
+                      margin-right: 10px;
+                    }
                     .tag-button {
                       background-color: inherit;
                       color: inherit;

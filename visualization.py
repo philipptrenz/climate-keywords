@@ -8,8 +8,12 @@ def home():
     return render_template('index.html')
 
 
-@app.route('/filter')
-def preset(preset_id):
+@app.route('/data', methods=["POST"])
+def preset():
+    data = request.get_json() # array of keywords
+
+    # TODO: filter corpora and return data
+
     return make_response('', 200)
 
 
