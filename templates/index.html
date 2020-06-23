@@ -1,14 +1,256 @@
-<!DOCTYPE html>
-<html lang="de">
-
+<!doctype html>
+<html lang="en" dir="ltr">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta http-equiv="Content-Language" content="en" />
+    <meta name="msapplication-TileColor" content="#2d89ef">
+    <meta name="theme-color" content="#4188c9">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="MobileOptimized" content="320">
+
     <title>climate keywords</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,300i,400,400i,500,500i,600,600i,700,700i&amp;subset=latin-ext">
+    <script src="/static/js/require.min.js"></script>
+    <script>
+      requirejs.config({
+          baseUrl: '.'
+      });
+    </script>
+    <!-- Dashboard Core -->
+    <link href="/static/css/dashboard.css" rel="stylesheet" />
+    <script src="/static/js/dashboard.js"></script>
+    <!-- c3.js Charts Plugin -->
+    <link href="/static/plugins/charts-c3/plugin.css" rel="stylesheet" />
+    <script src="/static/plugins/charts-c3/plugin.js"></script>
+    <!-- Input Mask Plugin -->
+    <script src="/static/plugins/input-mask/plugin.js"></script>
   </head>
+  <body class="">
+    <div class="page">
+      <div class="page-main">
 
-  <body>
+        <div class="my-3 my-md-5">
+          <div class="container">
+            <div class="page-header">
+              <h1 class="page-title">
+                climate keywords
+              </h1>
+            </div>
+            <div class="row row-cards">
+
+              <div class="col-lg-12">
+                <div class="card">
+                  <div class="card-header">
+                    <h3 class="card-title">Chart title</h3>
+                  </div>
+                  <div id="chart-development-activity" style="height: 10rem"></div>
+                </div>
+                <script>
+                  require(['c3', 'jquery'], function(c3, $) {
+                  	$(document).ready(function(){
+                  		var chart = c3.generate({
+                  			bindto: '#chart-development-activity', // id of chart wrapper
+                  			data: {
+                  				columns: [
+                  				    // each columns data
+                  					['data1', 0, 5, 1, 2, 7, 5, 6, 8, 24, 7, 12, 5, 6, 3, 2, 2, 6, 30, 10, 10, 15, 14, 47, 65, 55]
+                  				],
+                  				type: 'area', // default type of chart
+                  				groups: [
+                  					[ 'data1', 'data2', 'data3']
+                  				],
+                  				colors: {
+                  					'data1': tabler.colors["blue"]
+                  				},
+                  				names: {
+                  				    // name of each serie
+                  					'data1': 'Data type'
+                  				}
+                  			},
+                  			axis: {
+                  				y: {
+                  					padding: {
+                  						bottom: 0,
+                  					},
+                  					show: false,
+                  						tick: {
+                  						outer: false
+                  					}
+                  				},
+                  				x: {
+                  					padding: {
+                  						left: 0,
+                  						right: 0
+                  					},
+                  					show: false
+                  				}
+                  			},
+                  			legend: {
+                  				position: 'inset',
+                  				padding: 0,
+                  				inset: {
+                                      anchor: 'top-left',
+                  					x: 20,
+                  					y: 8,
+                  					step: 10
+                  				}
+                  			},
+                  			tooltip: {
+                  				format: {
+                  					title: function (x) {
+                  						return '';
+                  					}
+                  				}
+                  			},
+                  			padding: {
+                  				bottom: 0,
+                  				left: -1,
+                  				right: -1
+                  			},
+                  			point: {
+                  				show: false
+                  			}
+                  		});
+                  	});
+                  });
+                </script>
+              </div>
+              <div class="col-md-12">
+                <div class="row">
+                  <div class="col-sm-6">
+                    <div class="card">
+                      <div class="card-header">
+                        <h3 class="card-title">Chart title</h3>
+                      </div>
+                      <div class="card-body">
+                        <div id="chart-donut" style="height: 12rem;"></div>
+                      </div>
+                    </div>
+                    <script>
+                      require(['c3', 'jquery'], function(c3, $) {
+                      	$(document).ready(function(){
+                      		var chart = c3.generate({
+                      			bindto: '#chart-donut', // id of chart wrapper
+                      			data: {
+                      				columns: [
+                      				    // each columns data
+                      					['data1', 63],
+                      					['data2', 37]
+                      				],
+                      				type: 'donut', // default type of chart
+                      				colors: {
+                      					'data1': tabler.colors["green"],
+                      					'data2': tabler.colors["green-light"]
+                      				},
+                      				names: {
+                      				    // name of each serie
+                      					'data1': 'Maximum',
+                      					'data2': 'Minimum'
+                      				}
+                      			},
+                      			axis: {
+                      			},
+                      			legend: {
+                                      show: false, //hide legend
+                      			},
+                      			padding: {
+                      				bottom: 0,
+                      				top: 0
+                      			},
+                      		});
+                      	});
+                      });
+                    </script>
+                  </div>
+                  <div class="col-sm-6">
+                    <div class="card">
+                      <div class="card-header">
+                        <h3 class="card-title">Chart title</h3>
+                      </div>
+                      <div class="card-body">
+                        <div id="chart-pie" style="height: 12rem;"></div>
+                      </div>
+                    </div>
+                    <script>
+                      require(['c3', 'jquery'], function(c3, $) {
+                      	$(document).ready(function(){
+                      		var chart = c3.generate({
+                      			bindto: '#chart-pie', // id of chart wrapper
+                      			data: {
+                      				columns: [
+                      				    // each columns data
+                      					['data1', 63],
+                      					['data2', 44],
+                      					['data3', 12],
+                      					['data4', 14]
+                      				],
+                      				type: 'pie', // default type of chart
+                      				colors: {
+                      					'data1': tabler.colors["blue-darker"],
+                      					'data2': tabler.colors["blue"],
+                      					'data3': tabler.colors["blue-light"],
+                      					'data4': tabler.colors["blue-lighter"]
+                      				},
+                      				names: {
+                      				    // name of each serie
+                      					'data1': 'A',
+                      					'data2': 'B',
+                      					'data3': 'C',
+                      					'data4': 'D'
+                      				}
+                      			},
+                      			axis: {
+                      			},
+                      			legend: {
+                                      show: false, //hide legend
+                      			},
+                      			padding: {
+                      				bottom: 0,
+                      				top: 0
+                      			},
+                      		});
+                      	});
+                      });
+                    </script>
+                  </div>
+                  <div class="col-sm-6">
+                    <div class="card">
+                      <div class="card-body text-center">
+                        <div class="h5">Chart title</div>
+                        <div class="display-4 font-weight-bold mb-4">62</div>
+                        <div class="progress progress-sm">
+                          <div class="progress-bar bg-red" style="width: 28%"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-sm-6">
+                    <div class="card">
+                      <div class="card-body text-center">
+                        <div class="h5">Chart title</div>
+                        <div class="display-4 font-weight-bold mb-4">652</div>
+                        <div class="progress progress-sm">
+                          <div class="progress-bar bg-green" style="width: 84%"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer>
+
+      </footer>
+    </div>
   </body>
-
 </html>
