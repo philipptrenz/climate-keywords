@@ -435,7 +435,7 @@ class CorpusFilter:
                 if has_one_of_keywords_with_english_translation:
                     if not d.keywords:
                         continue
-                    keywords_en = [x.english_translation for x in d.keywords]
+                    keywords_en = [x['english_translation'] for x in d.keywords]
                     matched_keyword = False
                     for k in has_one_of_keywords_with_english_translation:
                         if k in keywords_en:
@@ -447,7 +447,7 @@ class CorpusFilter:
                 if has_one_of_keywords_with_german_translation:
                     if not d.keywords:
                         continue
-                    keywords_de = [x.german_translation for x in d.keywords]
+                    keywords_de = [x['german_translation'] for x in d.keywords]
                     matched_keyword = False
                     for k in has_one_of_keywords_with_german_translation:
                         if k in keywords_de:
@@ -459,8 +459,8 @@ class CorpusFilter:
                 if has_one_of_keywords:
                     if not d.keywords:
                         continue
-                    keywords_de = [x.german_translation for x in d.keywords]
-                    keywords_en = [x.english_translation for x in d.keywords]
+                    keywords_de = [x['german_translation'] for x in d.keywords]
+                    keywords_en = [x['english_translation'] for x in d.keywords]
                     matched_keyword = False
                     for k in has_one_of_keywords:
                         if k in keywords_de or k in keywords_en:
