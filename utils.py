@@ -283,6 +283,13 @@ class Corpus:
 
     @staticmethod
     def load_corpus(path: str) -> List[Document]:
+        def parse_keywords(keywords_dict_list: List[Dict[str, str]]):
+            parsed_keywords = [Keyword(german_translation=keyword_dict['german_translation'],
+                                       english_translation=keyword_dict['english_translation'],
+                                       keyword_type=KeywordType[keyword_dict['keyword_type'].upper()],
+                                       source_language=Language[keyword_dict['source_language'].upper()])
+                               for keyword_dict in keywords_dict_list]
+            return parsed_keywords
         logging.info(f"load {path}")
         with open(path, 'r', encoding='utf-8') as file:
             data = json.loads(file.read())
@@ -293,7 +300,7 @@ class Corpus:
                            doc_id=doc["doc_id"],
                            author=doc["author"],
                            tags=doc["tags"],
-                           keywords=doc["keywords"],
+                           keywords=parse_keywords(doc["keywords"]),
                            party=doc["party"],
                            rating=doc["rating"]) for doc in data]
         logging.info(f"{path} loaded")
@@ -856,7 +863,7 @@ class KeywordMatcher:
         return 2 * (math.log(liklihood(p_1, k_1, n_1)) + math.log(liklihood(p_2, k_2, n_2))
                     - math.log(liklihood(p, k_1, n_1)) - math.log(liklihood(p, k_2, n_2)))
 
-    def perform_liklihood_ratio_test(self, tf_mode=True) -> List[Tuple[str, float]]:
+    def perform_liklihood_ratio_test(self, tf_mode=False) -> List[Tuple[str, float]]:
         common = self.get_common_keyword_vocab()
         keyword_counts = self.get_keyword_counts(common, as_dict=True, tf_mode=tf_mode)
         n_1 = 0
