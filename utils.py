@@ -291,7 +291,7 @@ class Corpus:
                                            source_language=Language[keyword_dict['source_language'].upper()])
                                    for keyword_dict in keywords_dict_list]
                 return parsed_keywords
-            return []
+            return None
         logging.info(f"load {path}")
         with open(path, 'r', encoding='utf-8') as file:
             data = json.loads(file.read())
