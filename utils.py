@@ -284,12 +284,14 @@ class Corpus:
     @staticmethod
     def load_corpus(path: str) -> List[Document]:
         def parse_keywords(keywords_dict_list: List[Dict[str, str]]):
-            parsed_keywords = [Keyword(german_translation=keyword_dict['german_translation'],
-                                       english_translation=keyword_dict['english_translation'],
-                                       keyword_type=KeywordType[keyword_dict['keyword_type'].upper()],
-                                       source_language=Language[keyword_dict['source_language'].upper()])
-                               for keyword_dict in keywords_dict_list]
-            return parsed_keywords
+            if keywords_dict_list:
+                parsed_keywords = [Keyword(german_translation=keyword_dict['german_translation'],
+                                           english_translation=keyword_dict['english_translation'],
+                                           keyword_type=KeywordType[keyword_dict['keyword_type'].upper()],
+                                           source_language=Language[keyword_dict['source_language'].upper()])
+                                   for keyword_dict in keywords_dict_list]
+                return parsed_keywords
+            return []
         logging.info(f"load {path}")
         with open(path, 'r', encoding='utf-8') as file:
             data = json.loads(file.read())
