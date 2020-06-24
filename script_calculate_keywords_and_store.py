@@ -18,7 +18,7 @@ def main():
     #  remove and use actual args
     algorithm = "rake"  # args['algorithm']
     translate_keywords = False  # args['translate']
-    chosen_corpora = ['sustainability', 'state_of_the_union']  # args['corpora']
+    chosen_corpora = ['bundestag', 'abstract']  # args['corpora']
 
     PathMetaData = namedtuple('PathMetaData', 'path corpus_name language')
     paths_and_meta_data = [
