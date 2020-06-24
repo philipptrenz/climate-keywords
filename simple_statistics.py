@@ -14,7 +14,7 @@ def token_number(corpus: Corpus):
     return corpus.token_number()
 
 
-def yearwise_documents(corpus: Corpus, aggregation_func: Callable = len, printing: bool = False):
+def yearwise_documents(corpus: Corpus, aggregation_func: Callable = len, printing: bool = False, as_dict: bool = False):
     year_bins = defaultdict(list)
 
     for doc in corpus.get_documents():
@@ -23,6 +23,9 @@ def yearwise_documents(corpus: Corpus, aggregation_func: Callable = len, printin
     result = {year: aggregation_func(Corpus(source=docs, language=corpus.language, name=f'{corpus.name}_yearwise'))
               for year, docs in year_bins.items() if year is not None}
     result = OrderedDict(sorted(result.items()))
+
+    if as_dict:
+        return result
 
     years = []
     counts = []
