@@ -12,13 +12,13 @@ def main():
     parser.add_argument('-c', '--corpora', help='Corpora to annotate as list', nargs='+', default=['state_of_the_union'])
     parser.add_argument('-t', '--translate', help='Translate keywords', action='store_true')
     args = vars(parser.parse_args())
-    print(args)
 
     config = ConfigLoader.get_config()
 
-    algorithm = "rake"
-    translate_keywords = False
-    chosen_corpora = ['state_of_the_union']
+    #  remove and use actual args
+    algorithm = "rake"  # args['algorithm']
+    translate_keywords = False  # args['translate']
+    chosen_corpora = ['sustainability', 'state_of_the_union']  # args['corpora']
 
     PathMetaData = namedtuple('PathMetaData', 'path corpus_name language')
     paths_and_meta_data = [
@@ -28,6 +28,7 @@ def main():
         PathMetaData(config["corpora"]["state_of_the_union_corpus"], "state_of_the_union", Language.EN),
         PathMetaData(config["corpora"]["united_nations_corpus"], "united_nations", Language.EN)
     ]
+
     paths_and_meta_data = [path_meta for path_meta in paths_and_meta_data if path_meta.corpus_name in chosen_corpora]
 
     use = {
@@ -37,14 +38,15 @@ def main():
 
     keyword_extractor = use[algorithm]
 
+    print(f'Applied {algorithm} on {chosen_corpora} with translation={translate_keywords}')
+
     corpora = [Corpus(source=path_meta.path, name=path_meta.corpus_name, language=path_meta.language)
                for path_meta in paths_and_meta_data]
 
-    if translate_keywords:
-        kwt = KeywordTranslator(cache_file=config["translator"]["cache_file"])
-        # todo: add translation
-
     for corpus, path_meta in zip(corpora, paths_and_meta_data):
+        if translate_keywords:
+            kwt = KeywordTranslator(cache_file=config["translator"]["cache_file"])
+            # todo: add translation
         keyword_extractor(corpus=corpus)
         new_path = str(path_meta.path).replace('.json', f"_{algorithm}.json")
         corpus.save_corpus(new_path)
