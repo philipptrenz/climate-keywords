@@ -42,7 +42,7 @@
                 climate keywords
               </h1>
             </div>
-            <div class="row row-cards">
+            <div class="row row-cards" id="row-cards-container">
               <div class="col-lg-12">
                 <div class="card">
                   <div class="card-header">
@@ -110,10 +110,25 @@
                       function drawChart(data){
                   	    if (typeof data === 'undefined' || data == null) return;
                   	    console.log("redrawing chart");
+                        console.log(data)
 
                         Object.keys(data['corpora']).forEach(function(corpus_name) {
+
+                          var chartContainerId = "chart-" + corpus_name.replace('_', '-');
+                          var chartTile = `
+                            <div class="col-lg-12">
+                              <div class="card">
+                                <div class="card-header">
+                                  <h3 class="card-title">${corpus_name}</h3>
+                                </div>
+                                <div id="${chartContainerId}" style="height: 10rem"></div>
+                              </div>
+                            </div>
+                          `;
+                          if ( $("#" + chartContainerId).length == 0 ) {
+                            $( "#row-cards-container" ).append(chartTile);
+                          }
                           
-                          $( "#chart-1-title" ).text(corpus_name);
                           var corpus = data['corpora'][corpus_name];
 
                           keys = []
@@ -123,10 +138,8 @@
                             columns.push([key].concat(corpus[key])) // start array with keyword for grouping
                           });
 
-                          console.log(columns)
-
                           var chart = c3.generate({
-                              bindto: '#chart-development-activity', // id of chart wrapper
+                              bindto: '#' + chartContainerId, // id of chart wrapper
                               data: {
                                   columns: columns,
                                   type: 'line'/*, // default type of chart
@@ -221,14 +234,7 @@
                 </div>
               </div>
 
-              <div class="col-lg-12">
-                <div class="card">
-                  <div class="card-header">
-                    <h3 class="card-title" id="chart-1-title"></h3>
-                  </div>
-                  <div id="chart-development-activity" style="height: 30rem"></div>
-                </div>
-              </div>
+              
 
               <!--
               <div class="col-md-12">

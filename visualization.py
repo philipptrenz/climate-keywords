@@ -10,7 +10,7 @@ logging.info('importing corpora ...')
 config = ConfigLoader.get_config()
 corpora: List[Corpus] = [
 #     Corpus(source=config["corpora"]["bundestag_corpus"], name="bundestag", language=Language.DE),
-#     Corpus(source=config["corpora"]["abstract_corpus"], name="abstract", language=Language.EN),
+    Corpus(source=config["corpora"]["abstract_corpus"], name="abstract", language=Language.EN),
 #     Corpus(source=config["corpora"]["sustainability_corpus"], name="sustainability", language=Language.EN),
     Corpus(source=config["corpora"]["state_of_the_union_corpus"], name="state_of_the_union", language=Language.EN),
 #     Corpus(source=config["corpora"]["united_nations_corpus"], name="united_nations", language=Language.EN)
