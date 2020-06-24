@@ -379,6 +379,7 @@ class CorpusFilter:
                has_tags: [str] = None,
                is_one_of_parties: [str] = None,
                ratings_in_range: range = None,
+               has_one_of_keywords: [str] = None,
                has_one_of_keywords_with_english_translation: [str] = None,
                has_one_of_keywords_with_german_translation: [str] = None) -> Corpus:
 
@@ -450,6 +451,19 @@ class CorpusFilter:
                     matched_keyword = False
                     for k in has_one_of_keywords_with_german_translation:
                         if k in keywords_de:
+                            matched_keyword = True
+                            break
+                    if not matched_keyword:
+                        continue
+
+                if has_one_of_keywords:
+                    if not d.keywords:
+                        continue
+                    keywords_de = [x.german_translation for x in d.keywords]
+                    keywords_en = [x.english_translation for x in d.keywords]
+                    matched_keyword = False
+                    for k in has_one_of_keywords:
+                        if k in keywords_de or k in keywords_en:
                             matched_keyword = True
                             break
                     if not matched_keyword:
