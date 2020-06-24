@@ -109,79 +109,94 @@
 
                       function drawChart(data){
                   	    if (typeof data === 'undefined' || data == null) return;
-
                   	    console.log("redrawing chart");
 
-                  	    keys = []
-                  	    columns = []
-                  	    for (var key in data) {
-                          // check if the property/key is defined in the object itself, not in parent
-                          if (data.hasOwnProperty(key)) {
+                        Object.keys(data['corpora']).forEach(function(corpus_name) {
+                          
+                          $( "#chart-1-title" ).text(corpus_name);
+                          var corpus = data['corpora'][corpus_name];
+
+                          keys = []
+                          columns = []
+                          Object.keys(corpus).forEach(function(key) {
                             keys.push(key)
-                            columns.push([key].concat(data[key]))
-                          }
-                        }
-                  		var chart = c3.generate({
-                  			bindto: '#chart-development-activity', // id of chart wrapper
-                  			data: {
-                  				columns: columns,
-                  				type: 'area', // default type of chart
-                  				groups: [
-                  				    keys
-                  				]
-                  				/*,
-                  				colors: {
-                  					'data1': tabler.colors["blue"]
-                  				},
-                  				names: {
-                  				    // name of each serie
-                  					'data1': 'Data type'
-                  				}*/
-                  			},
-                  			axis: {
-                  				y: {
-                  					padding: {
-                  						bottom: 0,
-                  					},
-                  					show: false,
-                  						tick: {
-                  						outer: false
-                  					}
-                  				},
-                  				x: {
-                  					padding: {
-                  						left: 0,
-                  						right: 0
-                  					},
-                  					show: false
-                  				}
-                  			},
-                  			legend: {
-                  				position: 'inset',
-                  				padding: 0,
-                  				inset: {
-                                      anchor: 'top-left',
-                  					x: 20,
-                  					y: 8,
-                  					step: 10
-                  				}
-                  			},
-                  			tooltip: {
-                  				format: {
-                  					title: function (x) {
-                  						return '';
-                  					}
-                  				}
-                  			},
-                  			padding: {
-                  				bottom: 0,
-                  				left: -1,
-                  				right: -1
-                  			},
-                  			point: {
-                  				show: false
-                  			}
-                  		});
+                            columns.push([key].concat(corpus[key])) // start array with keyword for grouping
+                          });
+
+                          console.log(columns)
+
+                          var chart = c3.generate({
+                              bindto: '#chart-development-activity', // id of chart wrapper
+                              data: {
+                                  columns: columns,
+                                  type: 'line'/*, // default type of chart
+                                  groups: [
+                                      keys
+                                  ],
+                                  colors: {
+                                      'data1': tabler.colors["blue"]
+                                  },
+                                  names: {
+                                      // name of each serie
+                                      'data1': 'Data type'
+                                  }*/
+                              },
+                              axis: {
+                                  y: {
+                                      padding: {
+                                        bottom: 0,
+                                      },
+                                      show: true,
+                                      min: 0,
+                                      max: 1.0/*,
+                                        tick: {
+                                          outer: false
+                                      }*/
+                                  },
+                                  x: {
+                                      padding: {
+                                        left: 5,
+                                        right: 5
+                                      },
+                                      show: true,
+                                      type: 'category',
+                                      categories: data['years'],
+                                      tick: {
+                                        multiline: false,
+                                        culling: {
+                                          max: 20
+                                        }
+                                      }
+                                  }
+                              },
+                              legend: {
+                                  position: 'inset',
+                                  padding: 0,
+                                  inset: {
+                                        anchor: 'top-left',
+                                      x: 20,
+                                      y: 8,
+                                      step: 10
+                                  }
+                              },
+                              tooltip: {
+                                  format: {
+                                      title: function (x) {
+                                          return '';
+                                      }
+                                  }
+                              },
+                              padding: {
+                                  bottom: 0,
+                                  left: -1,
+                                  right: -1
+                              },
+                              point: {
+                                  show: false
+                              }
+                          });
+
+                        });
                   	  }
                     });
                   </script>
@@ -209,15 +224,10 @@
               <div class="col-lg-12">
                 <div class="card">
                   <div class="card-header">
-                    <h3 class="card-title">Chart title</h3>
+                    <h3 class="card-title" id="chart-1-title"></h3>
                   </div>
                   <div id="chart-development-activity" style="height: 30rem"></div>
                 </div>
-                <script>
-                  require(['c3', 'jquery'], function(c3, $) {
-
-                  });
-                </script>
               </div>
 
               <!--
