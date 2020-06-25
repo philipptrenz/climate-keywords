@@ -267,7 +267,6 @@ class Corpus:
             #     del self.documents[doc_id]
             #     print(f'deleted {doc_id}, no keywords')
 
-
     def year_wise_pseudo_documents(self) -> "Corpus":
         year_bins = defaultdict(list)
 
