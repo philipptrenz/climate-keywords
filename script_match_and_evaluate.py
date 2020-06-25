@@ -17,7 +17,7 @@ def modify_keyword_path(path: str, algorithm: str):
 
 
 def evaluate_single(config, algorithm, chosen_corpora, top_k, use_unassigned):
-    output_path = f"data/{algorithm}_{'_'.join(chosen_corpora)}.csv"
+    output_path = f"data/evaluation/{algorithm}_{'_'.join(chosen_corpora)}.csv"
     PathMetaData = namedtuple('PathMetaData', 'path corpus_name language')
     paths_and_meta_data = [
         PathMetaData(modify_path(config["corpora"]["bundestag_corpus"], algorithm, use_unassigned),
