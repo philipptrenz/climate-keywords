@@ -813,6 +813,7 @@ class KeywordMatcher:
         # print(ngrams_1.intersection(ngrams_2))
         return ngrams_1.intersection(ngrams_2)
 
+    # if tf_mode it returns term frequency, document frequency otherwise
     def get_keyword_counts(self, common_keywords, as_dict=False, tf_mode=False):
         if as_dict:
             tuples = {}
