@@ -1,13 +1,12 @@
 import argparse
-import json
-
-from corpora_processing import KeyPhraseExtractor
 from collections import namedtuple
 
-from utils import ConfigLoader, Corpus, Language, KeywordTranslator, Keyword
+from utils import ConfigLoader, Corpus, Language
+
 
 def modify_path(path: str):
-    return path.replace('.json','_no_text.json')
+    return path.replace('.json', '_no_text.json')
+
 
 def main():
     parser = argparse.ArgumentParser(description='Extracts keywords for given algorithm on given corpora')
@@ -20,13 +19,10 @@ def main():
     config = ConfigLoader.get_config()
 
     #  remove and use actual args
-    algorithm = "rake"  # args['algorithm']
-    translate_keywords = False  # args['translate']
     chosen_corpora = [
         'state_of_the_union',
         'bundestag', 'abstract', 'sustainability'
     ]  # args['corpora']
-    assign_keywords = False
 
     PathMetaData = namedtuple('PathMetaData', 'path corpus_name language')
     paths_and_meta_data = [

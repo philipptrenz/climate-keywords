@@ -1,9 +1,8 @@
 import argparse
 
-from corpora_processing import KeyPhraseExtractor
 from collections import namedtuple
 
-from utils import ConfigLoader, Corpus, Language, KeywordTranslator, KeywordMatcher
+from utils import ConfigLoader, Corpus, Language, KeywordMatcher
 
 
 def modify_path(path: str, algorithm: str, use_unassigned: bool):
