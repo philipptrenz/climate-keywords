@@ -6,14 +6,19 @@ from flask import Flask, render_template, request, Response
 from utils import ConfigLoader, Corpus, Keyword, KeywordType, Language, KeywordTranslator, CorpusFilter
 from simple_statistics import yearwise_documents
 
+
+def modify_path(path: str, algorithm: str):
+    return path.replace('.json', f'_{algorithm}.json')
+
+
 logging.info('importing corpora ...')
 config = ConfigLoader.get_config()
 corpora: List[Corpus] = [
-#     Corpus(source=config["corpora"]["bundestag_corpus"], name="bundestag", language=Language.DE),
-#     Corpus(source=config["corpora"]["abstract_corpus"], name="abstract", language=Language.EN),
-#     Corpus(source=config["corpora"]["sustainability_corpus"], name="sustainability", language=Language.EN),
-    Corpus(source=config["corpora"]["state_of_the_union_corpus"], name="state_of_the_union", language=Language.EN),
-#     Corpus(source=config["corpora"]["united_nations_corpus"], name="united_nations", language=Language.EN)
+    # Corpus(source=config["corpora"]["bundestag_corpus"], name="bundestag", language=Language.DE),
+    # Corpus(source=config["corpora"]["abstract_corpus"], name="abstract", language=Language.EN),
+    # Corpus(source=config["corpora"]["sustainability_corpus"], name="sustainability", language=Language.EN),
+    Corpus(source=f'{modify_path(config["corpora"]["state_of_the_union_corpus"], "rake")}', name="state_of_the_union", language=Language.EN),
+    # Corpus(source=config["corpora"]["united_nations_corpus"], name="united_nations", language=Language.EN)
 ]
 
 logging.info('starting flask ...')
