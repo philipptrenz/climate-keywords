@@ -62,17 +62,27 @@
                   <script>
                     require(['c3', 'jquery'], function(c3, $) {
 
+                      var colorPattern = ['#1f77b4', '#aec7e8', '#ff7f0e', '#ffbb78', '#2ca02c', '#98df8a', '#d62728', '#ff9896', '#9467bd', '#c5b0d5', '#8c564b', '#c49c94', '#e377c2', '#f7b6d2', '#7f7f7f', '#c7c7c7', '#bcbd22', '#dbdb8d', '#17becf', '#9edae5'];
                       var tagButton = '<button class="tag-button"><i class="fe fe-x"></i></button>';
+
                       $( ".tag" ).append( tagButton );
 
                       $('body').on('click', '.tag-button', function() {
                         $( this ).parent().remove();
                       });
 
+                      // process search bar submit
                       $( "#keyword-search-form" ).submit(function( event ) {
                         var value = $( ".keyword-search" ).val();
                         $( ".keyword-search" ).val("");
-                        $( "#card-filter" ).append('<span class="tag">' + value + tagButton +'</span>');
+                        //$( "#card-filter" ).append('<span class="tag" style="background-color: ' + colorPattern[$( "#card-filter" ).length + 1] + ';">' + value + tagButton +'</span>');
+                        $( "#card-filter" ).append(`
+                          <span class="tag" style="background-color: ${ colorPattern[$( "#card-filter > span" ).length] };">
+                            ${ value }
+                            ${ tagButton }
+                          </span>
+                        `);
+
                         event.preventDefault();
                       });
 
@@ -109,19 +119,18 @@
 
                       function drawChart(data){
                   	    if (typeof data === 'undefined' || data == null) return;
-                  	    console.log("redrawing chart");
                         console.log(data)
 
                         Object.keys(data['corpora']).forEach(function(corpus_name) {
 
-                          var chartContainerId = "chart-" + corpus_name.replace('_', '-');
+                          var chartContainerId = "chart-" + corpus_name.replace(/_/g, '-');
                           var chartTile = `
                             <div class="col-lg-12">
                               <div class="card">
                                 <div class="card-header">
-                                  <h3 class="card-title">${corpus_name}</h3>
+                                  <h3 class="card-title">${ corpus_name.replace(/_/g, ' ')+' corpus' }</h3>
                                 </div>
-                                <div id="${chartContainerId}" style="height: 10rem"></div>
+                                <div id="${ chartContainerId }" style="height: 10rem"></div>
                               </div>
                             </div>
                           `;
@@ -135,7 +144,7 @@
                           columns = []
                           Object.keys(corpus).forEach(function(key) {
                             keys.push(key)
-                            columns.push([key].concat(corpus[key])) // start array with keyword for grouping
+                            columns.push([key].concat(corpus[key]['df'])) // start array with keyword for grouping
                           });
 
                           var chart = c3.generate({
@@ -206,6 +215,9 @@
                               },
                               point: {
                                   show: false
+                              },
+                              color: {
+                                pattern: colorPattern
                               }
                           });
 
@@ -216,6 +228,8 @@
                   <style>
                     .tag {
                       margin-right: 10px;
+                      color: white;
+                      font-weight: bold;
                     }
                     .tag-button {
                       background-color: inherit;
