@@ -144,7 +144,7 @@
                           columns = []
                           Object.keys(corpus).forEach(function(key) {
                             keys.push(key)
-                            columns.push([key].concat(corpus[key]['df'])) // start array with keyword for grouping
+                            columns.push([key].concat(corpus[key]['norm'])) // start array with keyword for grouping
                           });
 
                           var chart = c3.generate({

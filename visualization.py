@@ -9,11 +9,11 @@ from simple_statistics import yearwise_documents
 logging.info('importing corpora ...')
 config = ConfigLoader.get_config()
 corpora: List[Corpus] = [
-#     Corpus(source=config["corpora"]["bundestag_corpus"], name="bundestag", language=Language.DE),
-    Corpus(source=config["corpora"]["abstract_corpus"], name="abstract", language=Language.EN),
-#     Corpus(source=config["corpora"]["sustainability_corpus"], name="sustainability", language=Language.EN),
-    Corpus(source=config["corpora"]["state_of_the_union_corpus"], name="state_of_the_union", language=Language.EN),
-#     Corpus(source=config["corpora"]["united_nations_corpus"], name="united_nations", language=Language.EN)
+#     Corpus(source=config["corpora_no_text"]["bundestag_corpus"], name="bundestag", language=Language.DE),
+    Corpus(source=config["corpora_no_text"]["abstract_corpus"], name="abstract", language=Language.EN),
+#     Corpus(source=config["corpora_no_text"]["sustainability_corpus"], name="sustainability", language=Language.EN),
+    Corpus(source=config["corpora_no_text"]["state_of_the_union_corpus"], name="state_of_the_union", language=Language.EN),
+#     Corpus(source=config["corpora_no_text"]["united_nations_corpus"], name="united_nations", language=Language.EN)
 ]
 
 logging.info('starting flask ...')

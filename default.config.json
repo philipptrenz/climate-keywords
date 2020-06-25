@@ -21,6 +21,13 @@
     "united_nations_corpus": "/path/to/file.json",
     "state_of_the_union_corpus": "/path/to/file.json"
   },
+  "corpora_no_text": {
+    "abstract_corpus": "/path/to/file.json",
+    "bundestag_corpus": "/path/to/file.json",
+    "sustainability_corpus": "/path/to/file.json",
+    "united_nations_corpus": "/path/to/file.json",
+    "state_of_the_union_corpus": "/path/to/file.json"
+  },
   "translator": {
     "cache_file": "",
     "google_client_secret_file": ""
