@@ -20,7 +20,7 @@ def main():
     #  remove and use actual args
     algorithm = "rake"  # args['algorithm']
     translate_keywords = False  # args['translate']
-    chosen_corpora = ['bundestag', 'abstract', 'sustainability']  # args['corpora']
+    chosen_corpora = ['state_of_the_union']  # args['corpora']
     assign_keywords = False
 
     PathMetaData = namedtuple('PathMetaData', 'path corpus_name language')
@@ -57,9 +57,7 @@ def main():
             corpus.save_corpus(new_path)
         else:
             new_path = str(path_meta.path).replace('.json', f"_{algorithm}_keywords.json")
-            print(new_path)
             keyword_storage = {doc_id: document.keywords for doc_id, document in corpus.documents.items()}
-            print(keyword_storage.keys())
             with open(new_path, 'w', encoding='utf-8') as f:
                 json.dump(keyword_storage, f, ensure_ascii=False, indent=1, default=lambda o: o.__dict__)
             print('wrote file')
