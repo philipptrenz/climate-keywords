@@ -263,9 +263,8 @@ class Corpus:
             for document in self.get_documents():
                 if document.keywords is None or len(document.keywords) == 0:
                     no_keywords_in.append(document.doc_id)
-            # for doc_id in no_keywords_in:
-            #     del self.documents[doc_id]
-            #     print(f'deleted {doc_id}, no keywords')
+
+        return doc_id2keywords
 
     def year_wise_pseudo_documents(self) -> "Corpus":
         year_bins = defaultdict(list)
