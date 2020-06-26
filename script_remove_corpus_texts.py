@@ -6,6 +6,8 @@ from collections import namedtuple
 
 from utils import ConfigLoader, Corpus, Language, KeywordTranslator, Keyword
 
+def modify_path(path: str):
+    return path.replace('.json','_no_text.json')
 
 def main():
     parser = argparse.ArgumentParser(description='Extracts keywords for given algorithm on given corpora')
@@ -20,7 +22,10 @@ def main():
     #  remove and use actual args
     algorithm = "rake"  # args['algorithm']
     translate_keywords = False  # args['translate']
-    chosen_corpora = ['state_of_the_union']  # args['corpora']
+    chosen_corpora = [
+        'state_of_the_union',
+        'bundestag', 'abstract', 'sustainability'
+    ]  # args['corpora']
     assign_keywords = False
 
     PathMetaData = namedtuple('PathMetaData', 'path corpus_name language')
@@ -31,36 +36,13 @@ def main():
         PathMetaData(config["corpora"]["state_of_the_union_corpus"], "state_of_the_union", Language.EN),
         PathMetaData(config["corpora"]["united_nations_corpus"], "united_nations", Language.EN)
     ]
-
     paths_and_meta_data = [path_meta for path_meta in paths_and_meta_data if path_meta.corpus_name in chosen_corpora]
-
-    use = {
-        "rake": KeyPhraseExtractor.rake,
-        "tfidf_skl": KeyPhraseExtractor.tfidf_skl,
-    }
-
-    keyword_extractor = use[algorithm]
-
-    print(f'Applied {algorithm} on {chosen_corpora} with translation={translate_keywords}')
 
     corpora = [Corpus(source=path_meta.path, name=path_meta.corpus_name, language=path_meta.language)
                for path_meta in paths_and_meta_data]
 
     for corpus, path_meta in zip(corpora, paths_and_meta_data):
-        if translate_keywords:
-            kwt = KeywordTranslator(cache_file=config["translator"]["cache_file"])
-            corpus.translate_keywords(kwt)
-            # todo: add translation
-        keyword_extractor(corpus=corpus)
-        if assign_keywords:
-            new_path = str(path_meta.path).replace('.json', f"_{algorithm}.json")
-            corpus.save_corpus(new_path)
-        else:
-            new_path = str(path_meta.path).replace('.json', f"_{algorithm}_keywords.json")
-            keyword_storage = {doc_id: document.keywords for doc_id, document in corpus.documents.items()}
-            with open(new_path, 'w', encoding='utf-8') as f:
-                json.dump(keyword_storage, f, ensure_ascii=False, indent=1, default=lambda o: o.__dict__)
-            print('wrote file')
+        corpus.save_corpus_without_text(modify_path(path_meta.path))
 
 
 if __name__ == '__main__':

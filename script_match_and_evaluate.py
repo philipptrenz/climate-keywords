@@ -17,7 +17,7 @@ def modify_keyword_path(path: str, algorithm: str):
 
 
 def evaluate_single(config, algorithm, chosen_corpora, top_k, use_unassigned):
-    output_path = f"data/{algorithm}_{'_'.join(chosen_corpora)}.csv"
+    output_path = f"data/evaluation/{algorithm}_{'_'.join(chosen_corpora)}.csv"
     PathMetaData = namedtuple('PathMetaData', 'path corpus_name language')
     paths_and_meta_data = [
         PathMetaData(modify_path(config["corpora"]["bundestag_corpus"], algorithm, use_unassigned),
@@ -59,20 +59,19 @@ def evaluate_single(config, algorithm, chosen_corpora, top_k, use_unassigned):
         corpus.assign_corpus_with_keywords_from_file(keyword_path.path)
 
     print('assigned copora')
-    print(corpora[0].get_documents()[0].keywords)
 
-    # km = KeywordMatcher(corpora[0], corpora[1])
-    # km.match_corpora(lemmatize=False, simplify_result=False)
-    # # common = km.get_common_keyword_vocab()
-    # # km.get_first_mentions(common)
-    # results_test_tf = km.perform_liklihood_ratio_test(tf_mode=True)
-    # results_test_df = km.perform_liklihood_ratio_test(tf_mode=False)
-    # with open(output_path, 'w') as f:
-    #     for result_tf, result_df in zip(results_test_tf[:top_k], results_test_df[:top_k]):
-    #         print(result_tf, result_df)
-    #         f.write(f"{result_tf[0]},{result_tf[1]},,{result_df[0]},{result_df[1]},\n")
-    #
-    # return results_test_tf, results_test_df
+    km = KeywordMatcher(corpora[0], corpora[1])
+    km.match_corpora(lemmatize=False, simplify_result=False)
+    # common = km.get_common_keyword_vocab()
+    # km.get_first_mentions(common)
+    results_test_tf = km.perform_liklihood_ratio_test(tf_mode=True)
+    results_test_df = km.perform_liklihood_ratio_test(tf_mode=False)
+    with open(output_path, 'w', encoding="utf-8") as f:
+        for result_tf, result_df in zip(results_test_tf[:top_k], results_test_df[:top_k]):
+            print(result_tf, result_df)
+            f.write(f"{result_tf[0]},{result_tf[1]},,{result_df[0]},{result_df[1]},\n")
+
+    return results_test_tf, results_test_df
 
 
 def main():
@@ -86,7 +85,7 @@ def main():
     config = ConfigLoader.get_config()
 
     #  remove and use actual args
-    chosen_corpora = ['bundestag', 'abstract']  # args['corpora']
+    chosen_corpora = ['abstract', 'sustainability']  # args['corpora']
     algorithm = "rake"  # args['algorithm']
     top_k = 100  # args['top_k']
 

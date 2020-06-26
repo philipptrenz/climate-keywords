@@ -150,7 +150,7 @@ class Keyword:
         )
 
     @staticmethod
-    def parse_keywords(keywords_dict_list: List[Dict[str, str]]):
+    def parse_keywords(keywords_dict_list: List[Dict[str, str]]) -> Union[List["Keyword"], None]:
         if keywords_dict_list:
             parsed_keywords = [Keyword(german_translation=keyword_dict['german_translation'],
                                        english_translation=keyword_dict['english_translation'],
@@ -159,6 +159,30 @@ class Keyword:
                                for keyword_dict in keywords_dict_list]
             return parsed_keywords
         return None
+
+    @staticmethod
+    def parse_keywords_from_str_list(key_word_list: List[str], language: Language, keyword_type: KeywordType) \
+            -> Union[List["Keyword"], None]:
+        if key_word_list:
+            if language == Language.DE:
+                parsed_keywords = [Keyword(german_translation=keyword, keyword_type=keyword_type,
+                                           source_language=language)
+                                   for keyword in key_word_list]
+            elif language == Language.EN:
+
+                parsed_keywords = [Keyword(english_translation=keyword, keyword_type=keyword_type,
+                                           source_language=language)
+                                   for keyword in key_word_list]
+
+                return parsed_keywords
+            else:
+                # parsed_keywords = [Keyword(english_translation=keyword, keyword_type=keyword_type,
+                #                            source_language=Language.UNKNOWN)
+                #                    for keyword in keywords[document.doc_id]]
+                raise UserWarning(f"Document Language {language} unknown!")
+            return parsed_keywords
+        return None
+
 
 class Document:
     def __init__(self, text: str, date, language: Language, doc_id: str, tags=None, author=None, party=None,
@@ -208,27 +232,22 @@ class Corpus:
         else:
             return self.documents
 
-    def assign_keywords(self, keywords: Dict[Union[int, str], List[str]] = None,
+    def assign_keywords(self, keywords: Dict[Union[int, str], List[Union[str, Keyword]]] = None,
                         keyword_type: KeywordType = KeywordType.UNKNOWN,
-                        translated_keywords: Dict[int, List[Keyword]] = None):
+                        translated_keywords: Dict[int, List[Keyword]] = None,
+                        keyword_type_is_str=True):
         for document in tqdm(self.get_documents(), desc="Assign keywords to documents"):
-            if keywords:
+            if keywords or keywords is not None:
                 if document.doc_id in keywords and keywords[document.doc_id]:
-                    if document.language == Language.DE:
-                        parsed_keywords = [Keyword(german_translation=keyword, keyword_type=keyword_type,
-                                                   source_language=document.language)
-                                           for keyword in keywords[document.doc_id]]
-                    elif document.language == Language.EN:
-
-                        parsed_keywords = [Keyword(english_translation=keyword, keyword_type=keyword_type,
-                                                   source_language=document.language)
-                                           for keyword in keywords[document.doc_id]]
+                    keyword_list = keywords[document.doc_id]
+                    if keyword_type_is_str:
+                        document.keywords = Keyword.parse_keywords_from_str_list(keyword_list,
+                                                                                 document.language,
+                                                                                 keyword_type)
                     else:
-                        # parsed_keywords = [Keyword(english_translation=keyword, keyword_type=keyword_type,
-                        #                            source_language=Language.UNKNOWN)
-                        #                    for keyword in keywords[document.doc_id]]
-                        raise UserWarning(f"Document Language {document.language} unknown!")
-                    document.keywords = parsed_keywords
+                        document.keywords = keyword_list
+            else:
+                document.keywords = []
 
             if translated_keywords:
                 document.keywords = translated_keywords[document.doc_id]
@@ -239,7 +258,14 @@ class Corpus:
         with open(keyword_path, 'r', encoding='utf-8') as file:
             data = json.loads(file.read())
             doc_id2keywords = {doc_id: Keyword.parse_keywords(keywords) for doc_id, keywords in data.items()}
-            self.assign_keywords(doc_id2keywords)
+            self.assign_keywords(doc_id2keywords, keyword_type_is_str=False)
+            no_keywords_in = []
+            for document in self.get_documents():
+                if document.keywords is None or len(document.keywords) == 0:
+                    no_keywords_in.append(document.doc_id)
+            # for doc_id in no_keywords_in:
+            #     del self.documents[doc_id]
+            #     print(f'deleted {doc_id}, no keywords')
 
     def year_wise_pseudo_documents(self) -> "Corpus":
         year_bins = defaultdict(list)
@@ -287,6 +313,17 @@ class Corpus:
 
     def save_corpus(self, path: str):
         data = [doc.__dict__ for doc in self.get_documents()]
+
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=1, default=lambda o: o.__dict__)
+        logging.info(f'saved {path}')
+
+    def save_corpus_without_text(self, path: str):
+        data = []
+        for doc in self.get_documents():
+            doc.text = ""
+            data.append(doc.__dict__)
+
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=1, default=lambda o: o.__dict__)
         logging.info(f'saved {path}')
@@ -695,17 +732,17 @@ class KeywordMatcher:
                 identifier = instance.doc_id
             else:
                 raise NotImplementedError("Not suppported type!")
+            if keywords:
+                for keyword in keywords:
+                    if keyword.german_translation is not None and keyword.german_translation != "":
+                        reversed_keywords[keyword.german_translation].add(identifier)
+                    if keyword.english_translation is not None and keyword.english_translation != "":
+                        reversed_keywords[keyword.english_translation].add(identifier)
 
-            for keyword in keywords:
-                if keyword.german_translation is not None and keyword.german_translation != "":
-                    reversed_keywords[keyword.german_translation].add(identifier)
-                if keyword.english_translation is not None and keyword.english_translation != "":
-                    reversed_keywords[keyword.english_translation].add(identifier)
-
-                if keyword.german_translation is not None and keyword.english_translation is not None \
-                        and keyword.german_translation != "" and keyword.english_translation != "":
-                    ger_translations[keyword.german_translation].add(keyword.english_translation)
-                    en_translations[keyword.english_translation].add(keyword.german_translation)
+                    if keyword.german_translation is not None and keyword.english_translation is not None \
+                            and keyword.german_translation != "" and keyword.english_translation != "":
+                        ger_translations[keyword.german_translation].add(keyword.english_translation)
+                        en_translations[keyword.english_translation].add(keyword.german_translation)
 
         return reversed_keywords, ger_translations, en_translations
 
