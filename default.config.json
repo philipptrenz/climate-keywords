@@ -21,12 +21,23 @@
     "united_nations_corpus": "/path/to/file.json",
     "state_of_the_union_corpus": "/path/to/file.json"
   },
-  "corpora_no_text": {
-    "abstract_corpus": "/path/to/file.json",
-    "bundestag_corpus": "/path/to/file.json",
-    "sustainability_corpus": "/path/to/file.json",
-    "united_nations_corpus": "/path/to/file.json",
-    "state_of_the_union_corpus": "/path/to/file.json"
+  "corpora_for_viz": {
+    "abstract_corpus": {
+      "corpus": "/path/to/XXX_corpus_no_text.json",
+      "keywords": "/path/to/XXX_inverse_keywords.json"
+    },
+    "bundestag_corpus": {
+      "corpus": "/path/to/XXX_corpus_no_text.json",
+      "keywords": "/path/to/XXX_inverse_keywords.json"
+    },
+    "sustainability_corpus": {
+      "corpus": "/path/to/XXX_corpus_no_text.json",
+      "keywords": "/path/to/XXX_inverse_keywords.json"
+    },
+    "state_of_the_union_corpus": {
+      "corpus": "/path/to/XXX_corpus_no_text.json",
+      "keywords": "/path/to/XXX_inverse_keywords.json"
+    }
   },
   "translator": {
     "cache_file": "",
