@@ -149,6 +149,16 @@ class Keyword:
             source_language=Language(data["source_language"])
         )
 
+    @staticmethod
+    def parse_keywords(keywords_dict_list: List[Dict[str, str]]):
+        if keywords_dict_list:
+            parsed_keywords = [Keyword(german_translation=keyword_dict['german_translation'],
+                                       english_translation=keyword_dict['english_translation'],
+                                       keyword_type=KeywordType[keyword_dict['keyword_type'].upper()],
+                                       source_language=Language[keyword_dict['source_language'].upper()])
+                               for keyword_dict in keywords_dict_list]
+            return parsed_keywords
+        return None
 
 class Document:
     def __init__(self, text: str, date, language: Language, doc_id: str, tags=None, author=None, party=None,
@@ -203,12 +213,13 @@ class Corpus:
                         translated_keywords: Dict[int, List[Keyword]] = None):
         for document in tqdm(self.get_documents(), desc="Assign keywords to documents"):
             if keywords:
-                if document.doc_id in keywords:
+                if document.doc_id in keywords and keywords[document.doc_id]:
                     if document.language == Language.DE:
                         parsed_keywords = [Keyword(german_translation=keyword, keyword_type=keyword_type,
                                                    source_language=document.language)
                                            for keyword in keywords[document.doc_id]]
                     elif document.language == Language.EN:
+
                         parsed_keywords = [Keyword(english_translation=keyword, keyword_type=keyword_type,
                                                    source_language=document.language)
                                            for keyword in keywords[document.doc_id]]
@@ -223,6 +234,12 @@ class Corpus:
                 document.keywords = translated_keywords[document.doc_id]
 
         self.has_assigned_keywords = True
+
+    def assign_corpus_with_keywords_from_file(self, keyword_path: str):
+        with open(keyword_path, 'r', encoding='utf-8') as file:
+            data = json.loads(file.read())
+            doc_id2keywords = {doc_id: Keyword.parse_keywords(keywords) for doc_id, keywords in data.items()}
+            self.assign_keywords(doc_id2keywords)
 
     def year_wise_pseudo_documents(self) -> "Corpus":
         year_bins = defaultdict(list)
@@ -283,15 +300,6 @@ class Corpus:
 
     @staticmethod
     def load_corpus(path: str) -> List[Document]:
-        def parse_keywords(keywords_dict_list: List[Dict[str, str]]):
-            if keywords_dict_list:
-                parsed_keywords = [Keyword(german_translation=keyword_dict['german_translation'],
-                                           english_translation=keyword_dict['english_translation'],
-                                           keyword_type=KeywordType[keyword_dict['keyword_type'].upper()],
-                                           source_language=Language[keyword_dict['source_language'].upper()])
-                                   for keyword_dict in keywords_dict_list]
-                return parsed_keywords
-            return None
         logging.info(f"load {path}")
         with open(path, 'r', encoding='utf-8') as file:
             data = json.loads(file.read())
@@ -302,7 +310,7 @@ class Corpus:
                            doc_id=doc["doc_id"],
                            author=doc["author"],
                            tags=doc["tags"],
-                           keywords=parse_keywords(doc["keywords"]),
+                           keywords=Keyword.parse_keywords(doc["keywords"]),
                            party=doc["party"],
                            rating=doc["rating"]) for doc in data]
         logging.info(f"{path} loaded")

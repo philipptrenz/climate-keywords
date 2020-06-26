@@ -1,15 +1,17 @@
 import argparse
+import json
 
 from corpora_processing import KeyPhraseExtractor
 from collections import namedtuple
 
-from utils import ConfigLoader, Corpus, Language, KeywordTranslator
+from utils import ConfigLoader, Corpus, Language, KeywordTranslator, Keyword
 
 
 def main():
     parser = argparse.ArgumentParser(description='Extracts keywords for given algorithm on given corpora')
     parser.add_argument('-a', '--algorithm', help='Algorithm to use like rake or tfidf', default="rake")
-    parser.add_argument('-c', '--corpora', help='Corpora to annotate as list', nargs='+', default=['state_of_the_union'])
+    parser.add_argument('-c', '--corpora', help='Corpora to annotate as list', nargs='+',
+                        default=['state_of_the_union'])
     parser.add_argument('-t', '--translate', help='Translate keywords', action='store_true')
     args = vars(parser.parse_args())
 
@@ -18,7 +20,8 @@ def main():
     #  remove and use actual args
     algorithm = "rake"  # args['algorithm']
     translate_keywords = False  # args['translate']
-    chosen_corpora = ['bundestag', 'abstract']  # args['corpora']
+    chosen_corpora = ['bundestag', 'abstract', 'sustainability']  # args['corpora']
+    assign_keywords = False
 
     PathMetaData = namedtuple('PathMetaData', 'path corpus_name language')
     paths_and_meta_data = [
@@ -46,10 +49,20 @@ def main():
     for corpus, path_meta in zip(corpora, paths_and_meta_data):
         if translate_keywords:
             kwt = KeywordTranslator(cache_file=config["translator"]["cache_file"])
+            corpus.translate_keywords(kwt)
             # todo: add translation
         keyword_extractor(corpus=corpus)
-        new_path = str(path_meta.path).replace('.json', f"_{algorithm}.json")
-        corpus.save_corpus(new_path)
+        if assign_keywords:
+            new_path = str(path_meta.path).replace('.json', f"_{algorithm}.json")
+            corpus.save_corpus(new_path)
+        else:
+            new_path = str(path_meta.path).replace('.json', f"_{algorithm}_keywords.json")
+            print(new_path)
+            keyword_storage = {doc_id: document.keywords for doc_id, document in corpus.documents.items()}
+            print(keyword_storage.keys())
+            with open(new_path, 'w', encoding='utf-8') as f:
+                json.dump(keyword_storage, f, ensure_ascii=False, indent=1, default=lambda o: o.__dict__)
+            print('wrote file')
 
 
 if __name__ == '__main__':

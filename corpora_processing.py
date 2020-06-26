@@ -74,8 +74,7 @@ class KeyPhraseExtractor:
         corpus.assign_keywords(keywords=keywords, keyword_type=KeywordType.TFIDF_SKL)
 
     @classmethod
-    def tfidf_pke(cls, corpus: Corpus):
-        number_keywords = 10
+    def tfidf_pke(cls, corpus: Corpus, top_k: int = 100):
         stop_list = list(string.punctuation)
         # 1. create a TfIdf extractor.
         extractor = pke.unsupervised.TfIdf()
@@ -108,13 +107,12 @@ class KeyPhraseExtractor:
             # extractor.candidate_weighting(df=df)
             extractor.candidate_weighting()
             # 5. get the 10-highest scored candidates as keyphrases
-            keyphrases = extractor.get_n_best(n=number_keywords)
+            keyphrases = extractor.get_n_best(n=top_k)
 
             corpus.assign_keywords(keywords={document.doc_id: keyphrases}, keyword_type=KeywordType.TFIDF_PKE)
 
     @classmethod
-    def yake_pke(cls, corpus: Corpus):
-        number_keywords = 10
+    def yake_pke(cls, corpus: Corpus, top_k: int = 100):
         # 1. create a YAKE extractor.
         extractor = pke.unsupervised.YAKE()
 
@@ -147,15 +145,14 @@ class KeyPhraseExtractor:
             #    redundant keyphrases are removed from the output using levenshtein
             #    distance and a threshold.
             threshold = 0.8
-            keyphrases = extractor.get_n_best(n=number_keywords, threshold=threshold)
+            keyphrases = extractor.get_n_best(n=top_k, threshold=threshold)
 
             corpus.assign_keywords(keywords={document.doc_id: keyphrases}, keyword_type=KeywordType.YAKE_PKE)
 
     @classmethod
-    def text_rank_pke(cls, corpus: Corpus):
+    def text_rank_pke(cls, corpus: Corpus, top_k: int = 100):
         # define the set of valid Part-of-Speeches
         pos = {'NOUN', 'PROPN', 'ADJ'}
-        number_keywords = 10
         # 1. create a TextRank extractor.
         extractor = pke.unsupervised.TextRank()
 
@@ -180,15 +177,14 @@ class KeyPhraseExtractor:
                                           top_percent=0.33)
 
             # 4. get the 10-highest scored candidates as keyphrases
-            keyphrases = extractor.get_n_best(n=number_keywords)
+            keyphrases = extractor.get_n_best(n=top_k)
 
             corpus.assign_keywords(keywords={document.doc_id: keyphrases}, keyword_type=KeywordType.TEXT_RANK_PKE)
 
     @classmethod
-    def single_rank_pke(cls, corpus: Corpus):
+    def single_rank_pke(cls, corpus: Corpus, top_k: int = 100):
         # define the set of valid Part-of-Speeches
         pos = {'NOUN', 'PROPN', 'ADJ'}
-        number_keywords = 10
         # 1. create a SingleRank extractor.
         extractor = pke.unsupervised.SingleRank()
 
@@ -217,15 +213,13 @@ class KeyPhraseExtractor:
 
             # 5. get the 10-highest scored candidates as keyphrases
             # 5. get the 10-highest scored candidates as keyphrases
-            keyphrases = extractor.get_n_best(n=number_keywords)
+            keyphrases = extractor.get_n_best(n=top_k)
             corpus.assign_keywords(keywords={document.doc_id: keyphrases}, keyword_type=KeywordType.SINGLE_RANK_PKE)
 
     @classmethod
-    def topic_rank_pke(cls, corpus: Corpus):
+    def topic_rank_pke(cls, corpus: Corpus, top_k: int = 100):
         # define the set of valid Part-of-Speeches
         pos = {'NOUN', 'PROPN', 'ADJ'}
-
-        number_keywords = 10
 
         # 1. create a TopicRank extractor.
         extractor = pke.unsupervised.TopicRank()
@@ -256,17 +250,15 @@ class KeyPhraseExtractor:
             extractor.candidate_weighting(threshold=0.74, method='average')
 
             # 5. get the 10-highest scored candidates as keyphrases
-            keyphrases = extractor.get_n_best(n=number_keywords)
+            keyphrases = extractor.get_n_best(n=top_k)
             corpus.assign_keywords(keywords={document.doc_id: keyphrases}, keyword_type=KeywordType.TOPIC_RANK_PKE)
 
     @classmethod
-    def topical_page_rank_pke(cls, corpus: Corpus):
+    def topical_page_rank_pke(cls, corpus: Corpus, top_k: int = 100):
         # define the set of valid Part-of-Speeches
         pos = {'NOUN', 'PROPN', 'ADJ'}
         # define the grammar for selecting the keyphrase candidates
         grammar = "NP: {<ADJ>*<NOUN|PROPN>+}"
-
-        number_keywords = 10
 
         # 1. create a TopicalPageRank extractor.
         extractor = pke.unsupervised.TopicalPageRank()
@@ -296,18 +288,16 @@ class KeyPhraseExtractor:
 
             # 5. get the 10-highest scored candidates as keyphrases
             # 5. get the 10-highest scored candidates as keyphrases
-            keyphrases = extractor.get_n_best(n=number_keywords)
+            keyphrases = extractor.get_n_best(n=top_k)
             corpus.assign_keywords(keywords={document.doc_id: keyphrases},
                                    keyword_type=KeywordType.TOPICAL_PAGE_RANK_PKE)
 
     @classmethod
-    def position_rank_pke(cls, corpus: Corpus):
+    def position_rank_pke(cls, corpus: Corpus, top_k: int = 100):
         # define the set of valid Part-of-Speeches
         pos = {'NOUN', 'PROPN', 'ADJ'}
         # define the grammar for selecting the keyphrase candidates
         grammar = "NP: {<ADJ>*<NOUN|PROPN>+}"
-
-        number_keywords = 10
 
         # 1. create a PositionRank extractor.
         extractor = pke.unsupervised.PositionRank()
@@ -339,11 +329,11 @@ class KeyPhraseExtractor:
 
             # 5. get the 10-highest scored candidates as keyphrases
             # 5. get the 10-highest scored candidates as keyphrases
-            keyphrases = extractor.get_n_best(n=number_keywords)
+            keyphrases = extractor.get_n_best(n=top_k)
             corpus.assign_keywords(keywords={document.doc_id: keyphrases}, keyword_type=KeywordType.POSITION_RANK_PKE)
 
     @classmethod
-    def multipartite_rank_pke(cls, corpus: Corpus):
+    def multipartite_rank_pke(cls, corpus: Corpus, top_k: int = 100):
         # define the set of valid Part-of-Speeches
         pos = {'NOUN', 'PROPN', 'ADJ'}
 
@@ -358,7 +348,6 @@ class KeyPhraseExtractor:
             stop_list = stopwords.words('english')
 
         # 2. load the content of the document.
-        number_keywords = 10
         for document in corpus.get_documents(as_list=True):
 
             stop_list += list(string.punctuation)
@@ -379,12 +368,12 @@ class KeyPhraseExtractor:
                                           method='average')
 
             # 5. get the 10-highest scored candidates as keyphrases
-            keyphrases = extractor.get_n_best(n=number_keywords)
+            keyphrases = extractor.get_n_best(n=top_k)
             corpus.assign_keywords(keywords={document.doc_id: keyphrases},
                                    keyword_type=KeywordType.MULTIPARTITE_RANK_PKE)
 
     @classmethod
-    def rake(cls, corpus: Union[Corpus, Document]):
+    def rake(cls, corpus: Union[Corpus, Document], top_k: int = 100):
         # additional parameters:
         # ranking_metric
         # punctuations
@@ -405,7 +394,7 @@ class KeyPhraseExtractor:
             keywords = {}
             for document in tqdm(corpus.get_documents(as_list=True), desc="Calculating RAKE"):
                 r.extract_keywords_from_text(document.text)
-                keywords[document.doc_id] = r.get_ranked_phrases()
+                keywords[document.doc_id] = r.get_ranked_phrases()[:top_k]
             corpus.assign_keywords(keywords=keywords, keyword_type=KeywordType.RAKE)
             return corpus
 
@@ -425,13 +414,13 @@ class KeyPhraseExtractor:
                      min_length=cls.min_nrgam,
                      max_length=cls.max_ngram)
             r.extract_keywords_from_text(document.text)
-            document.keywords = r.get_ranked_phrases()
+            document.keywords = r.get_ranked_phrases()[:top_k]
             results[document.doc_id] = document.keywords
 
             return results
 
     @classmethod
-    def key_word_count(cls, keywords: Dict[str, List[str]], top_k=100):
+    def key_word_count(cls, keywords: Dict[str, List[str]], top_k: int = 100):
         flattened_keywords = [word for document, document_keywords in keywords.items() for word in document_keywords]
         c = Counter(flattened_keywords)
         if top_k is None:
@@ -439,7 +428,7 @@ class KeyPhraseExtractor:
         return c.most_common(top_k)
 
     @staticmethod
-    def get_top_k_keywords(year_wise_keywords, top_k=100):
+    def get_top_k_keywords(year_wise_keywords, top_k: int = 100):
         return {year: keyword_list[:top_k] for year, keyword_list in year_wise_keywords.items()}
 
 
