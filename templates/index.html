@@ -128,7 +128,7 @@
                             <div class="col-lg-12">
                               <div class="card">
                                 <div class="card-header">
-                                  <h3 class="card-title">${ corpus_name.replace(/_/g, ' ')+' corpus' }</h3>
+                                  <h3 class="card-title">${ corpus_name.replace(/_/g, ' ') }</h3>
                                 </div>
                                 <div id="${ chartContainerId }" style="height: 10rem"></div>
                               </div>
@@ -151,7 +151,10 @@
                               bindto: '#' + chartContainerId, // id of chart wrapper
                               data: {
                                   columns: columns,
-                                  type: 'line'/*, // default type of chart
+                                  type: 'line',
+
+
+                                  /*
                                   groups: [
                                       keys
                                   ],
@@ -161,17 +164,26 @@
                                   names: {
                                       // name of each serie
                                       'data1': 'Data type'
-                                  }*/
+                                  }
+                                  */
                               },
                               axis: {
                                   y: {
+                                      label: 'Percentage of documents per year',
                                       padding: {
                                         bottom: 0,
                                       },
                                       show: true,
                                       min: 0,
-                                      max: 1.0/*,
-                                        tick: {
+                                      type: 'category',
+                                      tick: {
+                                        multiline: false,
+                                        values: [0, 0.1, 0.2, 0.3, 0.4]
+                                      },
+
+                                      /*
+                                      max: 1.0,
+                                      tick: {
                                           outer: false
                                       }*/
                                   },
