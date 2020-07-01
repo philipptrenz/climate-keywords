@@ -1,10 +1,13 @@
 import json
+import time
 import logging
 from typing import List, Union
 from flask import Flask, render_template, request, Response
 
 from utils import ConfigLoader, Corpus, Keyword, KeywordType, Language, KeywordTranslator, CorpusFilter
 from simple_statistics import yearwise_documents
+
+logging.basicConfig(level=logging.INFO)
 
 
 def modify_path(path: str, algorithm: str):
@@ -13,18 +16,44 @@ def modify_path(path: str, algorithm: str):
 
 logging.info('importing corpora ...')
 config = ConfigLoader.get_config()
-corpora: List[Corpus] = [
-#     Corpus(source=config["corpora"]["bundestag_corpus"], name="bundestag", language=Language.DE),
-    Corpus(source=config["corpora"]["abstract_corpus"], name="abstract", language=Language.EN),
-#     Corpus(source=config["corpora"]["sustainability_corpus"], name="sustainability", language=Language.EN),
-    Corpus(source=config["corpora"]["state_of_the_union_corpus"], name="state_of_the_union", language=Language.EN),
-#     Corpus(source=config["corpora"]["united_nations_corpus"], name="united_nations", language=Language.EN)
-    # Corpus(source=config["corpora"]["bundestag_corpus"], name="bundestag", language=Language.DE),
-    # Corpus(source=config["corpora"]["abstract_corpus"], name="abstract", language=Language.EN),
-    # Corpus(source=config["corpora"]["sustainability_corpus"], name="sustainability", language=Language.EN),
-    Corpus(source=f'{modify_path(config["corpora"]["state_of_the_union_corpus"], "rake")}', name="state_of_the_union", language=Language.EN),
-    # Corpus(source=config["corpora"]["united_nations_corpus"], name="united_nations", language=Language.EN)
-]
+
+corpus_data = {}
+keyword_data = {}
+min_year = 5000
+max_year = 0
+
+logging.info('importing corpora and keywords data ...')
+start_time = time.time()
+
+for corpus_name in config["corpora_for_viz"]:
+    logging.info(corpus_name)
+    with open(config["corpora_for_viz"][corpus_name]["corpus"]) as corpus_file:
+        corpus_data[corpus_name] = json.load(corpus_file)
+    with open(config["corpora_for_viz"][corpus_name]["keywords"]) as keyword_file:
+        keyword_data[corpus_name] = json.load(keyword_file)
+    logging.info('loading {} data took {}s'.format(corpus_name, (time.time() - start_time)))
+
+logging.info('finding min and max year over all corpora ...')
+for corpus_name in corpus_data:
+    for doc_id in corpus_data[corpus_name]:
+        doc = corpus_data[corpus_name][doc_id]
+        if doc['date']:
+            date = int(doc['date'])
+            if date > max_year:
+                max_year = date
+            if date < min_year:
+                min_year = date
+logging.info('min year: {}, max_year: {}'.format(min_year, max_year))
+
+logging.info('calculating number of documents per year for all corpora ...')
+number_of_documents_per_year = {}
+for corpus_name in corpus_data:
+    number_of_documents_per_year[corpus_name] = [0] * (max_year-min_year+1)
+    for doc_id in corpus_data[corpus_name]:
+        doc = corpus_data[corpus_name][doc_id]
+        if not doc['date']:
+            continue
+        number_of_documents_per_year[corpus_name][int(doc['date'])-min_year] += 1
 
 logging.info('starting flask ...')
 app = Flask(__name__)
@@ -42,48 +71,50 @@ def data():
     return Response(json.dumps(result),  mimetype='application/json')
 
 
-def get_documents_per_year_filtered_by(keywords, do_normalize=True):
+def process_documents_from_inverse_keyword(keyword, c_name):
+    df = [0] * (max_year-min_year+1)
+    norm = [0] * (max_year-min_year+1)
+    tf = [0] * (max_year-min_year+1)
 
-    def get_min_max_years():
-        min_year = 5000
-        max_year = 0
-        for corpus in corpora:
-            years, _ = yearwise_documents(corpus)
-            if min(years) < min_year:
-                min_year = min(years)
-            if max(years) > max_year:
-                max_year = max(years)
-        return min_year, max_year
+    for d in keyword:
+        for d_id in d:
+            year = corpus_data[c_name][d_id]["date"]
+            index = year - min_year  # min_year has index 0
+            term_frequency = d[d_id]  # within this document
+            df[index] += 1  # one document more
+            norm[index] = df[index] / number_of_documents_per_year[c_name][index]
+            tf[index] += term_frequency
 
-    min_year, max_year = get_min_max_years()
+    return df, norm, tf
+
+
+def get_documents_per_year_filtered_by(keywords):
 
     result = {
-        'corpora': {},
+        'corpora': {c_name: {} for c_name in corpus_data},
         'years': list(range(min_year, max_year+1))
     }
-    for corpus in corpora:
-        result['corpora'][corpus.name] = {}
 
+    for c_name in corpus_data:
         for key in keywords:
-            if do_normalize:
-                unfiltered_years = yearwise_documents(corpus, as_dict=True)
-            filtered_corpus = CorpusFilter.filter(corpus=corpus, has_one_of_keywords=key)
-            years_counts = yearwise_documents(filtered_corpus, as_dict=True)
-
-            result['corpora'][corpus.name][key] = {
+            key = key.strip()
+            result['corpora'][c_name][key] = {
                 'df': [],  # document frequency per year
                 'norm': [],  # document frequency per year, normalized by total documents per year
                 'tf': []  # term frequency per year
             }
-            for i in range(min_year, max_year+1):
-                if i in years_counts:
-                    result['corpora'][corpus.name][key]['norm'].append(years_counts[i]/unfiltered_years[i])
-                    result['corpora'][corpus.name][key]['df'].append(years_counts[i])
-                    result['corpora'][corpus.name][key]['tf'].append(0) # TODO: add term frequency
-                else:
-                    result['corpora'][corpus.name][key]['norm'].append(0)
-                    result['corpora'][corpus.name][key]['df'].append(0)
-                    result['corpora'][corpus.name][key]['tf'].append(0)
+
+            if key in keyword_data[c_name]:
+                df, norm, tf = process_documents_from_inverse_keyword(keyword_data[c_name][key], c_name)
+
+                result['corpora'][c_name][key]['df'] = df
+                result['corpora'][c_name][key]['norm'] = norm
+                result['corpora'][c_name][key]['tf'] = tf
+            else:
+                result['corpora'][c_name][key]['df'] = [0] * (max_year-min_year+1)
+                result['corpora'][c_name][key]['norm'] = [0] * (max_year-min_year+1)
+                result['corpora'][c_name][key]['tf'] = [0] * (max_year-min_year+1)
+
     return result
 
 
