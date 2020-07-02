@@ -24,14 +24,22 @@ require(['c3', 'jquery'], function(c3, $) {
         event.preventDefault();
     });
 
-    // gets triggered if tags get added or deleted
-    $('body').on('DOMSubtreeModified', '#card-filter', function(){
-        requestDataWithKeywords();
-    });
-
     $( document ).ready(function() {
         requestDataWithKeywords();
     });
+
+    // gets triggered if tags get added or deleted
+    $('body').on('DOMSubtreeModified', '#card-filter', function(){
+        requestDataWithKeywords();
+        recolorKeywordTags();
+    });
+
+    function recolorKeywordTags() {
+        $( "#card-filter > span" ).each(function(i) {
+            $( this ).css("background-color", colorPattern[i] );
+        });
+
+    }
 
     function requestDataWithKeywords() {
         var keywords = [];
