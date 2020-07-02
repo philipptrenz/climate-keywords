@@ -13,7 +13,7 @@ def main():
     paths = args['paths']
 
     for path in paths:
-        with open(path) as f:
+        with open(path, encoding='utf-8') as f:
             data = json.load(f)
             for doc_id, keywords in data.items():
                 for keyword in keywords:
