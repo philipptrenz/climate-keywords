@@ -18,9 +18,9 @@ def main():
     config = ConfigLoader.get_config()
 
     #  remove and use actual args
-    algorithm = "tfidf_skl"  # args['algorithm']
-    translate_keywords = False  # args['translate']
-    chosen_corpora = ['state_of_the_union', 'sustainability']  # args['corpora']
+    algorithm = args['algorithm']
+    translate_keywords = False  #args['translate']
+    chosen_corpora = args['corpora']
     assign_keywords = False
 
     PathMetaData = namedtuple('PathMetaData', 'path corpus_name language')
