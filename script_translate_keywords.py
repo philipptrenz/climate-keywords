@@ -8,10 +8,11 @@ import six
 import googletrans
 from google.cloud import translate_v2 as g_translate
 from google_auth_oauthlib import flow
+from tqdm import tqdm
 
 from utils import Language, Keyword, ConfigLoader
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 
 def load_cache_from_file(cache_file):
@@ -37,6 +38,8 @@ def translate(keyword, cache, translator, timeout, dest):
         translation_direction = "en2de"
     elif dest == "en":
         translation_direction = "de2en"
+    else:
+        raise UserWarning('Translation direction defined incorrectly"')
 
     src = "de" if dest == "en" else "en"
 
@@ -110,7 +113,8 @@ def main():
         }
 
     def iterate_keywords(data):
-        for doc_id, keywords in data.items():
+        tqdm_bar = tqdm(data.items(), total=len(data.keys()))
+        for doc_id, keywords in tqdm_bar:
             for keyword in keywords:
                 en_translation = keyword["english_translation"]
                 ger_translation = keyword["german_translation"]
@@ -132,7 +136,7 @@ def main():
 
             logging.debug(f'saving keywords with translations at \"{path}\"')
             with open(path, "w", encoding='utf-8') as f:
-                json.dump(data, f)
+                json.dump(data, f, indent=1)
 
     except KeyboardInterrupt:
         logging.debug('process was interrupted')
