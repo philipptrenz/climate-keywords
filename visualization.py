@@ -31,7 +31,7 @@ for corpus_name in config["corpora_for_viz"]:
         corpus_data[corpus_name] = json.load(corpus_file)
     with open(config["corpora_for_viz"][corpus_name]["keywords"]) as keyword_file:
         keyword_data[corpus_name] = json.load(keyword_file)
-    logging.info('loading {} data took {}s'.format(corpus_name, (time.time() - start_time)))
+    logging.info('loading {} data took {}s'.format(corpus_name, int(time.time() - start_time)))
 
 logging.info('finding min and max year over all corpora ...')
 for corpus_name in corpus_data:
@@ -57,6 +57,7 @@ for corpus_name in corpus_data:
 
 logging.info('starting flask ...')
 app = Flask(__name__)
+logging.info('server boot took about {}s'.format(int(time.time()-start_time)))
 
 
 @app.route('/')
