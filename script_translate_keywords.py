@@ -109,22 +109,36 @@ def main():
             "en2de": {}
         }
 
-    def iterate_keywords():
+    def iterate_keywords(data):
+        for doc_id, keywords in data.items():
+            for keyword in keywords:
+                en_translation = keyword["english_translation"]
+                ger_translation = keyword["german_translation"]
+                if en_translation is None:
+                    translated = translate(ger_translation, cache, translator, timeout, dest="en")
+                    keyword["english_translation"] = translated
+                if ger_translation is None:
+                    translated = translate(en_translation, cache, translator, timeout, dest="de")
+                    keyword["german_translation"] = translated
+
+    try:
         for path in paths:
+            logging.debug(f'loading keywords at \"{path}\"')
             with open(path, encoding='utf-8') as f:
                 data = json.load(f)
-                for doc_id, keywords in data.items():
-                    for keyword in keywords:
-                        en_translation = keyword["english_translation"]
-                        ger_translation = keyword["german_translation"]
-                        if en_translation is None:
-                            translate(ger_translation, cache, translator, timeout, dest="en")
-                        if ger_translation is None:
-                            translate(en_translation, cache, translator, timeout, dest="de")
 
-    iterate_keywords()
+            logging.debug('translating keywords ...')
+            iterate_keywords(data)
 
-    save_cache_to_file(cache, cache_file)
+            logging.debug(f'saving keywords with translations at \"{path}\"')
+            with open(path, "w", encoding='utf-8') as f:
+                json.dump(data, f)
+
+    except KeyboardInterrupt:
+        logging.debug('process was interrupted')
+    finally:
+        logging.debug('saving ...')
+        save_cache_to_file(cache, cache_file)
 
 
 if __name__ == '__main__':
