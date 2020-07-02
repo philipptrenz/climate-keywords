@@ -1,3 +1,4 @@
+import argparse
 import os
 import time
 import json
@@ -154,14 +155,15 @@ def main():
     for path in paths:
         with open(path, encoding='utf-8') as f:
             data = json.load(f)
-            for doc_id, keywords in data:
-                en_translation = keywords["english_translation"]
-                ger_translation = keywords["german_translation"]
-                print(keywords)
-                if en_translation is None:
-                    translate_german2english(keyword, cache, translator, timeout)
-                if ger_translation is None:
-                    translate_english2german(keyword, cache, translator, timeout)
+            for doc_id, keywords in data.items():
+                for keyword in keywords:
+                    en_translation = keyword["english_translation"]
+                    ger_translation = keyword["german_translation"]
+                    print(keywords)
+                    if en_translation is None:
+                        translate_german2english(keyword, cache, translator, timeout)
+                    if ger_translation is None:
+                        translate_english2german(keyword, cache, translator, timeout)
 
 
 if __name__ == '__main__':
