@@ -733,6 +733,7 @@ class KeywordMatcher:
                 raise NotImplementedError("Not suppported type!")
             if keywords:
                 for keyword in keywords:
+                    # TODO: Here!
                     if keyword.german_translation is not None and keyword.german_translation != "":
                         reversed_keywords[keyword.german_translation].add(identifier)
                     if keyword.english_translation is not None and keyword.english_translation != "":
