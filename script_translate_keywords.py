@@ -24,7 +24,7 @@ def load_cache_from_file(cache_file):
 
 def save_cache_to_file(cache, cache_file):
     with open(cache_file, "w", encoding='utf-8') as json_file:
-        json.dump(cache, json_file)
+        json.dump(cache, json_file, indent=1, ensure_ascii=True)
 
 
 def add_to_cache(keyword, translated_keyword, cache, translation_direction):
@@ -65,7 +65,7 @@ def translate(keyword, cache, translator, timeout, dest):
 
             logging.debug(f"\"{keyword}\" translated to \"{translated_keyword}\"")
             add_to_cache(keyword, translated_keyword, cache, translation_direction)
-            return keyword
+            return translated_keyword
         except Exception as e:
             logging.error("While trying to translate, an error occured:")
             logging.error(e)
@@ -76,7 +76,7 @@ def main():
     parser.add_argument('-p', '--paths', help='Paths of keyword files to translate', nargs='+',
                         default=['data/state_of_the_union_corpus_rake_keywords.json'])
     args = vars(parser.parse_args())
-
+    # -p data/bundestag_corpus_rake_keywords.json
     config = ConfigLoader.get_config()
     paths = args['paths']
 
@@ -136,7 +136,7 @@ def main():
 
             logging.debug(f'saving keywords with translations at \"{path}\"')
             with open(path, "w", encoding='utf-8') as f:
-                json.dump(data, f, indent=1)
+                json.dump(data, f, indent=1, ensure_ascii=True)
 
     except KeyboardInterrupt:
         logging.debug('process was interrupted')
