@@ -318,10 +318,10 @@ class Corpus:
         logging.info(f'saved {path}')
 
     def save_corpus_without_text(self, path: str):
-        data = []
+        data = {}
         for doc in self.get_documents():
             doc.text = ""
-            data.append(doc.__dict__)
+            data[doc.doc_id] = doc.__dict__
 
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=1, default=lambda o: o.__dict__)

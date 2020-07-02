@@ -7,14 +7,13 @@ import os
 def main():
     parser = argparse.ArgumentParser(description='Extracts annotations of annotated files')
     parser.add_argument('-i', '--in', help='in directory', default="data/evaluation")
-    parser.add_argument('-o', '--out', help='outfile', default="data/evaluation/extracted_keywords.csv")
+    parser.add_argument('-o', '--out', help='outfile', default="data/evaluation/annotated_keywords.csv")
     args = vars(parser.parse_args())
     directory = args['in']
     output_path = args['out']
     exclude = ['precision.csv']
-    from os import listdir
-    from os.path import isfile, join
-    dir_files = [f for f in listdir(directory) if isfile(join(directory, f))]
+
+    dir_files = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
     dir_files = [file for file in dir_files if file not in exclude and file.endswith('_an.csv')]
     print(dir_files)
     erg_dict = defaultdict(set)
