@@ -11,103 +11,61 @@ from google_auth_oauthlib import flow
 
 from utils import Language, Keyword, ConfigLoader
 
+logging.basicConfig(level=logging.DEBUG)
+
 
 def load_cache_from_file(cache_file):
-    cache = dict()
     if not os.path.exists(cache_file):
         raise Exception("File does not exist")
-
     with open(cache_file, encoding='utf-8') as json_file:
-        cache_data = json.load(json_file)
-        for key in cache_data:
-            cache[key] = Keyword.from_json(cache_data[key])
-    return cache
+        return json.load(json_file)
 
 
-def add_to_cache(keyword: Keyword, cache):
-    cache[keyword.german_translation] = keyword
-    cache[keyword.english_translation] = keyword
+def save_cache_to_file(cache, cache_file):
+    with open(cache_file, "w", encoding='utf-8') as json_file:
+        json.dump(cache, json_file)
 
 
-def translate_german2english(keyword, cache, translator, timeout):
-    if keyword.german_translation in cache and cache[keyword.german_translation].english_translation:
-        print(f"found keyword '{keyword.german_translation}' in cache, taking this one")
-        # keyword = self.cache[keyword.german_translation]
-        keyword.english_translation = cache[keyword.german_translation].english_translation
-        return keyword
+def add_to_cache(keyword, translated_keyword, cache, translation_direction):
+    cache[translation_direction][keyword] = translated_keyword
+    cache[translation_direction][keyword] = translated_keyword
+
+
+def translate(keyword, cache, translator, timeout, dest):
+
+    if dest == "de":
+        translation_direction = "en2de"
+    elif dest == "en":
+        translation_direction = "de2en"
+
+    src = "de" if dest == "en" else "en"
+
+    if keyword in cache[translation_direction] and cache[translation_direction][keyword] != "":
+        logging.debug('already in cache file')
+        return cache[translation_direction][keyword]
     else:
-        if not keyword.english_translation:
-            logging.debug("KeywordTranslator: {} | source is DE, EN not set, translating ...".format(
-                keyword.german_translation))
-            try:
-                if isinstance(translator, g_translate.Client):
+        try:
+            if isinstance(translator, g_translate.Client):
 
-                    text_input = str(keyword.german_translation)
-                    if isinstance(text_input, six.binary_type):
-                        text_input = text_input.decode('utf-8')
+                text_input = str(keyword)
+                if isinstance(text_input, six.binary_type):
+                    text_input = text_input.decode('utf-8')
 
-                    result = translator.translate(text_input, target_language=keyword.source_language.value)
-                    keyword.english_translation = result['translatedText']
+                result = translator.translate(text_input, target_language=dest)
+                translated_keyword = result['translatedText']
 
-                else:
-                    time.sleep(timeout)
-                    translated = translator.translate(text=keyword.german_translation,
-                                                           src=str(Language.DE.value),
-                                                           dest=str(Language.EN.value))
-                    keyword.english_translation = translated.text
+            else:
 
-                add_to_cache(keyword)
-                return keyword
-            except Exception as e:
-                logging.error("While trying to translate, an error occured:")
-                logging.error(e)
+                translated = translator.translate(text=keyword, src=src, dest=dest)
+                time.sleep(timeout)
+                translated_keyword = translated.text
 
-        else:
-            logging.debug(
-                "KeywordTranslator: {}, {} | source is DE, but EN already set, skipping translation".format(
-                    keyword.german_translation, keyword.english_translation))
-            return None
-
-
-def translate_english2german(keyword, cache, translator, timeout):
-
-    if keyword.english_translation in cache and cache[keyword.english_translation].german_translation:
-        print(f"found keyword '{keyword.english_translation}' in cache, taking this one")
-        # keyword = self.cache[keyword.english_translation]
-        keyword.german_translation = cache[keyword.english_translation].german_translation
-        return keyword
-    else:
-
-        if not keyword.german_translation:
-            logging.debug("KeywordTranslator: {} | source is EN, DE not set, translating ...".format(
-                keyword.english_translation))
-            try:
-                if isinstance(translator, g_translate.Client):
-
-                    text_input = str(keyword.english_translation)
-                    if isinstance(text_input, six.binary_type):
-                        text_input = text_input.decode('utf-8')
-
-                    result = translator.translate(text_input, target_language=keyword.source_language.value)
-                    keyword.german_translation = result['translatedText']
-
-                else:
-                    time.sleep(timeout)
-                    translated = translator.translate(text=keyword.english_translation,
-                                                           src=str(Language.EN.value),
-                                                           dest=str(Language.DE.value))
-                    keyword.german_translation = translated.text
-
-                add_to_cache(keyword)
-                return keyword
-            except Exception as e:
-                logging.error("While trying to translate, an error occured:")
-                logging.error(e)
-        else:
-            logging.debug(
-                "KeywordTranslator: {}, {}| source is EN, but DE already set, skipping translation".format(
-                    keyword.english_translation, keyword.german_translation))
-            return None
+            logging.debug(f"\"{keyword}\" translated to \"{translated_keyword}\"")
+            add_to_cache(keyword, translated_keyword, cache, translation_direction)
+            return keyword
+        except Exception as e:
+            logging.error("While trying to translate, an error occured:")
+            logging.error(e)
 
 
 def main():
@@ -118,10 +76,6 @@ def main():
 
     config = ConfigLoader.get_config()
     paths = args['paths']
-
-    config = ConfigLoader.get_config()
-
-    paths = ['data/state_of_the_union_corpus_rake_keywords.json']  # TODO
 
     cache_file = config["translator"]["cache_file"]
     google_client_secrets_file = config["translator"]["google_client_secret_file"]
@@ -150,20 +104,27 @@ def main():
     except Exception as e:
         logging.warning("Loading of file failed")
         logging.warning(e)
-        cache = dict()
+        cache = {
+            "de2en": {},
+            "en2de": {}
+        }
 
-    for path in paths:
-        with open(path, encoding='utf-8') as f:
-            data = json.load(f)
-            for doc_id, keywords in data.items():
-                for keyword in keywords:
-                    en_translation = keyword["english_translation"]
-                    ger_translation = keyword["german_translation"]
-                    print(keywords)
-                    if en_translation is None:
-                        translate_german2english(keyword, cache, translator, timeout)
-                    if ger_translation is None:
-                        translate_english2german(keyword, cache, translator, timeout)
+    def iterate_keywords():
+        for path in paths:
+            with open(path, encoding='utf-8') as f:
+                data = json.load(f)
+                for doc_id, keywords in data.items():
+                    for keyword in keywords:
+                        en_translation = keyword["english_translation"]
+                        ger_translation = keyword["german_translation"]
+                        if en_translation is None:
+                            translate(ger_translation, cache, translator, timeout, dest="en")
+                        if ger_translation is None:
+                            translate(en_translation, cache, translator, timeout, dest="de")
+
+    iterate_keywords()
+
+    save_cache_to_file(cache, cache_file)
 
 
 if __name__ == '__main__':
