@@ -55,6 +55,10 @@ for corpus_name in corpus_data:
             continue
         number_of_documents_per_year[corpus_name][int(doc['date'])-min_year] += 1
 
+logging.info('importing translation cache ...')
+with open(config["translator"]["cache_file"]) as f:
+    translation_cache = json.load(f)
+
 logging.info('starting flask ...')
 app = Flask(__name__)
 logging.info('server boot took about {}s'.format(int(time.time()-start_time)))
@@ -98,19 +102,33 @@ def get_documents_per_year_filtered_by(keywords):
 
     for c_name in corpus_data:
         for key in keywords:
-            key = key.strip()
+
+            key = key.strip().lower()
             result['corpora'][c_name][key] = {
                 'df': [],  # document frequency per year
                 'norm': [],  # document frequency per year, normalized by total documents per year
                 'tf': []  # term frequency per year
             }
 
-            if key in keyword_data[c_name]:
+            translated_key = None
+            if key in translation_cache["de2en"]:
+                translated_key = translation_cache["de2en"][key].lower()
+            elif key in translation_cache["en2de"]:
+                translated_key = translation_cache["en2de"][key].lower()
+
+            if key in keyword_data[c_name] or translated_key in keyword_data[c_name]:
                 df, norm, tf = process_documents_from_inverse_keyword(keyword_data[c_name][key], c_name)
 
-                result['corpora'][c_name][key]['df'] = df
-                result['corpora'][c_name][key]['norm'] = norm
-                result['corpora'][c_name][key]['tf'] = tf
+                if translated_key not in keyword_data[c_name]:
+                    result['corpora'][c_name][key]['df'] = df
+                    result['corpora'][c_name][key]['norm'] = norm
+                    result['corpora'][c_name][key]['tf'] = tf
+                else:
+                    transl_df, transl_norm, transl_tf = process_documents_from_inverse_keyword(keyword_data[c_name][translated_key], c_name)
+
+                    result['corpora'][c_name][key]['df'] = [(df[i] + transl_df[i]) for i in range(max_year-min_year+1)]
+                    result['corpora'][c_name][key]['norm'] = [(norm[i] + transl_norm[i]) for i in range(max_year-min_year+1)]
+                    result['corpora'][c_name][key]['tf'] = [(tf[i] + transl_tf[i]) for i in range(max_year-min_year+1)]
             else:
                 result['corpora'][c_name][key]['df'] = [0] * (max_year-min_year+1)
                 result['corpora'][c_name][key]['norm'] = [0] * (max_year-min_year+1)
@@ -121,4 +139,5 @@ def get_documents_per_year_filtered_by(keywords):
 
 if __name__ == "__main__":
     app.config['TEMPLATES_AUTO_RELOAD'] = True
+    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
     app.run(host='127.0.0.1', port=8080)
