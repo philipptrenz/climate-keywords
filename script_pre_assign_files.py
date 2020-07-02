@@ -1,0 +1,58 @@
+import argparse
+import os
+import pandas as pd
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Extracts annotations of annotated files')
+    parser.add_argument('-i', '--in', help='in directory', default="data/evaluation")
+    parser.add_argument('-s', '--standard', help='in directory', default="data/evaluation/annotated_keywords.csv")
+    args = vars(parser.parse_args())
+    directory = args['in']
+    keyword_list_file = args['standard']
+    exclude = ['precision.csv', 'annotated_keywords.csv']
+
+    dir_files = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
+    dir_files = [file for file in dir_files if file not in exclude and not file.endswith('_an.csv') and file.endswith('.csv')]
+    print(dir_files)
+    label_df = pd.read_csv(keyword_list_file)
+
+    labels = {row['Keyword']: row['Label'] for i, row in label_df.iterrows()}
+    for file in dir_files:
+        path = os.path.join(directory, file)
+        df = pd.read_csv(path, header=None)
+        df.columns = ['Word_1', 'Score_1', 'Label_1', 'Word_2', 'Score_2', 'Label_2']
+        print(df)
+        override = []
+        for i, row in df.iterrows():
+            label_1 = row['Label_1']
+            label_2 = row['Label_2']
+            if str(label_1).lower() == "nan":
+                label_1 = labels.get(row['Word_1'])
+            if str(label_2).lower() == "nan":
+                label_2 = labels.get(row['Word_2'])
+            override.append((row['Word_1'], row['Score_1'], label_1, row['Word_2'], row['Score_2'], label_2))
+
+        override_df = pd.DataFrame(override, columns=df.columns)
+        override_df.to_csv(os.path.join(directory, f"{file.replace('.csv', '_ov.csv')}"), index=False)
+        print(override_df)
+    #
+    #         if len(erg_dict[row['Word_1']]) > 1:
+    #             print(f'{row["Word_1"]} of {file} is labeled ambiguous.')
+    #             erg_dict[row['Word_1']].clear()
+    #             erg_dict[row['Word_1']].add('ambiguous')
+    #         if len(erg_dict[row['Word_2']]) > 1:
+    #             print(f'{row["Word_2"]} of {file} is labeled ambiguous.')
+    #             erg_dict[row['Word_2']].clear()
+    #             erg_dict[row['Word_2']].add('ambiguous')
+    #
+    # erg_dict = {word: next(iter(label)) for word, label in erg_dict.items()}
+    #
+    # sorted_ergs = list(sorted(erg_dict.items(), key=lambda x: (x[1], x[0]), reverse=False))
+    # erg_df = pd.DataFrame(sorted_ergs, columns=['Keyword', 'Label'])
+    #
+    # erg_df.to_csv(output_path, index=False)
+
+
+if __name__ == '__main__':
+    main()

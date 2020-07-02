@@ -1,17 +1,15 @@
 import argparse
-
-from corpora_processing import KeyPhraseExtractor
 from collections import namedtuple
 
-from utils import ConfigLoader, Corpus, Language, KeywordTranslator, KeywordMatcher
+from utils import ConfigLoader, Corpus, Language, KeywordMatcher
 
 
 def modify_path(path: str, algorithm: str):
     return path.replace('.json', f'_{algorithm}.json')
 
 
-def evaluate_single(config, algorithm, chosen_corpora, top_k):
-    output_path = f"data/{algorithm}_{'_'.join(chosen_corpora)}.csv"
+def match(config, algorithm, chosen_corpora):
+    # output_path = f"data/{algorithm}_{'_'.join(chosen_corpora)}.csv"
     PathMetaData = namedtuple('PathMetaData', 'path corpus_name language')
     paths_and_meta_data = [
         PathMetaData(modify_path(config["corpora"]["bundestag_corpus"], algorithm), "bundestag", Language.DE),
@@ -51,7 +49,6 @@ def main():
     parser.add_argument('-a', '--algorithm', help='Algorithm to use like rake or tfidf', default="rake")
     parser.add_argument('-c', '--corpora', help='Two Corpora to operate on ', nargs='+',
                         default=['state_of_the_union', 'abstract'])
-    parser.add_argument('-k', '--top_k', help='number of elements for output', type=int, default=100)
     args = vars(parser.parse_args())
 
     config = ConfigLoader.get_config()
@@ -59,9 +56,8 @@ def main():
     #  remove and use actual args
     chosen_corpora = ['state_of_the_union', 'abstract']  # args['corpora']
     algorithm = "rake"  # args['algorithm']
-    top_k = 100  # args['top_k']
 
-    evaluate_single(config, algorithm, chosen_corpora, top_k)
+    match(config, algorithm, chosen_corpora)
 
 
 if __name__ == '__main__':
