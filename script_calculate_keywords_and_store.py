@@ -18,17 +18,17 @@ def main():
     config = ConfigLoader.get_config()
 
     #  remove and use actual args
-    algorithm = "rake"  # args['algorithm']
+    algorithm = "tfidf_skl"  # args['algorithm']
     translate_keywords = False  # args['translate']
-    chosen_corpora = ['state_of_the_union']  # args['corpora']
+    chosen_corpora = ['state_of_the_union', 'sustainability']  # args['corpora']
     assign_keywords = False
 
     PathMetaData = namedtuple('PathMetaData', 'path corpus_name language')
     paths_and_meta_data = [
+        PathMetaData(config["corpora"]["state_of_the_union_corpus"], "state_of_the_union", Language.EN),
         PathMetaData(config["corpora"]["bundestag_corpus"], "bundestag", Language.DE),
         PathMetaData(config["corpora"]["abstract_corpus"], "abstract", Language.EN),
         PathMetaData(config["corpora"]["sustainability_corpus"], "sustainability", Language.EN),
-        PathMetaData(config["corpora"]["state_of_the_union_corpus"], "state_of_the_union", Language.EN),
         PathMetaData(config["corpora"]["united_nations_corpus"], "united_nations", Language.EN)
     ]
 
@@ -37,6 +37,15 @@ def main():
     use = {
         "rake": KeyPhraseExtractor.rake,
         "tfidf_skl": KeyPhraseExtractor.tfidf_skl,
+        "tfidf_pke": KeyPhraseExtractor.tfidf_pke,
+        "text_rank": KeyPhraseExtractor.text_rank_pke,
+        "yake": KeyPhraseExtractor.yake_pke,
+        "single_rank": KeyPhraseExtractor.single_rank_pke,
+        "topic_rank": KeyPhraseExtractor.topic_rank_pke,
+        "topical_page_rank": KeyPhraseExtractor.topical_page_rank_pke,
+        "position_rank": KeyPhraseExtractor.position_rank_pke,
+        "multipartite_rank": KeyPhraseExtractor.multipartite_rank_pke
+
     }
 
     keyword_extractor = use[algorithm]

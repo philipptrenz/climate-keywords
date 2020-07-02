@@ -20,7 +20,7 @@ def main():
 
     #  remove and use actual args
     chosen_corpora = [
-        'state_of_the_union',
+        # 'state_of_the_union',
         'bundestag', 'abstract', 'sustainability'
     ]  # args['corpora']
 
