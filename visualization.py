@@ -116,6 +116,8 @@ def get_documents_per_year_filtered_by(keywords):
                 translated_key = translation_cache["de2en"][key].lower()
             elif key in translation_cache["en2de"]:
                 translated_key = translation_cache["en2de"][key].lower()
+            if translated_key == key:
+                translated_key = None  # prevent the case that English and German is the same
 
             if key in keyword_data[c_name] or translated_key in keyword_data[c_name]:
                 df, norm, tf = process_documents_from_inverse_keyword(keyword_data[c_name][key], c_name)
