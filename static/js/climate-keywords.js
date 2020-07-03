@@ -3,6 +3,8 @@ require(['c3', 'jquery'], function(c3, $) {
     var colorPattern = ['#1f77b4', '#aec7e8', '#ff7f0e', '#ffbb78', '#2ca02c', '#98df8a', '#d62728', '#ff9896', '#9467bd', '#c5b0d5', '#8c564b', '#c49c94', '#e377c2', '#f7b6d2', '#7f7f7f', '#c7c7c7', '#bcbd22', '#dbdb8d', '#17becf', '#9edae5'];
     var tagButton = '<button class="tag-button"><i class="fe fe-x"></i></button>';
 
+    var jsonData = null;
+
     $( ".tag" ).append( tagButton );
 
     // delete tag
@@ -16,20 +18,21 @@ require(['c3', 'jquery'], function(c3, $) {
     // process search bar submit
     $( "#keyword-search-form" ).submit(function( event ) {
         var value = $( ".keyword-search" ).val();
+        var keyword = value.trim().toLowerCase();
         $( ".keyword-search" ).val("");
         //$( "#card-filter" ).append('<span class="tag" style="background-color: ' + colorPattern[$( "#card-filter" ).length + 1] + ';">' + value + tagButton +'</span>');
         $( "#card-filter" ).append(`
             <span class="tag" style="background-color: ${ colorPattern[$( "#card-filter > span" ).length] };">
-                ${ value }
+                ${ keyword }
                 ${ tagButton }
             </span>
         `);
-        requestDataWithKeywords();
+        requestDataWithKeywords([keyword]);
         event.preventDefault();
     });
 
     $( document ).ready(function() {
-        requestDataWithKeywords();
+        requestDataWithKeywords([]);
     });
 
     // gets triggered if tags get added or deleted
@@ -43,8 +46,6 @@ require(['c3', 'jquery'], function(c3, $) {
         });
     }
 
-    var jsonData = null;
-
     function removeKeywordFromJson(keyword) {
         if (jsonData === null) return;
 
@@ -54,23 +55,15 @@ require(['c3', 'jquery'], function(c3, $) {
         });
     }
 
-    function requestDataWithKeywords() {
-        var keywords = [];
-        $( "#card-filter > span" ).each(function() {
-            keywords.push( $( this ).text() );
-        });
-
-        var start_time = new Date();
+    function requestDataWithKeywords(keywordArray) {
         $.ajax({
             type: "POST",
             url: "/data",
-            data: JSON.stringify(keywords),
+            data: JSON.stringify(keywordArray),
             contentType: "application/json; charset=utf-8",
             dataType: "json",
             success: function(data){
-                var now = new Date();
-                console.log('request took', Math.round((now-start_time)/10)/100, 's');
-                jsonData = data;
+                mergeNewDataIntoJsonData(data);
                 drawChart();
             },
             failure: function(errMsg) {
@@ -78,6 +71,22 @@ require(['c3', 'jquery'], function(c3, $) {
                 alert(errMsg);
             }
         });
+    }
+
+    function mergeNewDataIntoJsonData(newData) {
+        if (jsonData === null) {
+            jsonData = newData;
+        } else {
+            Object.keys(newData['corpora']).forEach(function(corpus_name) {
+                Object.keys(newData['corpora'][corpus_name]).forEach(function(keyword) {
+                    if (corpus_name in jsonData['corpora']) {
+                        jsonData['corpora'][corpus_name][keyword] = newData['corpora'][corpus_name][keyword];
+                    } else {
+                        alert("Corpora are inconsistent between frontend and backend, please reload the page");
+                    }
+                });
+            });
+        }
     }
 
     function drawChart(){
