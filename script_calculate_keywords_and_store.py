@@ -9,9 +9,9 @@ from utils import ConfigLoader, Corpus, Language, KeywordTranslator, Keyword
 
 def main():
     parser = argparse.ArgumentParser(description='Extracts keywords for given algorithm on given corpora')
-    parser.add_argument('-a', '--algorithm', help='Algorithm to use like rake or tfidf', default="rake")
+    parser.add_argument('-a', '--algorithm', help='Algorithm to use like rake or tfidf', default="yake")
     parser.add_argument('-c', '--corpora', help='Corpora to annotate as list', nargs='+',
-                        default=['state_of_the_union'])
+                        default=['sustainability'])
     parser.add_argument('-t', '--translate', help='Translate keywords', action='store_true')
     args = vars(parser.parse_args())
 
@@ -22,6 +22,7 @@ def main():
     translate_keywords = False  #args['translate']
     chosen_corpora = args['corpora']
     assign_keywords = False
+    yearwise = True
 
     PathMetaData = namedtuple('PathMetaData', 'path corpus_name language')
     paths_and_meta_data = [
@@ -33,7 +34,8 @@ def main():
     ]
 
     paths_and_meta_data = [path_meta for path_meta in paths_and_meta_data if path_meta.corpus_name in chosen_corpora]
-
+    if yearwise:
+        KeyPhraseExtractor.top_k = 1000
     use = {
         "rake": KeyPhraseExtractor.rake,
         "tfidf_skl": KeyPhraseExtractor.tfidf_skl,
@@ -55,6 +57,9 @@ def main():
     corpora = [Corpus(source=path_meta.path, name=path_meta.corpus_name, language=path_meta.language)
                for path_meta in paths_and_meta_data]
 
+    if yearwise:
+        corpora = [corpus.year_wise_pseudo_documents() for corpus in corpora]
+
     for corpus, path_meta in zip(corpora, paths_and_meta_data):
         if translate_keywords:
             kwt = KeywordTranslator(cache_file=config["translator"]["cache_file"])
@@ -66,10 +71,12 @@ def main():
             corpus.save_corpus(new_path)
         else:
             new_path = str(path_meta.path).replace('.json', f"_{algorithm}_keywords.json")
+            if yearwise:
+                new_path = str(new_path).replace('.json', f"_yearwise.json")
             keyword_storage = {doc_id: document.keywords for doc_id, document in corpus.documents.items()}
             with open(new_path, 'w', encoding='utf-8') as f:
                 json.dump(keyword_storage, f, ensure_ascii=False, indent=1, default=lambda o: o.__dict__)
-            print('wrote file')
+            print(f'wrote file {new_path}')
 
 
 if __name__ == '__main__':

@@ -272,7 +272,7 @@ class Corpus:
         for doc in self.get_documents():
             year_bins[doc.date].append(doc)
 
-        pseudo_docs = [Document(doc_id=f'pseudo_{year}',
+        pseudo_docs = [Document(doc_id=f'{self.name}_pseudo_{year}',
                                 date=year,
                                 text=" ".join([doc.text for doc in docs]),
                                 language=self.language
