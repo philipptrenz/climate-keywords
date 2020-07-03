@@ -13,7 +13,7 @@ def modify_path(path: str, without_text: bool = False):
 def main():
     parser = argparse.ArgumentParser(description='Extracts keywords for given algorithm on given corpora')
     parser.add_argument('-c', '--corpora', help='Corpora to annotate as list', nargs='+',
-                        default=['state_of_the_union'])
+                        default=['bundestag', 'abstract'])
     parser.add_argument('-t', '--translate', help='Translate keywords', action='store_true')
     args = vars(parser.parse_args())
 

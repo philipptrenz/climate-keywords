@@ -17,7 +17,10 @@ def main():
     top_k = 100
     root = 'data/evaluation'
     files = [
-        'rake_state_of_the_union_abstract'
+        'rake_state_of_the_union_abstract',
+        'rake_state_of_the_union_sustainability',
+        'rake_state_of_the_union_sustainability_yearwise',
+        'tfidf_skl_state_of_the_union_sustainability',
     ]
 
     results = []

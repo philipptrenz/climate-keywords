@@ -312,6 +312,7 @@ class Corpus:
 
     def save_corpus(self, path: str):
         data = [doc.__dict__ for doc in self.get_documents()]
+        # data = {doc.doc_id: doc.__dict__ for doc in self.get_documents()}
 
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=1, default=lambda o: o.__dict__)

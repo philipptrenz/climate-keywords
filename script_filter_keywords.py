@@ -37,7 +37,7 @@ def main():
 
         en_counter = {keyword_string: counter_var for keyword_string, counter_var in tqdm(en_counter.items())
                       if counter_var > 1 or keyword_string != ''}
-
+        print(en_counter)
         filtered = {doc_id: [keyword for keyword in keywords
                              if keyword['german_translation'] in ger_counter
                              or keyword['english_translation'] in en_counter]
