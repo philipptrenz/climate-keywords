@@ -16,16 +16,20 @@ def calculate_precision_of_file(path, top_k):
 def main():
     top_k = 100
     root = 'data/evaluation'
-    files = [
-        'rake_state_of_the_union_abstract',
-        'rake_state_of_the_union_sustainability',
-        'rake_state_of_the_union_sustainability_yearwise',
-        'tfidf_skl_state_of_the_union_sustainability',
-    ]
+    exclude = ['precision.csv']
+    # files = [
+    #     'rake_state_of_the_union_abstract',
+    #     'rake_state_of_the_union_sustainability',
+    #     'rake_state_of_the_union_sustainability_yearwise',
+    #     'tfidf_skl_state_of_the_union_sustainability',
+    # ]
+
+    files = [f for f in os.listdir(root) if os.path.isfile(os.path.join(root, f))]
+    files = [file for file in files if file not in exclude and file.endswith('_an.csv')]
 
     results = []
     for file in files:
-        tf_prec, df_prec = calculate_precision_of_file(os.path.join(root, f'{file}_an.csv'), top_k)
+        tf_prec, df_prec = calculate_precision_of_file(os.path.join(root, file), top_k)
         # print(file.replace('_', ' '), tf_prec, df_prec)
         results.append((file.replace('_', ' '), tf_prec, df_prec))
 

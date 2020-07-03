@@ -19,8 +19,8 @@ def main():
     erg_dict = defaultdict(set)
     for file in dir_files:
         path = os.path.join(directory, file)
-        df = pd.read_csv(path, header=None)
-        df.columns = ['Word_1', 'Score_1', 'Label_1', 'Word_2', 'Score_2', 'Label_2']
+        df = pd.read_csv(path)
+        # df.columns = ['Word_1', 'Score_1', 'Label_1', 'Word_2', 'Score_2', 'Label_2']
         for i, row in df.iterrows():
             erg_dict[row['Word_1']].add(row['Label_1'])
             erg_dict[row['Word_2']].add(row['Label_2'])

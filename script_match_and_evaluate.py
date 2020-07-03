@@ -76,7 +76,7 @@ def evaluate_single(config, algorithm, chosen_corpora, top_k, use_unassigned, ye
     if yearwise:
         output_path = output_path.replace('.csv', '_yearwise.csv')
     with open(output_path, 'w', encoding="utf-8") as f:
-        f.write(f"Word_1,Score_1,Label_1,Word_2,Score_2,Label_2")
+        f.write(f"Word_1,Score_1,Label_1,Word_2,Score_2,Label_2\n")
         for result_tf, result_df in zip(results_test_tf[:top_k], results_test_df[:top_k]):
             print(result_tf, result_df)
             f.write(f"{result_tf[0]},{result_tf[1]},,{result_df[0]},{result_df[1]},\n")
@@ -96,7 +96,7 @@ def main():
 
     #  remove and use actual args
     chosen_corpora = ['state_of_the_union', 'abstract']  # args['corpora']
-    algorithm = "rake"  # args['algorithm']
+    algorithm = "tfidf_skl"  # args['algorithm']
     top_k = 100  # args['top_k']
     yearwise = True
 

@@ -39,24 +39,9 @@ def main():
             override.append((row['Word_1'], row['Score_1'], label_1, row['Word_2'], row['Score_2'], label_2))
 
         override_df = pd.DataFrame(override, columns=df.columns)
+        # override_df[["Label_1", "Label_2"]] = df[["Label_1", "Label_2"]].astype(int)
         override_df.to_csv(os.path.join(directory, f"{file.replace('.csv', '_ov.csv')}"), index=False)
         print(override_df)
-    #
-    #         if len(erg_dict[row['Word_1']]) > 1:
-    #             print(f'{row["Word_1"]} of {file} is labeled ambiguous.')
-    #             erg_dict[row['Word_1']].clear()
-    #             erg_dict[row['Word_1']].add('ambiguous')
-    #         if len(erg_dict[row['Word_2']]) > 1:
-    #             print(f'{row["Word_2"]} of {file} is labeled ambiguous.')
-    #             erg_dict[row['Word_2']].clear()
-    #             erg_dict[row['Word_2']].add('ambiguous')
-    #
-    # erg_dict = {word: next(iter(label)) for word, label in erg_dict.items()}
-    #
-    # sorted_ergs = list(sorted(erg_dict.items(), key=lambda x: (x[1], x[0]), reverse=False))
-    # erg_df = pd.DataFrame(sorted_ergs, columns=['Keyword', 'Label'])
-    #
-    # erg_df.to_csv(output_path, index=False)
 
 
 if __name__ == '__main__':

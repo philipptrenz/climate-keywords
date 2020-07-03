@@ -126,7 +126,7 @@ class KeyPhraseExtractor:
         # 2. load the content of the document.
         keywords = {}
         for document in tqdm(corpus.get_documents(as_list=True), desc="Calculating YAKE"):
-            extractor.load_document(input=document.text[:10000000],
+            extractor.load_document(input=document.text,
                                     language=lan,
                                     normalization="lemmatization"
                                     )
