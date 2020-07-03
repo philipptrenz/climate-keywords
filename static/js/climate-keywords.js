@@ -4,54 +4,68 @@ require(['c3', 'jquery'], function(c3, $) {
     var tagButton = '<button class="tag-button"><i class="fe fe-x"></i></button>';
 
     var jsonData = null;
-
-    $( ".tag" ).append( tagButton );
-
-    // delete tag
-    $('body').on('click', '.tag-button', function() {
-        $( this ).parent().remove();
-        var keyword = $( this ).parent().text().trim().toLowerCase();
-        removeKeywordFromJson(keyword);
-        drawChart();
-    });
-
-    // process search bar submit
-    $( "#keyword-search-form" ).submit(function( event ) {
-        var value = $( ".keyword-search" ).val();
-        var keyword = value.trim().toLowerCase();
-        $( ".keyword-search" ).val("");
-        //$( "#card-filter" ).append('<span class="tag" style="background-color: ' + colorPattern[$( "#card-filter" ).length + 1] + ';">' + value + tagButton +'</span>');
-        $( "#card-filter" ).append(`
-            <span class="tag" style="background-color: ${ colorPattern[$( "#card-filter > span" ).length] };">
-                ${ keyword }
-                ${ tagButton }
-            </span>
-        `);
-        requestDataWithKeywords([keyword]);
-        event.preventDefault();
-    });
+    var jsonKeywords = [];
+    var jsonKeywordsColorPalette = {};
+    var charts = {};
 
     $( document ).ready(function() {
+        $( ".tag" ).append( tagButton );
         requestDataWithKeywords([]);
     });
 
-    // gets triggered if tags get added or deleted
-    $('body').on('DOMSubtreeModified', '#card-filter', function(){
-        recolorKeywordTags();
+    // add keyword tag
+    $( "#keyword-search-form" ).submit(function( event ) {
+        var value = $( ".keyword-search" ).val();
+        var keyword = value.trim().toLowerCase();
+
+        $( ".keyword-search" ).val("");
+        if (!jsonKeywords.includes(keyword)) {
+            jsonKeywords.push(keyword);
+
+            //$( "#card-filter" ).append('<span class="tag" style="background-color: ' + colorPattern[$( "#card-filter" ).length + 1] + ';">' + value + tagButton +'</span>');
+            $( "#card-filter" ).append(`
+                <span class="tag" style="background-color: ${ colorPattern[$( "#card-filter > span" ).length] };">
+                    ${ keyword }
+                    ${ tagButton }
+                </span>
+            `);
+            requestDataWithKeywords([keyword]);
+        }
+        event.preventDefault();
     });
 
-    function recolorKeywordTags() {
+    // delete keyword tag
+    $('body').on('click', '.tag-button', function() {
+        $( this ).parent().remove();
+        var keyword = $( this ).parent().text().trim().toLowerCase();
+
+        // remove keyword from jsonKeywords
+        var index = jsonKeywords.indexOf(keyword);
+        if (index !== -1) jsonKeywords.splice(index, 1);
+
+        removeKeywordFromJson(keyword);
+    });
+
+    // recolor tags if element gets added or removed
+    $('body').on('DOMSubtreeModified', '#card-filter', function(){
         $( "#card-filter > span" ).each(function(i) {
             $( this ).css("background-color", colorPattern[i] );
+            jsonKeywordsColorPalette[$( this ).text().trim().toLowerCase()] = d3.rgb(colorPattern[i]);
         });
-    }
+    });
 
     function removeKeywordFromJson(keyword) {
         if (jsonData === null) return;
-
-        console.log("removing "+keyword+" from json data")
         Object.keys(jsonData['corpora']).forEach(function(corpus_name) {
-            delete jsonData['corpora'][corpus_name][keyword];
+
+            charts[corpus_name].unload({
+                ids: [keyword]
+            });
+            charts[corpus_name].data.colors(jsonKeywordsColorPalette);
+
+            Object.keys(jsonData['corpora'][corpus_name]).forEach(function(data_type) {
+                delete jsonData['corpora'][corpus_name][data_type][keyword];
+            });
         });
     }
 
@@ -78,24 +92,23 @@ require(['c3', 'jquery'], function(c3, $) {
             jsonData = newData;
         } else {
             Object.keys(newData['corpora']).forEach(function(corpus_name) {
-                Object.keys(newData['corpora'][corpus_name]).forEach(function(keyword) {
-                    if (corpus_name in jsonData['corpora']) {
-                        jsonData['corpora'][corpus_name][keyword] = newData['corpora'][corpus_name][keyword];
-                    } else {
-                        alert("Corpora are inconsistent between frontend and backend, please reload the page");
-                    }
+                Object.keys(newData['corpora'][corpus_name]).forEach(function(data_type) {
+                    Object.keys(newData['corpora'][corpus_name][data_type]).forEach(function(keyword) {
+
+                        if (corpus_name in jsonData['corpora']) {
+                            jsonData['corpora'][corpus_name][data_type][keyword] = newData['corpora'][corpus_name][data_type][keyword];
+                        } else {
+                            alert("Corpora are inconsistent between frontend and backend, please reload the page");
+                        }
+
+                    });
                 });
             });
         }
     }
 
     function drawChart(){
-        var data = jsonData;
-
-        if (typeof data === 'undefined' || data == null) return;
-        console.log(data)
-
-        Object.keys(data['corpora']).forEach(function(corpus_name) {
+        Object.keys(jsonData['corpora']).forEach(function(corpus_name) {
 
             var chartContainerId = "chart-" + corpus_name.replace(/_/g, '-');
             var chartTile = `
@@ -104,7 +117,7 @@ require(['c3', 'jquery'], function(c3, $) {
                         <div class="card-header">
                             <h3 class="card-title">${ corpus_name.replace(/_/g, ' ') }</h3>
                         </div>
-                        <div id="${ chartContainerId }" style="height: 10rem"></div>
+                        <div id="${ chartContainerId }" style="height: 15rem"></div>
                     </div>
                 </div>
             `;
@@ -112,7 +125,7 @@ require(['c3', 'jquery'], function(c3, $) {
                 $( "#row-cards-container" ).append(chartTile);
             }
 
-            var corpus = data['corpora'][corpus_name];
+            var corpus = jsonData['corpora'][corpus_name];
 
             keys = []
             columns = []
@@ -121,91 +134,79 @@ require(['c3', 'jquery'], function(c3, $) {
                 columns.push([key].concat(corpus[key]['norm'])) // start array with keyword for grouping
             });
 
-            var chart = c3.generate({
-                    bindto: '#' + chartContainerId, // id of chart wrapper
-                    data: {
-                            columns: columns,
-                            type: 'line',
+            if (typeof charts[corpus_name] === 'undefined' || charts[corpus_name] == null) { // generate chart
 
+                charts[corpus_name] = c3.generate({
+                        bindto: '#' + chartContainerId, // id of chart wrapper
+                        data: {
+                                json: jsonData['corpora'][corpus_name]['norm']/*,
+                                keys: {
+                                    // x: 'name', // it's possible to specify 'x' when category axis
+                                    value: ['norm', 'tf', 'df'],
+                                }*/
 
-                            /*
-                            groups: [
-                                    keys
-                            ],
-                            colors: {
-                                    'data1': tabler.colors["blue"]
-                            },
-                            names: {
-                                    // name of each serie
-                                    'data1': 'Data type'
-                            }
-                            */
-                    },
-                    axis: {
-                            y: {
-                                    label: 'Percentage of documents per year',
-                                    padding: {
-                                        bottom: 0,
-                                    },
+                        },
+                        axis: {
+                                y: {
+                                    label: '% of documents p.a.',
                                     show: true,
-                                    min: 0,
-                                    type: 'category',
-                                    tick: {
-                                        multiline: false,
-                                        values: [0, 0.1, 0.2, 0.3, 0.4]
-                                    },
-
-                                    /*
-                                    max: 1.0,
-                                    tick: {
-                                            outer: false
-                                    }*/
-                            },
-                            x: {
-                                    padding: {
-                                        left: 5,
-                                        right: 5
-                                    },
+                                    min: null,
+                                },
+                                x: {
                                     show: true,
                                     type: 'category',
-                                    categories: data['years'],
+                                    categories: jsonData['years'],
                                     tick: {
                                         multiline: false,
                                         culling: {
                                             max: 20
                                         }
                                     }
-                            }
-                    },
-                    legend: {
+                                }
+                        },
+                        legend: {
+                            show: false,
                             position: 'inset',
                             padding: 0,
                             inset: {
-                                        anchor: 'top-left',
-                                    x: 20,
-                                    y: 8,
-                                    step: 10
+                                anchor: 'top-left',
+                                x: 20,
+                                y: 8,
+                                step: 10
                             }
-                    },
-                    tooltip: {
+                        },
+                        tooltip: {
                             format: {
-                                    title: function (x) {
-                                            return '';
-                                    }
+                                title: function (x) {
+                                    return '';
+                                },
+                                value: function (value, ratio, id) {
+                                    var format = d3.format('.2%');
+                                    return format(value);
+                                }
                             }
-                    },
-                    padding: {
-                            bottom: 0,
-                            left: -1,
-                            right: -1
-                    },
-                    point: {
+                        },
+                        padding: {
+                            top: 20,
+                            bottom: 10,
+                            left: 40,
+                            right: 40
+                        },
+                        point: {
                             show: false
-                    },
-                    color: {
-                        pattern: colorPattern
-                    }
-            });
+                        },
+                        color: {
+                            pattern: colorPattern
+                        }
+                });
+
+            } else { // only reload data
+
+                charts[corpus_name].load({
+                    json: jsonData['corpora'][corpus_name]['norm']
+                });
+                charts[corpus_name].data.colors(jsonKeywordsColorPalette);
+            }
 
         });
     }
