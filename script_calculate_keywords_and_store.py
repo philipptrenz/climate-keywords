@@ -9,9 +9,9 @@ from utils import ConfigLoader, Corpus, Language, KeywordTranslator, Keyword
 
 def main():
     parser = argparse.ArgumentParser(description='Extracts keywords for given algorithm on given corpora')
-    parser.add_argument('-a', '--algorithm', help='Algorithm to use like rake or tfidf', default="yake")
+    parser.add_argument('-a', '--algorithm', help='Algorithm to use like rake or tfidf_skl', default="rake")
     parser.add_argument('-c', '--corpora', help='Corpora to annotate as list', nargs='+',
-                        default=['sustainability'])
+                        default=['abstract'])
     parser.add_argument('-t', '--translate', help='Translate keywords', action='store_true')
     args = vars(parser.parse_args())
 
@@ -64,7 +64,6 @@ def main():
         if translate_keywords:
             kwt = KeywordTranslator(cache_file=config["translator"]["cache_file"])
             corpus.translate_keywords(kwt)
-            # todo: add translation
         keyword_extractor(corpus=corpus)
         if assign_keywords:
             new_path = str(path_meta.path).replace('.json', f"_{algorithm}.json")

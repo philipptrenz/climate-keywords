@@ -15,7 +15,14 @@ def modify_keyword_path(path: str, algorithm: str):
     return path.replace('.json', f'_{algorithm}_keywords.json')
 
 
-def evaluate_single(config, algorithm, chosen_corpora, top_k, use_unassigned):
+def modify_yearwise_path(path: str, yearwise=False):
+    if yearwise:
+        return path.replace('.json', '_yearwise.json')
+    else:
+        return path
+
+
+def evaluate_single(config, algorithm, chosen_corpora, top_k, use_unassigned, yearwise):
     output_path = f"data/evaluation/{algorithm}_{'_'.join(chosen_corpora)}.csv"
     PathMetaData = namedtuple('PathMetaData', 'path corpus_name language')
     paths_and_meta_data = [
@@ -50,12 +57,13 @@ def evaluate_single(config, algorithm, chosen_corpora, top_k, use_unassigned):
 
     print(f'Evaluate {algorithm} on {chosen_corpora}')
 
-    corpora = [Corpus(source=path_meta.path, name=path_meta.corpus_name, language=path_meta.language)
+    corpora = [Corpus(source=modify_yearwise_path(path_meta.path, yearwise=yearwise),
+                      name=path_meta.corpus_name, language=path_meta.language)
                for path_meta in paths_and_meta_data]
 
     print('assign copora...')
     for corpus, keyword_path in zip(corpora, keyword_files):
-        corpus.assign_corpus_with_keywords_from_file(keyword_path.path)
+        corpus.assign_corpus_with_keywords_from_file(modify_yearwise_path(keyword_path.path, yearwise))
 
     print('assigned copora')
 
@@ -65,7 +73,10 @@ def evaluate_single(config, algorithm, chosen_corpora, top_k, use_unassigned):
     # km.get_first_mentions(common)
     results_test_tf = km.perform_liklihood_ratio_test(tf_mode=True)
     results_test_df = km.perform_liklihood_ratio_test(tf_mode=False)
+    if yearwise:
+        output_path = output_path.replace('.csv', '_yearwise.csv')
     with open(output_path, 'w', encoding="utf-8") as f:
+        f.write(f"Word_1,Score_1,Label_1,Word_2,Score_2,Label_2")
         for result_tf, result_df in zip(results_test_tf[:top_k], results_test_df[:top_k]):
             print(result_tf, result_df)
             f.write(f"{result_tf[0]},{result_tf[1]},,{result_df[0]},{result_df[1]},\n")
@@ -84,11 +95,12 @@ def main():
     config = ConfigLoader.get_config()
 
     #  remove and use actual args
-    chosen_corpora = ['abstract', 'sustainability']  # args['corpora']
+    chosen_corpora = ['state_of_the_union', 'abstract']  # args['corpora']
     algorithm = "rake"  # args['algorithm']
     top_k = 100  # args['top_k']
+    yearwise = True
 
-    evaluate_single(config, algorithm, chosen_corpora, top_k, use_unassigned=True)
+    evaluate_single(config, algorithm, chosen_corpora, top_k, use_unassigned=True, yearwise=yearwise)
 
 
 if __name__ == '__main__':

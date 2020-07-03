@@ -20,8 +20,8 @@ def main():
     labels = {row['Keyword']: row['Label'] for i, row in label_df.iterrows()}
     for file in dir_files:
         path = os.path.join(directory, file)
-        df = pd.read_csv(path, header=None)
-        df.columns = ['Word_1', 'Score_1', 'Label_1', 'Word_2', 'Score_2', 'Label_2']
+        df = pd.read_csv(path)
+        # df.columns = ['Word_1', 'Score_1', 'Label_1', 'Word_2', 'Score_2', 'Label_2']
         print(df)
         override = []
         for i, row in df.iterrows():
@@ -29,8 +29,13 @@ def main():
             label_2 = row['Label_2']
             if str(label_1).lower() == "nan":
                 label_1 = labels.get(row['Word_1'])
+                if label_1:
+                    label_1 = int(label_1)
+
             if str(label_2).lower() == "nan":
                 label_2 = labels.get(row['Word_2'])
+                if label_2:
+                    label_2 = int(label_2)
             override.append((row['Word_1'], row['Score_1'], label_1, row['Word_2'], row['Score_2'], label_2))
 
         override_df = pd.DataFrame(override, columns=df.columns)
