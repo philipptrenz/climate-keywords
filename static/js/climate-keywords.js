@@ -117,7 +117,7 @@ require(['c3', 'jquery'], function(c3, $) {
                         <div class="card-header">
                             <h3 class="card-title">${ corpus_name.replace(/_/g, ' ') }</h3>
                         </div>
-                        <div id="${ chartContainerId }" style="height: 10rem"></div>
+                        <div id="${ chartContainerId }" style="height: 15rem"></div>
                     </div>
                 </div>
             `;
@@ -148,65 +148,52 @@ require(['c3', 'jquery'], function(c3, $) {
                         },
                         axis: {
                                 y: {
-                                        label: 'Percentage of documents per year',
-                                        padding: {
-                                            bottom: 0,
-                                        },
-                                        show: true,
-                                        min: 0,
-                                        type: 'category',
-                                        tick: {
-                                            multiline: false,
-                                            values: [0, 0.1, 0.2, 0.3, 0.4]
-                                        },
-
-                                        /*
-                                        max: 1.0,
-                                        tick: {
-                                                outer: false
-                                        }*/
+                                    label: '% of documents p.a.',
+                                    show: true,
+                                    min: null,
                                 },
                                 x: {
-                                        padding: {
-                                            left: 5,
-                                            right: 5
-                                        },
-                                        show: true,
-                                        type: 'category',
-                                        categories: jsonData['years'],
-                                        tick: {
-                                            multiline: false,
-                                            culling: {
-                                                max: 20
-                                            }
+                                    show: true,
+                                    type: 'category',
+                                    categories: jsonData['years'],
+                                    tick: {
+                                        multiline: false,
+                                        culling: {
+                                            max: 20
                                         }
+                                    }
                                 }
                         },
                         legend: {
-                                show: true, // debug
-                                position: 'inset',
-                                padding: 0,
-                                inset: {
-                                            anchor: 'top-left',
-                                        x: 20,
-                                        y: 8,
-                                        step: 10
-                                }
+                            show: false,
+                            position: 'inset',
+                            padding: 0,
+                            inset: {
+                                anchor: 'top-left',
+                                x: 20,
+                                y: 8,
+                                step: 10
+                            }
                         },
                         tooltip: {
-                                format: {
-                                        title: function (x) {
-                                                return '';
-                                        }
+                            format: {
+                                title: function (x) {
+                                    return '';
+                                },
+                                value: function (value, ratio, id) {
+                                    var format = d3.format('.2%');
+                                    return format(value);
                                 }
+                            }
                         },
                         padding: {
-                                bottom: 0,
-                                left: -1,
-                                right: -1
+                            top: 20,
+                            bottom: 10,
+                            left: 40,
+                            right: 40
                         },
                         point: {
-                                show: false
+                            show: false
                         },
                         color: {
                             pattern: colorPattern
