@@ -5,8 +5,12 @@ require(['c3', 'jquery'], function(c3, $) {
 
     $( ".tag" ).append( tagButton );
 
+    // delete tag
     $('body').on('click', '.tag-button', function() {
         $( this ).parent().remove();
+        var keyword = $( this ).parent().text().trim().toLowerCase();
+        removeKeywordFromJson(keyword);
+        drawChart();
     });
 
     // process search bar submit
@@ -20,7 +24,7 @@ require(['c3', 'jquery'], function(c3, $) {
                 ${ tagButton }
             </span>
         `);
-
+        requestDataWithKeywords();
         event.preventDefault();
     });
 
@@ -30,7 +34,6 @@ require(['c3', 'jquery'], function(c3, $) {
 
     // gets triggered if tags get added or deleted
     $('body').on('DOMSubtreeModified', '#card-filter', function(){
-        requestDataWithKeywords();
         recolorKeywordTags();
     });
 
@@ -38,7 +41,17 @@ require(['c3', 'jquery'], function(c3, $) {
         $( "#card-filter > span" ).each(function(i) {
             $( this ).css("background-color", colorPattern[i] );
         });
+    }
 
+    var jsonData = null;
+
+    function removeKeywordFromJson(keyword) {
+        if (jsonData === null) return;
+
+        console.log("removing "+keyword+" from json data")
+        Object.keys(jsonData['corpora']).forEach(function(corpus_name) {
+            delete jsonData['corpora'][corpus_name][keyword];
+        });
     }
 
     function requestDataWithKeywords() {
@@ -57,7 +70,8 @@ require(['c3', 'jquery'], function(c3, $) {
             success: function(data){
                 var now = new Date();
                 console.log('request took', Math.round((now-start_time)/10)/100, 's');
-                drawChart(data);
+                jsonData = data;
+                drawChart();
             },
             failure: function(errMsg) {
                 console.log("failure");
@@ -66,7 +80,9 @@ require(['c3', 'jquery'], function(c3, $) {
         });
     }
 
-    function drawChart(data){
+    function drawChart(){
+        var data = jsonData;
+
         if (typeof data === 'undefined' || data == null) return;
         console.log(data)
 
