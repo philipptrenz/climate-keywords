@@ -59,24 +59,28 @@ logging.info('importing translation cache ...')
 with open(config["translator"]["cache_file"]) as f:
     translation_cache = json.load(f)
 
-logging.info('calculating number of documents by document frequency ...')
-
-df_occurences_data = {'corpora': {}}
+logging.info('calculating number of documents and TOP 10 keywords by document frequency ...')
+df_occurrences_data = {'corpora': {}}
+df_top10_keywords = {'corpora': {}}
+df_occurrences_x = 10
 for c_name in corpus_data:
-    df_per_keyword = [len(keyword_data[c_name][key][0].keys()) for key in keyword_data[c_name]]
-    df_occurences_data['corpora'][c_name] = [df_per_keyword.count(i) for i in range(1, 6)]
 
-    sum_of_first_5 = sum(df_occurences_data['corpora'][c_name])
-    df_occurences_data['corpora'][c_name].append(sum(df_per_keyword) - sum_of_first_5)
-    df_occurences_data['labels'] = [
-        'once',
-        'twice',
-        'three times',
-        'four times',
-        'five times',
-        '> 5'
-    ]
+    # create df_occurrences_data
+    df_per_keyword = [len(list(keyword_data[c_name][key][0].keys())) for key in keyword_data[c_name]]
+    df_occurrences_data['corpora'][c_name] = [df_per_keyword.count(i) for i in range(1, df_occurrences_x+1)]
 
+    df_occurrences_data['corpora'][c_name].append(sum(df_per_keyword) - sum(df_occurrences_data['corpora'][c_name]))
+    last_element = '≥ {}'.format(df_occurrences_x)
+    arr = list(range(1, df_occurrences_x))
+    arr.append(last_element)
+    df_occurrences_data['labels'] = arr
+
+    # create df_top10_keywords
+    df_per_keyword = {len(list(keyword_data[c_name][key][0].keys())): key for key in keyword_data[c_name]}
+    df_keys = sorted(df_per_keyword.keys())
+    df_top10_keywords['corpora'][c_name] = []
+    for i in range(1, 11):
+        df_top10_keywords['corpora'][c_name].append({'keyword': df_per_keyword[df_keys[-1*i]], 'df': df_keys[-1*i]})
 
 logging.info('starting flask ...')
 app = Flask(__name__)
@@ -98,8 +102,13 @@ def keywords_per_year():
 @app.route('/keywords-grouped-by-document-frequency', methods=["POST"])
 def keywords_grouped_by_document_frequency():
     data = request.get_json()  # array of keywords
+    return Response(json.dumps(df_occurrences_data),  mimetype='application/json')
 
-    return Response(json.dumps(df_occurences_data),  mimetype='application/json')
+
+@app.route('/keywords-top10-by-document-frequency', methods=["POST"])
+def keywords_top10_by_document_frequency():
+    data = request.get_json()  # array of keywords
+    return Response(json.dumps(df_top10_keywords),  mimetype='application/json')
 
 
 def process_documents_from_inverse_keyword(keyword, c_name):
