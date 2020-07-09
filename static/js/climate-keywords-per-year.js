@@ -72,7 +72,7 @@ require(['c3', 'jquery'], function(c3, $) {
     function requestDataWithKeywords(keywordArray) {
         $.ajax({
             type: "POST",
-            url: "/data",
+            url: "/keywords-per-year",
             data: JSON.stringify(keywordArray),
             contentType: "application/json; charset=utf-8",
             dataType: "json",

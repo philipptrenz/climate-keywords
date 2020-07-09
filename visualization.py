@@ -59,6 +59,25 @@ logging.info('importing translation cache ...')
 with open(config["translator"]["cache_file"]) as f:
     translation_cache = json.load(f)
 
+logging.info('calculating number of documents by document frequency ...')
+
+df_occurences_data = {'corpora': {}}
+for c_name in corpus_data:
+    df_per_keyword = [len(keyword_data[c_name][key][0].keys()) for key in keyword_data[c_name]]
+    df_occurences_data['corpora'][c_name] = [df_per_keyword.count(i) for i in range(1, 6)]
+
+    sum_of_first_5 = sum(df_occurences_data['corpora'][c_name])
+    df_occurences_data['corpora'][c_name].append(sum(df_per_keyword) - sum_of_first_5)
+    df_occurences_data['labels'] = [
+        'once',
+        'twice',
+        'three times',
+        'four times',
+        'five times',
+        '> 5'
+    ]
+
+
 logging.info('starting flask ...')
 app = Flask(__name__)
 logging.info('server boot took about {}s'.format(int(time.time()-start_time)))
@@ -69,11 +88,18 @@ def home():
     return render_template('index.html')
 
 
-@app.route('/data', methods=["POST"])
-def data():
-    data = request.get_json() # array of keywords
+@app.route('/keywords-per-year', methods=["POST"])
+def keywords_per_year():
+    data = request.get_json()  # array of keywords
     result = get_documents_per_year_filtered_by(data)
     return Response(json.dumps(result),  mimetype='application/json')
+
+
+@app.route('/keywords-grouped-by-document-frequency', methods=["POST"])
+def keywords_grouped_by_document_frequency():
+    data = request.get_json()  # array of keywords
+
+    return Response(json.dumps(df_occurences_data),  mimetype='application/json')
 
 
 def process_documents_from_inverse_keyword(keyword, c_name):
@@ -125,25 +151,20 @@ def get_documents_per_year_filtered_by(keywords):
                                           and translated_dest_lang == corpus_language \
                                           and translated_key != key
 
-            if key in keyword_data[c_name] or is_translation_key_relevant:
+            df, norm, tf = [[0] * (max_year-min_year+1)] * 3
+            transl_df, transl_norm, transl_tf = [[0] * (max_year-min_year+1)] * 3
+
+            if key in keyword_data[c_name]:
                 df, norm, tf = process_documents_from_inverse_keyword(keyword_data[c_name][key], c_name)
 
-                if is_translation_key_relevant:
-                    transl_df, transl_norm, transl_tf = process_documents_from_inverse_keyword(keyword_data[c_name][translated_key], c_name)
+            if is_translation_key_relevant:
+                transl_df, transl_norm, transl_tf = process_documents_from_inverse_keyword(keyword_data[c_name][translated_key], c_name)
 
-                    # for translation: aggregate values from initial findings and translated findings, as we do not know
-                    # in which language keywords got entered
-                    result['corpora'][c_name]['df'][key] = [(df[i] + transl_df[i]) for i in range(max_year-min_year+1)]
-                    result['corpora'][c_name]['norm'][key] = [(norm[i] + transl_norm[i]) for i in range(max_year-min_year+1)]
-                    result['corpora'][c_name]['tf'][key] = [(tf[i] + transl_tf[i]) for i in range(max_year-min_year+1)]
-                else:
-                    result['corpora'][c_name]['df'][key] = df
-                    result['corpora'][c_name]['norm'][key] = norm
-                    result['corpora'][c_name]['tf'][key] = tf
-            else:
-                result['corpora'][c_name]['df'][key] = [0] * (max_year-min_year+1)
-                result['corpora'][c_name]['norm'][key] = [0] * (max_year-min_year+1)
-                result['corpora'][c_name]['tf'][key] = [0] * (max_year-min_year+1)
+            # for translation: aggregate values from initial findings and translated findings, as we do not know
+            # in which language keywords got entered
+            result['corpora'][c_name]['df'][key] = [(df[i] + transl_df[i]) for i in range(max_year-min_year+1)]
+            result['corpora'][c_name]['norm'][key] = [(norm[i] + transl_norm[i]) for i in range(max_year-min_year+1)]
+            result['corpora'][c_name]['tf'][key] = [(tf[i] + transl_tf[i]) for i in range(max_year-min_year+1)]
 
     return result
 
