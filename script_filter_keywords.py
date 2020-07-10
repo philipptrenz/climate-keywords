@@ -3,7 +3,8 @@ import json
 
 from tqdm import tqdm
 
-from collections import namedtuple, defaultdict
+from collections import defaultdict
+
 
 def modify_path(old_path: str):
     return old_path.replace('.json', '_old.json')
@@ -33,10 +34,10 @@ def main():
                     en_counter[keyword["english_translation"]] += 1
 
         ger_counter = {keyword_string: counter_var for keyword_string, counter_var in tqdm(ger_counter.items())
-                       if counter_var > 1 or keyword_string != ''}
+                       if counter_var > 3 and keyword_string != '' and keyword_string is not None}
 
         en_counter = {keyword_string: counter_var for keyword_string, counter_var in tqdm(en_counter.items())
-                      if counter_var > 1 or keyword_string != ''}
+                      if counter_var > 3 and keyword_string != '' and keyword_string is not None}
         print(en_counter)
         filtered = {doc_id: [keyword for keyword in keywords
                              if keyword['german_translation'] in ger_counter
