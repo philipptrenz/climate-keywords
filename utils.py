@@ -23,7 +23,6 @@ import bs4
 import xml.etree.ElementTree as et
 
 
-
 class ConfigLoader:
     @staticmethod
     def get_config(relative_path=""):

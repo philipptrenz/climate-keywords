@@ -36,7 +36,7 @@ def main():
 
     erg_dict = {word: next(iter(label)) for word, label in erg_dict.items()}
 
-    sorted_ergs = list(sorted(erg_dict.items(), key=lambda x: (x[1], x[0]), reverse=False))
+    sorted_ergs = list(sorted(erg_dict.items(), key=lambda x: (str(x[1]), str(x[0])), reverse=False))
     erg_df = pd.DataFrame(sorted_ergs, columns=['Keyword', 'Label'])
 
     erg_df.to_csv(output_path, index=False)
