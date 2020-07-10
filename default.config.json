@@ -42,5 +42,6 @@
   "translator": {
     "cache_file": "",
     "google_client_secret_file": ""
-  }
+  },
+  "annotator": "/path/to/annotated_keywords.csv"
 }
