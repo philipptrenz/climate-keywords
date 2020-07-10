@@ -74,7 +74,7 @@ def translate(keyword, cache, translator, timeout, dest):
 def main():
     parser = argparse.ArgumentParser(description='Translates keywords in keyword files of given paths')
     parser.add_argument('-p', '--paths', help='Paths of keyword files to translate', nargs='+',
-                        default=['data/state_of_the_union_corpus_rake_keywords.json'])
+                        default=['data/bundestag_corpus_yake_keywords_yearwise.json'])
     args = vars(parser.parse_args())
     # -p data/bundestag_corpus_rake_keywords.json
     config = ConfigLoader.get_config()

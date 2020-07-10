@@ -95,7 +95,7 @@ def main():
     config = ConfigLoader.get_config()
 
     #  remove and use actual args
-    chosen_corpora = ['state_of_the_union', 'abstract']  # args['corpora']
+    chosen_corpora = ['sustainability', 'state_of_the_union']  # args['corpora']
     algorithm = "tfidf_skl"  # args['algorithm']
     top_k = 100  # args['top_k']
     yearwise = True
