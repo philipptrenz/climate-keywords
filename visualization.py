@@ -1,4 +1,5 @@
 import json
+import csv
 import time
 import logging
 from typing import List, Union
@@ -60,8 +61,20 @@ with open(config["translator"]["cache_file"]) as f:
     translation_cache = json.load(f)
 
 logging.info('calculating number of documents and TOP 10 keywords by document frequency ...')
+annotated_keywords = []
+with open(config["annotator"]) as csv_file:
+    csv_reader = csv.reader(csv_file, delimiter=',')
+    line_count = 0
+    for row in csv_reader:
+        try:
+            label = int(row[1])
+            if label == 1:
+                annotated_keywords.append(row[0])
+        except:
+            pass
 df_occurrences_data = {'corpora': {}}
 df_top10_keywords = {'corpora': {}}
+df_top10_climate_keywords = {'corpora': {}}
 df_occurrences_x = 10
 for c_name in corpus_data:
 
@@ -81,6 +94,13 @@ for c_name in corpus_data:
     df_top10_keywords['corpora'][c_name] = []
     for i in range(1, 11):
         df_top10_keywords['corpora'][c_name].append({'keyword': df_per_keyword[df_keys[-1*i]], 'df': df_keys[-1*i]})
+
+    # create df_top10_climate_keywords
+    df_per_climate_keyword = {len(list(keyword_data[c_name][key][0].keys())): key for key in keyword_data[c_name] if key in annotated_keywords}
+    df_climate_keys = sorted(df_per_climate_keyword.keys())
+    df_top10_climate_keywords['corpora'][c_name] = []
+    for i in range(1, 11):
+        df_top10_climate_keywords['corpora'][c_name].append({'keyword': df_per_climate_keyword[df_climate_keys[-1*i]], 'df': df_climate_keys[-1*i]})
 
 logging.info('starting flask ...')
 app = Flask(__name__)
@@ -109,6 +129,12 @@ def keywords_grouped_by_document_frequency():
 def keywords_top10_by_document_frequency():
     data = request.get_json()  # array of keywords
     return Response(json.dumps(df_top10_keywords),  mimetype='application/json')
+
+
+@app.route('/climate-keywords-top10-by-document-frequency', methods=["POST"])
+def climate_keywords_top10_by_document_frequency():
+    data = request.get_json()  # array of keywords
+    return Response(json.dumps(df_top10_climate_keywords),  mimetype='application/json')
 
 
 def process_documents_from_inverse_keyword(keyword, c_name):

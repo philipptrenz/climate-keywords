@@ -5,7 +5,7 @@ require(['c3', 'jquery'], function(c3, $) {
     $( document ).ready(function() {
         $.ajax({
             type: "POST",
-            url: "/keywords-top10-by-document-frequency",
+            url: "/climate-keywords-top10-by-document-frequency",
             data: JSON.stringify({}),
             contentType: "application/json; charset=utf-8",
             dataType: "json",
@@ -22,7 +22,7 @@ require(['c3', 'jquery'], function(c3, $) {
         console.log(jsonData)
 
         Object.keys(jsonData['corpora']).forEach(function(corpus_name) {
-            var corpus_div_id = "corpus-top10-" + corpus_name.replace(/_/g, '-').replace(/ /g, '-');
+            var corpus_div_id = "corpus-top10-climate-" + corpus_name.replace(/_/g, '-').replace(/ /g, '-');
 
             var trs = ""
             for (var i=0; i < jsonData['corpora'][corpus_name].length; i++) {
@@ -36,7 +36,7 @@ require(['c3', 'jquery'], function(c3, $) {
                 `
             }
 
-            $( "#row-top10-container" ).append(`
+            $( "#row-top10-climate-container" ).append(`
                 <div class="col-lg-${Math.round(12.0 / Object.keys(jsonData['corpora']).length)}">
                     <div class="card">
                         <div class="card-header"><h3 class="card-title">${corpus_name.replace(/_/g, ' ').replace(/ /g, ' ')}</h3></div>
