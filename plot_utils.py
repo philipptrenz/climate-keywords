@@ -1,5 +1,9 @@
 from typing import List, Union
 from matplotlib import pyplot as plt
+from collections import defaultdict
+import numpy as np; np.random.seed(0)
+import seaborn as sns; sns.set()
+import pandas as pd
 
 
 def simple_bar_histogram(bin_data: List[Union[int, str]], count_data: List[int], y_scale: str = "linear"):
@@ -49,3 +53,48 @@ def multi_bar_histogram(multiple_bin_data: List[List[int]],
     plt.legend(loc='best')
     plt.yscale(y_scale)
     plt.show()
+
+
+def heatmap(df, algorithm, yearwise=True):
+    df_f = df.loc[df["Yearwise"]==yearwise]
+    df_f = df_f.loc[df["Algorithm"]==algorithm]
+#     display(df_f)
+    res = {}
+    sources = set()
+    for i, row in df_f.iterrows():
+        res[(row["Source1"], row["Source2"])] = (row["TF Precision"], row["DF Precision"])
+        res[(row["Source2"], row["Source1"])] = (row["TF Precision"], row["DF Precision"])
+        sources.add(row["Source1"])
+        sources.add(row["Source2"])
+    res
+
+    sources = list(sources)
+    sources.sort()
+    matrix = []
+
+    for i, source in enumerate(sources):
+        inner_matrix = []
+        for j, other_source in enumerate(sources):
+            tup = (source, other_source)
+            if i > j:
+                index = 1
+            else:
+                index = 0
+            tf_df = res.get(tup)
+            if not tf_df:
+                tf_df = (0, 0)
+
+            inner_matrix.append(tf_df[index])
+        matrix.append(np.array(inner_matrix))
+
+    matrix = np.array(matrix)
+    ax = plt.axes()
+    ax = sns.heatmap(matrix, xticklabels=sources, yticklabels=sources, annot=True, cmap="YlGn", ax = ax)
+    ax.set_title(f'{algorithm} {"yearwise" if yearwise else ""}: ↓ DF \ TF →')
+    plt.show()
+
+df = pd.read_csv('data/evaluation/precision.csv')
+heatmap(df, "tfidfskl", yearwise=True)
+heatmap(df, "rake", yearwise=True)
+heatmap(df, "rake", yearwise=False)
+heatmap(df, "tfidfskl", yearwise=False)
