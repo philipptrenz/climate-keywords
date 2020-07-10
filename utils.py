@@ -270,10 +270,11 @@ class Corpus:
 
         for doc in self.get_documents():
             year_bins[doc.date].append(doc)
+        pattern = re.compile('[^a-zA-ZöäüÖÄÜß\s]+')
 
         pseudo_docs = [Document(doc_id=f'{self.name}_pseudo_{year}',
                                 date=year,
-                                text=" ".join([doc.text for doc in docs]),
+                                text=" ".join([pattern.sub('', doc.text) for doc in docs]),
                                 language=self.language
                                 )
                        for year, docs in tqdm(year_bins.items(), desc="Construct pseudo docs", total=len(year_bins))]
