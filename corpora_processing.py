@@ -10,6 +10,7 @@ from rake_nltk import Rake
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from tqdm import tqdm
 
+from text_rank import text_rank
 from utils import Corpus, Document, ConfigLoader, Keyword, KeywordTranslator, KeywordType, Language
 
 
@@ -436,6 +437,32 @@ class KeyPhraseExtractor:
             results[document.doc_id] = document.keywords
 
             return results
+
+    @classmethod
+    def text_rank(cls, corpus: Union[Corpus, Document]):
+        # additional parameters:
+        # ranking_metric
+        # punctuations
+
+        if isinstance(corpus, Corpus):
+            corpus = corpus
+            if corpus.language == Language.DE:
+                language = 'german'
+            else:
+                language = 'english'
+            logging.info(f"{language} is used")
+
+            keywords = {}
+            for document in tqdm(corpus.get_documents(as_list=True), desc="Calculating Textrank"):
+                keywords[document.doc_id] = text_rank(document.text, top_k=cls.top_k,
+                                                      language=language,
+                                                      simple_mode=False)
+                # print(keywords[document.doc_id])
+            corpus.assign_keywords(keywords=keywords, keyword_type=KeywordType.TEXT_RANK)
+            return corpus
+
+        else:
+            raise NotImplementedError
 
     @classmethod
     def key_word_count(cls, keywords: Dict[str, List[str]], top_k: int = 100):

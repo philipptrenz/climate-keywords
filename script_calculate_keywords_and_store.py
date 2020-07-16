@@ -9,7 +9,7 @@ from utils import ConfigLoader, Corpus, Language, KeywordTranslator, Keyword
 
 def main():
     parser = argparse.ArgumentParser(description='Extracts keywords for given algorithm on given corpora')
-    parser.add_argument('-a', '--algorithm', help='Algorithm to use like rake or tfidf_skl', default="rake")
+    parser.add_argument('-a', '--algorithm', help='Algorithm to use like rake or tfidf_skl', default="text_rank")
     parser.add_argument('-c', '--corpora', help='Corpora to annotate as list', nargs='+',
                         default=['bundestag'])
     parser.add_argument('-t', '--translate', help='Translate keywords', action='store_true')
@@ -22,7 +22,7 @@ def main():
     translate_keywords = False  #args['translate']
     chosen_corpora = args['corpora']
     assign_keywords = False
-    yearwise = True
+    yearwise = False
 
     PathMetaData = namedtuple('PathMetaData', 'path corpus_name language')
     paths_and_meta_data = [
@@ -36,12 +36,13 @@ def main():
     paths_and_meta_data = [path_meta for path_meta in paths_and_meta_data if path_meta.corpus_name in chosen_corpora]
     if yearwise:
         KeyPhraseExtractor.top_k = 1000
-        KeyPhraseExtractor.max_ngram = 2
+        KeyPhraseExtractor.max_ngram = 3
     use = {
         "rake": KeyPhraseExtractor.rake,
         "tfidf_skl": KeyPhraseExtractor.tfidf_skl,
         "tfidf_pke": KeyPhraseExtractor.tfidf_pke,
-        "text_rank": KeyPhraseExtractor.text_rank_pke,
+        "text_rank": KeyPhraseExtractor.text_rank,
+        "text_rank_pke": KeyPhraseExtractor.text_rank_pke,
         "yake": KeyPhraseExtractor.yake_pke,
         "single_rank": KeyPhraseExtractor.single_rank_pke,
         "topic_rank": KeyPhraseExtractor.topic_rank_pke,

@@ -74,7 +74,7 @@ def translate(keyword, cache, translator, timeout, dest):
 def main():
     parser = argparse.ArgumentParser(description='Translates keywords in keyword files of given paths')
     parser.add_argument('-p', '--paths', help='Paths of keyword files to translate', nargs='+',
-                        default=['data/bundestag_corpus_rake_keywords_yearwise.json'])
+                        default=['data/bundestag_corpus_text_rank_keywords.json'])
     args = vars(parser.parse_args())
     # -p data/bundestag_corpus_rake_keywords.json
     config = ConfigLoader.get_config()
@@ -115,15 +115,16 @@ def main():
     def iterate_keywords(data):
         tqdm_bar = tqdm(data.items(), total=len(data.keys()))
         for doc_id, keywords in tqdm_bar:
-            for keyword in keywords:
-                en_translation = keyword["english_translation"]
-                ger_translation = keyword["german_translation"]
-                if en_translation is None:
-                    translated = translate(ger_translation, cache, translator, timeout, dest="en")
-                    keyword["english_translation"] = translated
-                if ger_translation is None:
-                    translated = translate(en_translation, cache, translator, timeout, dest="de")
-                    keyword["german_translation"] = translated
+            if keywords:
+                for keyword in keywords:
+                    en_translation = keyword["english_translation"]
+                    ger_translation = keyword["german_translation"]
+                    if en_translation is None:
+                        translated = translate(ger_translation, cache, translator, timeout, dest="en")
+                        keyword["english_translation"] = translated
+                    if ger_translation is None:
+                        translated = translate(en_translation, cache, translator, timeout, dest="de")
+                        keyword["german_translation"] = translated
 
     try:
         for path in paths:

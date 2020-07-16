@@ -49,6 +49,7 @@ class KeywordType(str, Enum):
     TFIDF_SKL = "tfidf_skl"
     TFIDF_PKE = "tfidf_pke"
     RAKE = "rake"
+    TEXT_RANK = "text_rank"
     TEXT_RANK_PKE = "text_rank_pke"
     SINGLE_RANK_PKE = "single_rank_pke"
     YAKE_PKE = "yake_pke"
@@ -905,7 +906,8 @@ class KeywordMatcher:
 
         k_1 = keyword_counts[term][0]
         k_2 = keyword_counts[term][1]
-
+        if n_1 == 0 or n_2 == 0:
+            return 0
         p_1 = k_1 / n_1
         p_2 = k_2 / n_2
         p = (k_1 + k_2) / (n_1 + n_2)

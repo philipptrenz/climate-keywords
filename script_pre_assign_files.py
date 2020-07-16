@@ -38,7 +38,7 @@ def main():
             if str(label_2).lower() == "nan":
                 label_2 = labels.get(row['Word_2'])
                 if label_2:
-                    label_2 = int(str(label_2))
+                    label_2 = int(float(str(label_2)))
 
             override.append((row['Word_1'], row['Score_1'], label_1, row['Word_2'], row['Score_2'], label_2))
         override_df = pd.DataFrame(override, columns=df.columns)

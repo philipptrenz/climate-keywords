@@ -95,10 +95,10 @@ def main():
     config = ConfigLoader.get_config()
 
     #  remove and use actual args
-    chosen_corpora = ['state_of_the_union', 'bundestag']  # args['corpora']
-    algorithm = "rake"  # args['algorithm']
+    chosen_corpora = ['abstract', 'state_of_the_union']  # args['corpora']
+    algorithm = "text_rank"  # args['algorithm']
     top_k = 100  # args['top_k']
-    yearwise = True
+    yearwise = False
 
     evaluate_single(config, algorithm, chosen_corpora, top_k, use_unassigned=True, yearwise=yearwise)
 
