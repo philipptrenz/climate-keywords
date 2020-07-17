@@ -60,6 +60,11 @@ logging.info('importing translation cache ...')
 with open(config["translator"]["cache_file"]) as f:
     translation_cache = json.load(f)
 
+    for key, value in translation_cache['de2en'].items():
+        translation_cache['en2de'][value] = key
+    for key, value in translation_cache['en2de'].items():
+        translation_cache['de2en'][value] = key
+
 logging.info('calculating number of documents and TOP 10 keywords by document frequency ...')
 annotated_keywords = []
 with open(config["annotator"]) as csv_file:
