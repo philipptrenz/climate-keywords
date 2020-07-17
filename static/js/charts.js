@@ -112,6 +112,8 @@ define(['c3', 'jquery'], function(c3, $) {
         }
     }
 
+    var mouseOverX = -1;
+
     function drawChart(){
         Object.keys(jsonData['corpora']).forEach(function(corpus_name) {
 
@@ -144,12 +146,19 @@ define(['c3', 'jquery'], function(c3, $) {
                 charts[corpus_name] = c3.generate({
                         bindto: '#' + chartContainerId, // id of chart wrapper
                         data: {
-                                json: jsonData['corpora'][corpus_name]['norm']/*,
+                                json: jsonData['corpora'][corpus_name]['norm'],/*,
                                 keys: {
                                     // x: 'name', // it's possible to specify 'x' when category axis
                                     value: ['norm', 'tf', 'df'],
                                 }*/
-
+                                onmouseout: function(d) {
+                                    if (mouseOverX != -1) {
+                                        mouseOverX = -1;
+                                        for (ch in charts) {
+                                            charts[ch].tooltip.hide()
+                                        }
+                                    }
+                                }
                         },
                         axis: {
                                 y: {
@@ -189,6 +198,22 @@ define(['c3', 'jquery'], function(c3, $) {
                                     var format = d3.format('.2%');
                                     return format(value);
                                 }
+                            },
+                            position: function (data, width, height, element) {
+                                var top =  15;
+                                var left = parseInt(element.getAttribute('x')) + parseInt(element.getAttribute('width'));
+                                var x = data[0].x;
+
+                                if (mouseOverX != x) {
+                                    mouseOverX = x;
+                                    for (ch in charts) {
+                                        if (charts[ch].internal.config.bindto != this.config.bindto) {
+                                            charts[ch].tooltip.show({x: x})
+                                        }
+                                    }
+                                }
+
+                                return {top: top, left: left};
                             }
                         },
                         padding: {
