@@ -61,9 +61,11 @@ with open(config["translator"]["cache_file"]) as f:
     translation_cache = json.load(f)
 
     for key, value in translation_cache['de2en'].items():
-        translation_cache['en2de'][value] = key
+        if value not in translation_cache['en2de']:
+            translation_cache['en2de'][value] = key
     for key, value in translation_cache['en2de'].items():
-        translation_cache['de2en'][value] = key
+        if value not in translation_cache['de2en']:
+            translation_cache['de2en'][value] = key
 
 logging.info('calculating number of documents and TOP 10 keywords by document frequency ...')
 annotated_keywords = []
