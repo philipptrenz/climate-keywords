@@ -1,7 +1,7 @@
 import json
 from collections import defaultdict
 
-path = "data/bundestag_corpus_yake_keywords_yearwise.json"
+path = "data/sustainability_corpus_yake_keywords_yearwise.json"
 with open(path, encoding='utf-8') as f:
     data = json.load(f)
 
