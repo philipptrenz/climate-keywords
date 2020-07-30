@@ -8,6 +8,9 @@ define(['c3', 'jquery'], function(c3, $) {
     var jsonKeywordsColorPalette = {};
     var charts = {};
 
+    var min_year = 1945;
+    var max_year = 2018;
+
     $( document ).ready(function() {
         $( ".tag" ).append( tagButton );
         requestDataWithKeywords([]);
@@ -78,10 +81,11 @@ define(['c3', 'jquery'], function(c3, $) {
         $.ajax({
             type: "POST",
             url: "/keywords-per-year",
-            data: JSON.stringify(keywordArray),
+            data: JSON.stringify({ keywords: keywordArray, minYear: min_year, maxYear: max_year }),
             contentType: "application/json; charset=utf-8",
             dataType: "json",
             success: function(data){
+                console.log(data);
                 mergeNewDataIntoJsonData(data);
                 drawChart();
             },

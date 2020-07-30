@@ -122,7 +122,10 @@ def home():
 @app.route('/keywords-per-year', methods=["POST"])
 def keywords_per_year():
     data = request.get_json()  # array of keywords
-    result = get_documents_per_year_filtered_by(data)
+
+
+
+    result = get_documents_per_year_filtered_by(data["keywords"], req_min_year=int(data["minYear"]), req_max_year=int(data["maxYear"]))
     return Response(json.dumps(result),  mimetype='application/json')
 
 
@@ -161,11 +164,14 @@ def process_documents_from_inverse_keyword(keyword, c_name):
     return df, norm, tf
 
 
-def get_documents_per_year_filtered_by(keywords):
+def get_documents_per_year_filtered_by(keywords, req_min_year=min_year, req_max_year=max_year):
+
+    if req_min_year < min_year: req_min_year = min_year
+    if req_max_year > max_year: req_max_year = max_year
 
     result = {
         'corpora': {c_name: {} for c_name in corpus_data},
-        'years': list(range(min_year, max_year+1))
+        'years': list(range(req_min_year, req_max_year+1))
     }
 
     for c_name in corpus_data:
@@ -204,9 +210,12 @@ def get_documents_per_year_filtered_by(keywords):
 
             # for translation: aggregate values from initial findings and translated findings, as we do not know
             # in which language keywords got entered
-            result['corpora'][c_name]['df'][key] = [(df[i] + transl_df[i]) for i in range(max_year-min_year+1)]
-            result['corpora'][c_name]['norm'][key] = [(norm[i] + transl_norm[i]) for i in range(max_year-min_year+1)]
-            result['corpora'][c_name]['tf'][key] = [(tf[i] + transl_tf[i]) for i in range(max_year-min_year+1)]
+            # result['corpora'][c_name]['df'][key] = [(df[i] + transl_df[i]) for i in range(max_year-min_year+1)]
+            # result['corpora'][c_name]['norm'][key] = [(norm[i] + transl_norm[i]) for i in range(max_year-min_year+1)]
+            # result['corpora'][c_name]['tf'][key] = [(tf[i] + transl_tf[i]) for i in range(max_year-min_year+1)]
+            result['corpora'][c_name]['df'][key] = [(df[i] + transl_df[i]) for i in range(req_min_year-min_year, req_max_year-min_year+1)]
+            result['corpora'][c_name]['norm'][key] = [(norm[i] + transl_norm[i]) for i in range(req_min_year-min_year, req_max_year-min_year+1)]
+            result['corpora'][c_name]['tf'][key] = [(tf[i] + transl_tf[i]) for i in range(req_min_year-min_year, req_max_year-min_year+1)]
 
     return result
 
