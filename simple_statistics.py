@@ -14,6 +14,10 @@ def token_number(corpus: Corpus):
     return corpus.token_number()
 
 
+def document_number(corpus: Corpus):
+    return len(corpus.documents)
+
+
 def yearwise_documents(corpus: Corpus, aggregation_func: Callable = len, printing: bool = False, as_dict: bool = False):
     year_bins = defaultdict(list)
 
@@ -48,7 +52,9 @@ def main():
                Corpus(source=config["corpora"]["bundestag_corpus"],
                       language=Language.DE, name="bundestag_corpus"),
                Corpus(source=config["corpora"]["sustainability_corpus"],
-                      language=Language.EN, name="sustainability_corpus")]
+                      language=Language.EN, name="sustainability_corpus"),
+               Corpus(source=config["corpora"]["state_of_the_union_corpus"],
+                      language=Language.EN, name="state_of_the_union_corpus")]
 
     # count_non_years(corpora[0])
     # count_non_years(corpora[1])
@@ -59,9 +65,15 @@ def main():
     # bundestag: 0 / 877973
     # sustainability 3 / 221034
 
-    # print(token_number(corpora[0]))
-    # print(token_number(corpora[1]))
-    # print(token_number(corpora[2]))
+    print(document_number(corpora[0]))
+    print(document_number(corpora[1]))
+    print(document_number(corpora[2]))
+    print(document_number(corpora[3]))
+
+    print(token_number(corpora[0]))
+    print(token_number(corpora[1]))
+    print(token_number(corpora[2]))
+    print(token_number(corpora[3]))
 
     # Results: token number
     # abstract: 59314582

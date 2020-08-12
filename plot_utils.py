@@ -55,6 +55,8 @@ def multi_bar_histogram(multiple_bin_data: List[List[int]],
     plt.show()
 
 
+
+
 def heatmap(df, algorithm, yearwise=True):
     df_f = df.loc[df["Yearwise"]==yearwise]
     df_f = df_f.loc[df["Algorithm"]==algorithm]
@@ -66,7 +68,6 @@ def heatmap(df, algorithm, yearwise=True):
         res[(row["Source2"], row["Source1"])] = (row["TF Precision"], row["DF Precision"])
         sources.add(row["Source1"])
         sources.add(row["Source2"])
-    res
 
     sources = list(sources)
     sources.sort()
@@ -93,8 +94,8 @@ def heatmap(df, algorithm, yearwise=True):
     ax.set_title(f'{algorithm} {"yearwise" if yearwise else ""}: ↓ DF \ TF →')
     plt.show()
 
-df = pd.read_csv('data/evaluation/precision.csv')
-heatmap(df, "tfidfskl", yearwise=True)
-heatmap(df, "rake", yearwise=True)
-heatmap(df, "rake", yearwise=False)
-heatmap(df, "tfidfskl", yearwise=False)
+# df = pd.read_csv('data/evaluation/precision.csv')
+# heatmap(df, "tfidfskl", yearwise=True)
+# heatmap(df, "rake", yearwise=True)
+# heatmap(df, "rake", yearwise=False)
+# heatmap(df, "tfidfskl", yearwise=False)
