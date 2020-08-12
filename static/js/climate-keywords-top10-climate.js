@@ -1,4 +1,4 @@
-require(['c3', 'jquery'], function(c3, $) {
+require(['c3', 'jquery', 'static/js/charts'], function(c3, $, charts) {
 
     var keywordStatsCharts = {};
 
@@ -16,6 +16,13 @@ require(['c3', 'jquery'], function(c3, $) {
             }
         });
 
+        $( "body" ).on('click', "a.top10-climate-keywords-link", function() {
+            event.preventDefault();
+            $('html,body').animate({ scrollTop: 0 }, 'slow');
+            var keyword = $(this).text().trim();
+            charts.addKeyword(keyword)
+        })
+
     });
 
     function draw_top10(jsonData) {
@@ -30,7 +37,7 @@ require(['c3', 'jquery'], function(c3, $) {
                 trs += `
                     <tr>
                       <td width="1"><h4> ${ i+1 } </h4></td>
-                      <td> ${ jsonData['corpora'][corpus_name][i]['keyword'] } </td>
+                      <td><a href="#" class="top10-climate-keywords-link"> ${ jsonData['corpora'][corpus_name][i]['keyword'] } </a></td>
                       <td class="text-right"><span class="text-muted"> ${ jsonData['corpora'][corpus_name][i]['df'] } </span></td>
                     </tr>
                 `
