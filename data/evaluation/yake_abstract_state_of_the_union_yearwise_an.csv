@@ -1,0 +1,54 @@
+Word_1,Score_1,Label_1,Word_2,Score_2,Label_2
+energy,1285.6707078024706,1,research and development,206.06149463901662,0
+may be use,111.40464097951299,0,may be use,206.06149463901662,0
+research and development,64.30254212313365,0,rate of increase,151.44758310292931,0
+may be much,50.09004642256341,0,high and much,147.56877648761989,0
+year to year,34.686245061293704,0,increase the efficiency,145.63056754972192,0
+much and much,32.236512019768384,0,present and future,145.63056754972192,0
+period of time,28.44403802476597,0,one or much,141.75657471275926,0
+may be consider,13.873025873524034,0,increase the amount,141.75657471275926,0
+throughout the year,13.873025873524034,0,much or little,141.75657471275926,0
+among the much,8.49155330709597,0,increase by much,141.75657471275926,0
+may be reduce,6.936267663664701,0,much than one,141.75657471275926,0
+would be much,6.936267663664701,0,large and much,141.75657471275926,0
+north and south,6.065035293467226,0,much than two,137.88586706933586,0
+high and much,2.0908521726642717,0,america to china,136.38105740570631,0
+increase the efficiency,1.900751837930388,0,may be reduce,134.71775923913657,0
+around the world,1.8471440434817623,0,period of time,124.75171121651266,0
+east and west,0.13185868096733344,0,may be consider,98.80361653596049,0
+department of energy,0.06335102838751086,1,europe and america,94.32297910089159,0
+america to china,0.0,0,much,87.89015023495085,0
+much,0.0,0,would be much,83.48498992444634,0
+make -pron- possible,0.0,0,throughout the year,73.4732479807641,0
+one or much,0.0,0,united states,72.66341511085744,0
+europe and america,0.0,0,states and canada,69.91108010274047,0
+gulf of mexico,0.0,0,states of america,63.997939712031155,0
+states of america,0.0,0,year to year,62.84906164994043,0
+europe and asia,0.0,0,china and japan,62.009113406777146,0
+china and japan,0.0,0,gulf of mexico,61.17996091029534,0
+states and canada,0.0,0,atlantic and pacific,58.02239224141636,1
+atlantic and pacific,0.0,1,europe and japan,55.464014969125735,0
+increase the amount,0.0,0,among the much,53.664055007116595,0
+much or little,0.0,0,europe and asia,53.56580064237141,0
+america and europe,0.0,0,republic of china,51.68258361727152,0
+increase by much,0.0,0,japan and china,50.82437759524487,0
+republic of china,0.0,0,may be much,39.59623089011552,0
+much than two,0.0,0,north and south,38.16470581979644,0
+japan and china,0.0,0,may be increase,27.832231212928896,0
+europe and japan,0.0,0,states and china,21.77230212946438,0
+much than one,0.0,0,department of energy,15.171477034301006,1
+rate of increase,0.0,0,america and europe,14.768577598289196,0
+may be increase,0.0,0,part of europe,9.861534397689523,0
+states and china,0.0,0,pacific and indian,9.090610628217972,0
+large and much,0.0,0,asia and europe,8.957802259239031,0
+united states,0.0,0,make -pron- possible,7.1601221255075975,0
+present and future,0.0,0,make -pron- much,6.394332869238895,0
+september and october,0.0,0,july and august,5.5947358285177415,0
+asia and europe,0.0,0,much and much,4.8951476222400165,0
+part of europe,0.0,0,increase,4.093731908640962,0
+pacific and indian,0.0,0,system,4.093731908640962,0
+july and august,0.0,0,result,2.6388737700706315,0
+make -pron- much,0.0,0,september and october,0.3143156106804028,0
+result,-233.90633298211566,0,energy,0.030817799296556814,1
+increase,-405.2178106118871,0,around the world,-1349.2807338540142,0
+system,-405.2178106118871,0,east and west,-1371.4472078581025,0
