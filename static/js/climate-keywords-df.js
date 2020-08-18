@@ -46,7 +46,7 @@ require(['c3', 'jquery'], function(c3, $) {
                 },
                 axis: {
                     y: {
-                        label: '# documents',
+                        label: '# keywords',
                         show: true,
                         tick: {
                             format: d3.format("s")
