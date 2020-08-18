@@ -13,7 +13,7 @@ def modify_path(old_path: str):
 def main():
     parser = argparse.ArgumentParser(description='Extracts keywords for given algorithm on given corpora')
     parser.add_argument('-p', '--paths', help='Paths of keyword files to translate', nargs='+',
-                        default=['data/bundestag_corpus_text_rank_keywords.json'])
+                        default=['data/bundestag_corpus_rake_keywords.json'])
     args = vars(parser.parse_args())
     paths = args['paths']
 
@@ -34,7 +34,7 @@ def main():
                     en_counter[keyword["english_translation"]] += 1
 
         ger_counter = {keyword_string: counter_var for keyword_string, counter_var in tqdm(ger_counter.items())
-                       if counter_var > 29 and counter_var < 2000 and keyword_string != '' and keyword_string is not None}
+                       if counter_var > 50 and counter_var < 5000 and keyword_string != '' and keyword_string is not None}
 
         en_counter = {keyword_string: counter_var for keyword_string, counter_var in tqdm(en_counter.items())
                       if counter_var > 15 and counter_var < 7000 and keyword_string != '' and keyword_string is not None}

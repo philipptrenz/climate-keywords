@@ -9,7 +9,7 @@ from utils import ConfigLoader, Corpus, Language, KeywordTranslator, Keyword
 
 def main():
     parser = argparse.ArgumentParser(description='Extracts keywords for given algorithm on given corpora')
-    parser.add_argument('-a', '--algorithm', help='Algorithm to use like rake or tfidf_skl', default="text_rank")
+    parser.add_argument('-a', '--algorithm', help='Algorithm to use like rake or tfidf_skl', default="rake")
     parser.add_argument('-c', '--corpora', help='Corpora to annotate as list', nargs='+',
                         default=['bundestag'])
     parser.add_argument('-t', '--translate', help='Translate keywords', action='store_true')
@@ -22,7 +22,7 @@ def main():
     translate_keywords = False  #args['translate']
     chosen_corpora = args['corpora']
     assign_keywords = False
-    yearwise = False
+    yearwise = True
 
     PathMetaData = namedtuple('PathMetaData', 'path corpus_name language')
     paths_and_meta_data = [

@@ -1,0 +1,33 @@
+Config,TF Precision,DF Precision,TF Recall,DF Recall,TF F-measure,DF F-measure,Algorithm,Source1,Source2,Year-wise
+RAKE Abstracts Bundestag an.csv,0.07,0.01,0.018134715025906734,0.0025906735751295338,0.028806584362139915,0.004115226337448559,RAKE,Abstracts,Bundestag,False
+RAKE Abstracts Bundestag year-wise an.csv,0.1917808219178082,0.1917808219178082,0.03626943005181347,0.03626943005181347,0.06100217864923747,0.06100217864923747,RAKE,Abstracts,Bundestag,True
+RAKE Abstracts Sustainability an.csv,0.6,0.72,0.15544041450777202,0.18652849740932642,0.2469135802469136,0.2962962962962963,RAKE,Abstracts,Sustainability,False
+RAKE State of the Union Abstracts an.csv,0.22,0.13,0.05699481865284974,0.03367875647668394,0.0905349794238683,0.053497942386831275,RAKE,Abstracts,State of the Union,False
+RAKE State of the Union Abstracts year-wise an.csv,0.17,0.18,0.04404145077720207,0.046632124352331605,0.06995884773662552,0.07407407407407407,RAKE,Abstracts,State of the Union,True
+RAKE State of the Union Bundestag an.csv,0.0,0.0,0.0,0.0,0.0,0.0,RAKE,State of the Union,Bundestag,False
+RAKE State of the Union Bundestag year-wise an.csv,0.01,0.03,0.0025906735751295338,0.007772020725388601,0.004115226337448559,0.012345679012345678,RAKE,State of the Union,Bundestag,True
+RAKE State of the Union Sustainability an.csv,0.04,0.04,0.010362694300518135,0.010362694300518135,0.016460905349794237,0.016460905349794237,RAKE,State of the Union,Sustainability,False
+RAKE State of the Union Sustainability year-wise an.csv,0.1,0.08,0.025906735751295335,0.02072538860103627,0.0411522633744856,0.03292181069958847,RAKE,State of the Union,Sustainability,True
+RAKE Sustainability Abstracts year-wise an.csv,0.47,0.27,0.12176165803108809,0.06994818652849741,0.1934156378600823,0.11111111111111109,RAKE,Abstracts,Sustainability,True
+RAKE Sustainability Bundestag year-wise an.csv,0.375,0.375,0.015544041450777202,0.015544041450777202,0.029850746268656716,0.029850746268656716,RAKE,Bundestag,Sustainability,True
+TextRank Abstracts State of the Union an.csv,0.15,0.15,0.038860103626943004,0.038860103626943004,0.0617283950617284,0.0617283950617284,TextRank,Abstracts,State of the Union,False
+TextRank Bundestag Abstracts an.csv,0.11,0.01,0.02849740932642487,0.0025906735751295338,0.04526748971193415,0.004115226337448559,TextRank,Abstracts,Bundestag,False
+TextRank Bundestag State of the Union an.csv,0.01,0.02,0.0025906735751295338,0.0051813471502590676,0.004115226337448559,0.008230452674897118,TextRank,State of the Union,Bundestag,False
+TextRank Sustainability Abstracts an.csv,0.47,0.52,0.12176165803108809,0.13471502590673576,0.1934156378600823,0.2139917695473251,TextRank,Abstracts,Sustainability,False
+TextRank Sustainability Bundestag an.csv,0.08,0.04,0.02072538860103627,0.010362694300518135,0.03292181069958847,0.016460905349794237,TextRank,Bundestag,Sustainability,False
+TextRank Sustainability State of the Union an.csv,0.16,0.09,0.04145077720207254,0.023316062176165803,0.06584362139917695,0.037037037037037035,TextRank,State of the Union,Sustainability,False
+TF-IDF Abstracts Sustainability year-wise an.csv,0.11,0.19,0.02849740932642487,0.04922279792746114,0.04526748971193415,0.07818930041152262,TF-IDF,Abstracts,Sustainability,True
+TF-IDF Bundestag Abstracts year-wise an.csv,0.1,0.09,0.025906735751295335,0.023316062176165803,0.0411522633744856,0.037037037037037035,TF-IDF,Abstracts,Bundestag,True
+TF-IDF Bundestag State of the Union year-wise an.csv,0.04,0.0,0.010362694300518135,0.0,0.016460905349794237,0.0,TF-IDF,State of the Union,Bundestag,True
+TF-IDF Bundestag Sustainability year-wise an.csv,0.09,0.1,0.023316062176165803,0.025906735751295335,0.037037037037037035,0.0411522633744856,TF-IDF,Bundestag,Sustainability,True
+TF-IDF State of the Union Abstracts year-wise an.csv,0.17,0.25,0.04404145077720207,0.06476683937823834,0.06995884773662552,0.10288065843621398,TF-IDF,Abstracts,State of the Union,True
+TF-IDF State of the Union Sustainability an.csv,0.15,0.14,0.038860103626943004,0.03626943005181347,0.0617283950617284,0.05761316872427983,TF-IDF,State of the Union,Sustainability,False
+TF-IDF Sustainability Abstracts year-wise an.csv,0.11,0.19,0.02849740932642487,0.04922279792746114,0.04526748971193415,0.07818930041152262,TF-IDF,Abstracts,Sustainability,True
+TF-IDF Sustainability State of the Union year-wise an.csv,0.15,0.15,0.038860103626943004,0.038860103626943004,0.0617283950617284,0.0617283950617284,TF-IDF,State of the Union,Sustainability,True
+YAKE Abstracts Bundestag year-wise an.csv,0.0,0.0,0.0,0.0,0.0,0.0,YAKE,Abstracts,Bundestag,True
+YAKE Abstracts State of the Union year-wise an.csv,0.05660377358490566,0.05660377358490566,0.007772020725388601,0.007772020725388601,0.01366742596810934,0.01366742596810934,YAKE,Abstracts,State of the Union,True
+YAKE Abstracts Sustainability year-wise an.csv,0.12,0.15,0.031088082901554404,0.038860103626943004,0.04938271604938271,0.0617283950617284,YAKE,Abstracts,Sustainability,True
+YAKE Bundestag State of the Union year-wise an.csv,0.0,0.0,0.0,0.0,0.0,0.0,YAKE,State of the Union,Bundestag,True
+YAKE State of the Union Bundestag year-wise an.csv,0.0,0.0,0.0,0.0,0.0,0.0,YAKE,State of the Union,Bundestag,True
+YAKE Sustainability Bundestag year-wise an.csv,0.0,0.0,0.0,0.0,0.0,0.0,YAKE,Bundestag,Sustainability,True
+YAKE Sustainability State of the Union year-wise an.csv,0.0379746835443038,0.0379746835443038,0.007772020725388601,0.007772020725388601,0.012903225806451615,0.012903225806451615,YAKE,State of the Union,Sustainability,True
